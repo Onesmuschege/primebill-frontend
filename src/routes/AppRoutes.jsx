@@ -15,7 +15,7 @@ import TicketList from '../pages/tickets/TicketList'
 import TicketDetail from '../pages/tickets/TicketDetail'
 import SmsDashboard from '../pages/sms/SmsDashboard'
 import RouterList from '../pages/routers/RouterList'
-import RadiusPage from '../pages/radius/RadiusPage'
+// RadiusPage import removed — backend endpoints not yet implemented
 import InventoryList from '../pages/inventory/InventoryList'
 import FinanceOverview from '../pages/finance/FinanceOverview'
 import Reports from '../pages/reports/Reports'
@@ -41,7 +41,7 @@ export default function AppRoutes() {
             <Route path="/tickets/:id" element={<TicketDetail />} />
             <Route path="/sms"         element={<SmsDashboard />} />
             <Route path="/routers"     element={<RouterList />} />
-            <Route path="/radius"      element={<RadiusPage />} />
+            {/* /radius route disabled — backend not yet implemented */}
             <Route path="/inventory"   element={<InventoryList />} />
             <Route path="/finance"     element={<FinanceOverview />} />
             <Route path="/reports"     element={<Reports />} />

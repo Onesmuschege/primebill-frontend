@@ -21,8 +21,8 @@ export default function ClientList() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['clients', page, search, status],
-    // Unwrap once: r.data = { data: [...], meta: {...} }
-    queryFn: () => getClients({ page, search, status, per_page: 15 }).then(r => r.data),
+    // getClients returns normalized { data: [], meta: {} } via unwrapList
+    queryFn: () => getClients({ page, search, status, per_page: 15 }),
   })
 
   const suspendMutation = useMutation({
@@ -54,27 +54,15 @@ export default function ClientList() {
     { key: 'created_at', label: 'Joined',  render: (r) => formatDate(r.created_at) },
     { key: 'actions',    label: 'Actions', render: (r) => (
       <div className="flex items-center gap-2">
-        <button
-          onClick={() => navigate(`/clients/${r.id}`)}
-          className="p-1 text-blue-600 hover:bg-blue-50 rounded"
-          title="View"
-        >
+        <button onClick={() => navigate(`/clients/${r.id}`)} className="p-1 text-blue-600 hover:bg-blue-50 rounded" title="View">
           <Eye size={16} />
         </button>
         {r.status === 'active' ? (
-          <button
-            onClick={() => suspendMutation.mutate(r.id)}
-            className="p-1 text-orange-600 hover:bg-orange-50 rounded"
-            title="Suspend"
-          >
+          <button onClick={() => suspendMutation.mutate(r.id)} className="p-1 text-orange-600 hover:bg-orange-50 rounded" title="Suspend">
             <UserX size={16} />
           </button>
         ) : (
-          <button
-            onClick={() => activateMutation.mutate(r.id)}
-            className="p-1 text-green-600 hover:bg-green-50 rounded"
-            title="Activate"
-          >
+          <button onClick={() => activateMutation.mutate(r.id)} className="p-1 text-green-600 hover:bg-green-50 rounded" title="Activate">
             <UserCheck size={16} />
           </button>
         )}
@@ -91,7 +79,6 @@ export default function ClientList() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -120,13 +107,11 @@ export default function ClientList() {
         </button>
       </div>
 
-      {/* Table */}
       <div className="card p-0 overflow-hidden">
         <Table columns={columns} data={data?.data} loading={isLoading} />
         <Pagination meta={data?.meta} onPageChange={setPage} />
       </div>
 
-      {/* Add Client Modal */}
       <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Add New Client" size="lg">
         <ClientForm onSuccess={() => {
           setShowForm(false)

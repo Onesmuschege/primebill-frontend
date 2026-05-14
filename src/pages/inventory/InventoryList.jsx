@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api from '../../api/axiosInstance'
+import api, { unwrapList } from '../../api/axiosInstance'
 import Table from '../../components/common/Table'
 import Pagination from '../../components/common/Pagination'
 import Modal from '../../components/common/Modal'
 import { formatKES } from '../../utils/formatCurrency'
-import { Plus, Package, AlertTriangle } from 'lucide-react'
+import { Plus, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function InventoryList() {
@@ -19,9 +19,7 @@ export default function InventoryList() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['inventory', page],
-    // API returns { data: { data: [...], meta: {...} } }
-    // We unwrap once to get { data: [...], meta: {...} }
-    queryFn: () => api.get('/inventory', { params: { page } }).then(r => r.data),
+    queryFn: () => api.get('/inventory', { params: { page } }).then(unwrapList),
   })
 
   const createMutation = useMutation({
@@ -35,21 +33,18 @@ export default function InventoryList() {
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to add item'),
   })
 
-  // Low stock count from current page data
   const lowStockCount = data?.data?.filter(i => i.quantity <= i.low_stock_alert).length || 0
 
   const columns = [
-    { key: 'name',     label: 'Item',     render: (r) => (
+    { key: 'name',      label: 'Item',     render: (r) => (
       <span className="font-medium flex items-center gap-2">
         {r.quantity <= r.low_stock_alert && <AlertTriangle size={14} className="text-red-500" />}
         {r.name}
       </span>
     )},
-    { key: 'category', label: 'Category' },
-    { key: 'quantity', label: 'Qty',      render: (r) => (
-      <span className={r.quantity <= r.low_stock_alert ? 'text-red-600 font-semibold' : ''}>
-        {r.quantity}
-      </span>
+    { key: 'category',  label: 'Category' },
+    { key: 'quantity',  label: 'Qty',      render: (r) => (
+      <span className={r.quantity <= r.low_stock_alert ? 'text-red-600 font-semibold' : ''}>{r.quantity}</span>
     )},
     { key: 'unit_cost', label: 'Unit Cost', render: (r) => formatKES(r.unit_cost) },
     { key: 'status',    label: 'Status',    render: (r) => (
@@ -57,11 +52,9 @@ export default function InventoryList() {
         r.status === 'available' ? 'bg-green-100 text-green-700' :
         r.status === 'assigned'  ? 'bg-blue-100 text-blue-700' :
         'bg-gray-100 text-gray-600'
-      }`}>
-        {r.status}
-      </span>
+      }`}>{r.status}</span>
     )},
-    { key: 'assigned', label: 'Assigned To', render: (r) =>
+    { key: 'assigned',  label: 'Assigned To', render: (r) =>
       r.assigned_client ? `${r.assigned_client.first_name} ${r.assigned_client.last_name}` : '—'
     },
   ]
@@ -91,12 +84,12 @@ export default function InventoryList() {
         <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(form) }} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             {[
-              { key: 'name',            label: 'Item Name',        required: true },
-              { key: 'category',        label: 'Category',         required: true },
-              { key: 'quantity',        label: 'Quantity',         required: true, type: 'number' },
-              { key: 'unit_cost',       label: 'Unit Cost (KES)',  required: true, type: 'number' },
+              { key: 'name',            label: 'Item Name',       required: true },
+              { key: 'category',        label: 'Category',        required: true },
+              { key: 'quantity',        label: 'Quantity',        required: true, type: 'number' },
+              { key: 'unit_cost',       label: 'Unit Cost (KES)', required: true, type: 'number' },
               { key: 'serial_number',   label: 'Serial Number' },
-              { key: 'low_stock_alert', label: 'Low Stock Alert',  type: 'number' },
+              { key: 'low_stock_alert', label: 'Low Stock Alert', type: 'number' },
             ].map(({ key, label, required, type }) => (
               <div key={key}>
                 <label className="block text-sm font-medium text-gray-700 mb-1">

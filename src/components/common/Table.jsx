@@ -1,7 +1,20 @@
 import Spinner from './Spinner'
 
-export default function Table({ columns, data, loading, emptyMessage = 'No data found' }) {
-  if (loading) return <div className="py-12"><Spinner /></div>
+export default function Table({
+  columns = [],
+  data = [],
+  loading,
+  emptyMessage = 'No data found',
+}) {
+  if (loading) {
+    return (
+      <div className="py-12">
+        <Spinner />
+      </div>
+    )
+  }
+
+  const safeData = Array.isArray(data) ? data : []
 
   return (
     <div className="overflow-x-auto">
@@ -15,15 +28,19 @@ export default function Table({ columns, data, loading, emptyMessage = 'No data 
             ))}
           </tr>
         </thead>
+
         <tbody className="divide-y divide-gray-100">
-          {data?.length === 0 ? (
+          {safeData.length === 0 ? (
             <tr>
-              <td colSpan={columns.length} className="px-4 py-8 text-center text-gray-400">
+              <td
+                colSpan={columns.length}
+                className="px-4 py-8 text-center text-gray-400"
+              >
                 {emptyMessage}
               </td>
             </tr>
           ) : (
-            data?.map((row, i) => (
+            safeData.map((row, i) => (
               <tr key={i} className="hover:bg-gray-50 transition-colors">
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3">
