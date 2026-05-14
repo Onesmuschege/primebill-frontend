@@ -30,4 +30,29 @@ api.interceptors.response.use(
   }
 )
 
+/**
+ * Normalize a paginated API response into { data: [], meta: {} }
+ * Handles both:
+ *   - { data: { data: [], meta: {} } }  (Laravel Resource Collection)
+ *   - { data: [], meta: {} }            (flat)
+ */
+export function unwrapList(response) {
+  const body = response.data
+
+  // Case 1: body itself is an array  → { data: [] }
+  if (Array.isArray(body)) {
+    return { data: body, meta: {} }
+  }
+  // Case 2: body.data is an array (flat paginated) → { data: [], meta: {} }
+  if (Array.isArray(body.data)) {
+    return { data: body.data, meta: body.meta || {} }
+  }
+  // Case 3: body.data is an object with nested data array (double-wrapped)
+  if (body.data && Array.isArray(body.data.data)) {
+    return { data: body.data.data, meta: body.data.meta || {} }
+  }
+  // Fallback
+  return { data: [], meta: {} }
+}
+
 export default api
