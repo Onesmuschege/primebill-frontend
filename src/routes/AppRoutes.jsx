@@ -15,6 +15,7 @@ import TicketList from '../pages/tickets/TicketList'
 import TicketDetail from '../pages/tickets/TicketDetail'
 import SmsDashboard from '../pages/sms/SmsDashboard'
 import RouterList from '../pages/routers/RouterList'
+import RadiusPage from '../pages/radius/RadiusPage'
 import InventoryList from '../pages/inventory/InventoryList'
 import FinanceOverview from '../pages/finance/FinanceOverview'
 import Reports from '../pages/reports/Reports'
@@ -30,21 +31,22 @@ export default function AppRoutes() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
           <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-            <Route path="/dashboard"  element={<Dashboard />} />
-            <Route path="/clients"    element={<ClientList />} />
+            <Route path="/dashboard"   element={<Dashboard />} />
+            <Route path="/clients"     element={<ClientList />} />
             <Route path="/clients/:id" element={<ClientDetail />} />
-            <Route path="/plans"      element={<PlanList />} />
-            <Route path="/invoices"   element={<InvoiceList />} />
-            <Route path="/payments"   element={<PaymentList />} />
-            <Route path="/tickets"    element={<TicketList />} />
+            <Route path="/plans"       element={<PlanList />} />
+            <Route path="/invoices"    element={<InvoiceList />} />
+            <Route path="/payments"    element={<PaymentList />} />
+            <Route path="/tickets"     element={<TicketList />} />
             <Route path="/tickets/:id" element={<TicketDetail />} />
-            <Route path="/sms"        element={<SmsDashboard />} />
-            <Route path="/routers"    element={<RouterList />} />
-            <Route path="/inventory"  element={<InventoryList />} />
-            <Route path="/finance"    element={<FinanceOverview />} />
-            <Route path="/reports"    element={<Reports />} />
-            <Route path="/logs"       element={<SystemLogs />} />
-            <Route path="/settings"   element={<Settings />} />
+            <Route path="/sms"         element={<SmsDashboard />} />
+            <Route path="/routers"     element={<RouterList />} />
+            <Route path="/radius"      element={<RadiusPage />} />
+            <Route path="/inventory"   element={<InventoryList />} />
+            <Route path="/finance"     element={<FinanceOverview />} />
+            <Route path="/reports"     element={<Reports />} />
+            <Route path="/logs"        element={<SystemLogs />} />
+            <Route path="/settings"    element={<Settings />} />
           </Route>
         </Routes>
       </AuthProvider>
