@@ -12,59 +12,76 @@ import toast from 'react-hot-toast'
 import ClientForm from './ClientForm'
 
 export default function ClientList() {
-  const [page, setPage]           = useState(1)
-  const [search, setSearch]       = useState('')
-  const [status, setStatus]       = useState('')
-  const [showForm, setShowForm]   = useState(false)
-  const navigate                  = useNavigate()
-  const queryClient               = useQueryClient()
+  const [page, setPage]         = useState(1)
+  const [search, setSearch]     = useState('')
+  const [status, setStatus]     = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const navigate                = useNavigate()
+  const queryClient             = useQueryClient()
 
   const { data, isLoading } = useQuery({
     queryKey: ['clients', page, search, status],
-    queryFn: () => getClients({ page, search, status, per_page: 15 }).then(r => r.data.data),
+    // Unwrap once: r.data = { data: [...], meta: {...} }
+    queryFn: () => getClients({ page, search, status, per_page: 15 }).then(r => r.data),
   })
 
   const suspendMutation = useMutation({
     mutationFn: suspendClient,
     onSuccess: () => { toast.success('Client suspended'); queryClient.invalidateQueries(['clients']) },
+    onError: () => toast.error('Failed to suspend client'),
   })
 
   const activateMutation = useMutation({
     mutationFn: activateClient,
     onSuccess: () => { toast.success('Client activated'); queryClient.invalidateQueries(['clients']) },
+    onError: () => toast.error('Failed to activate client'),
   })
 
   const deleteMutation = useMutation({
     mutationFn: deleteClient,
     onSuccess: () => { toast.success('Client deleted'); queryClient.invalidateQueries(['clients']) },
+    onError: () => toast.error('Failed to delete client'),
   })
 
   const columns = [
-    { key: 'name',   label: 'Client',  render: (r) => `${r.first_name} ${r.last_name}` },
-    { key: 'phone',  label: 'Phone' },
-    { key: 'email',  label: 'Email',   render: (r) => r.email || '—' },
-    { key: 'town',   label: 'Town',    render: (r) => r.town || '—' },
-    { key: 'status', label: 'Status',  render: (r) => (
+    { key: 'name',       label: 'Client',  render: (r) => `${r.first_name} ${r.last_name}` },
+    { key: 'phone',      label: 'Phone' },
+    { key: 'email',      label: 'Email',   render: (r) => r.email || '—' },
+    { key: 'town',       label: 'Town',    render: (r) => r.town || '—' },
+    { key: 'status',     label: 'Status',  render: (r) => (
       <span className={clientStatusBadge(r.status)}>{r.status}</span>
     )},
-    { key: 'created_at', label: 'Joined', render: (r) => formatDate(r.created_at) },
-    { key: 'actions', label: 'Actions', render: (r) => (
+    { key: 'created_at', label: 'Joined',  render: (r) => formatDate(r.created_at) },
+    { key: 'actions',    label: 'Actions', render: (r) => (
       <div className="flex items-center gap-2">
-        <button onClick={() => navigate(`/clients/${r.id}`)} className="p-1 text-blue-600 hover:bg-blue-50 rounded">
+        <button
+          onClick={() => navigate(`/clients/${r.id}`)}
+          className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+          title="View"
+        >
           <Eye size={16} />
         </button>
         {r.status === 'active' ? (
-          <button onClick={() => suspendMutation.mutate(r.id)} className="p-1 text-orange-600 hover:bg-orange-50 rounded">
+          <button
+            onClick={() => suspendMutation.mutate(r.id)}
+            className="p-1 text-orange-600 hover:bg-orange-50 rounded"
+            title="Suspend"
+          >
             <UserX size={16} />
           </button>
         ) : (
-          <button onClick={() => activateMutation.mutate(r.id)} className="p-1 text-green-600 hover:bg-green-50 rounded">
+          <button
+            onClick={() => activateMutation.mutate(r.id)}
+            className="p-1 text-green-600 hover:bg-green-50 rounded"
+            title="Activate"
+          >
             <UserCheck size={16} />
           </button>
         )}
         <button
           onClick={() => { if (confirm('Delete this client?')) deleteMutation.mutate(r.id) }}
           className="p-1 text-red-600 hover:bg-red-50 rounded"
+          title="Delete"
         >
           <Trash2 size={16} />
         </button>
@@ -99,8 +116,7 @@ export default function ClientList() {
           </select>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
-          <Plus size={16} />
-          Add Client
+          <Plus size={16} /> Add Client
         </button>
       </div>
 
