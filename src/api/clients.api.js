@@ -1,8 +1,8 @@
-import api from './axiosInstance'
+import api, { unwrapList } from './axiosInstance'
 
 export const getClients = async (params) => {
   const response = await api.get('/clients', { params })
-  return response.data
+  return unwrapList(response)          // ✅ returns { data: [], meta: {} }
 }
 
 export const getClient = async (id) => {
