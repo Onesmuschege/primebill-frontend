@@ -5,11 +5,12 @@ export default function Table({
   data = [],
   loading,
   emptyMessage = 'No data found',
+  onRowClick,
 }) {
   if (loading) {
     return (
-      <div className="py-12">
-        <Spinner />
+      <div className="py-16">
+        <Spinner size="md" />
       </div>
     )
   }
@@ -18,32 +19,34 @@ export default function Table({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm text-left">
-        <thead className="bg-gray-50 text-gray-600 uppercase text-xs">
+      <table className="table w-full">
+        <thead>
           <tr>
             {columns.map((col) => (
-              <th key={col.key} className="px-4 py-3 font-medium">
-                {col.label}
-              </th>
+              <th key={col.key}>{col.label}</th>
             ))}
           </tr>
         </thead>
-
-        <tbody className="divide-y divide-gray-100">
+        <tbody>
           {safeData.length === 0 ? (
             <tr>
               <td
                 colSpan={columns.length}
-                className="px-4 py-8 text-center text-gray-400"
+                className="px-4 py-12 text-center text-sm"
+                style={{ color: 'var(--pb-text-3)' }}
               >
                 {emptyMessage}
               </td>
             </tr>
           ) : (
             safeData.map((row, i) => (
-              <tr key={i} className="hover:bg-gray-50 transition-colors">
+              <tr
+                key={row.id ?? i}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                style={onRowClick ? { cursor: 'pointer' } : undefined}
+              >
                 {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3">
+                  <td key={col.key}>
                     {col.render ? col.render(row) : row[col.key]}
                   </td>
                 ))}

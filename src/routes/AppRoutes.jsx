@@ -3,33 +3,40 @@ import { AuthProvider } from '../context/AuthContext'
 import ProtectedRoute from './ProtectedRoute'
 import AdminLayout from '../components/layout/AdminLayout'
 
-// Pages
-import Login from '../pages/auth/Login'
-import Dashboard from '../pages/dashboard/Dashboard'
-import ClientList from '../pages/clients/ClientList'
+// Auth pages
+import Login          from '../pages/auth/Login'
+import ForgotPassword from '../pages/auth/ForgotPassword'
+import ResetPassword  from '../pages/auth/ResetPassword'
+
+// App pages — all imports preserved exactly
+import Dashboard    from '../pages/dashboard/Dashboard'
+import ClientList   from '../pages/clients/ClientList'
 import ClientDetail from '../pages/clients/ClientDetail'
-import PlanList from '../pages/plans/PlanList'
-import InvoiceList from '../pages/invoices/InvoiceList'
-import PaymentList from '../pages/payments/PaymentList'
-import TicketList from '../pages/tickets/TicketList'
+import PlanList     from '../pages/plans/PlanList'
+import InvoiceList  from '../pages/invoices/InvoiceList'
+import PaymentList  from '../pages/payments/PaymentList'
+import TicketList   from '../pages/tickets/TicketList'
 import TicketDetail from '../pages/tickets/TicketDetail'
 import SmsDashboard from '../pages/sms/SmsDashboard'
-import RouterList from '../pages/routers/RouterList'
-// RadiusPage import removed — backend endpoints not yet implemented
-import InventoryList from '../pages/inventory/InventoryList'
+import RouterList   from '../pages/routers/RouterList'
+import InventoryList  from '../pages/inventory/InventoryList'
 import FinanceOverview from '../pages/finance/FinanceOverview'
-import Reports from '../pages/reports/Reports'
-import SystemLogs from '../pages/logs/SystemLogs'
-import Settings from '../pages/settings/Settings'
+import Reports      from '../pages/reports/Reports'
+import SystemLogs   from '../pages/logs/SystemLogs'
+import Settings     from '../pages/settings/Settings'
 
 export default function AppRoutes() {
   return (
     <BrowserRouter>
       <AuthProvider>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          {/* Public auth routes */}
+          <Route path="/login"           element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password"  element={<ResetPassword />} />
+          <Route path="/"                element={<Navigate to="/dashboard" replace />} />
 
+          {/* Protected app routes */}
           <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
             <Route path="/dashboard"   element={<Dashboard />} />
             <Route path="/clients"     element={<ClientList />} />
@@ -41,7 +48,6 @@ export default function AppRoutes() {
             <Route path="/tickets/:id" element={<TicketDetail />} />
             <Route path="/sms"         element={<SmsDashboard />} />
             <Route path="/routers"     element={<RouterList />} />
-            {/* /radius route disabled — backend not yet implemented */}
             <Route path="/inventory"   element={<InventoryList />} />
             <Route path="/finance"     element={<FinanceOverview />} />
             <Route path="/reports"     element={<Reports />} />

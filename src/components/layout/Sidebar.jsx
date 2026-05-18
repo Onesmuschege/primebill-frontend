@@ -2,84 +2,154 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Wifi, FileText, CreditCard,
   Ticket, MessageSquare, Router, BarChart2, Settings,
-  Package, DollarSign, ScrollText, LogOut, Radio
+  Package, DollarSign, ScrollText, LogOut, X,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
-const navItems = [
-  { to: '/dashboard',    icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/clients',      icon: Users,           label: 'Clients' },
-  { to: '/plans',        icon: Wifi,            label: 'Plans' },
-  { to: '/invoices',     icon: FileText,        label: 'Invoices' },
-  { to: '/payments',     icon: CreditCard,      label: 'Payments' },
-  { to: '/tickets',      icon: Ticket,          label: 'Tickets' },
-  { to: '/sms',          icon: MessageSquare,   label: 'SMS' },
-  { to: '/routers',      icon: Router,          label: 'Routers' },
-  { to: '/radius',       icon: Radio,           label: 'RADIUS' },
-  { to: '/inventory',    icon: Package,         label: 'Inventory' },
-  { to: '/finance',      icon: DollarSign,      label: 'Finance' },
-  { to: '/reports',      icon: BarChart2,       label: 'Reports' },
-  { to: '/logs',         icon: ScrollText,      label: 'System Logs' },
-  { to: '/settings',     icon: Settings,        label: 'Settings' },
+const NAV_SECTIONS = [
+  {
+    label: 'Overview',
+    items: [
+      { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    ],
+  },
+  {
+    label: 'Subscribers',
+    items: [
+      { to: '/clients',  icon: Users,    label: 'Clients' },
+      { to: '/plans',    icon: Wifi,     label: 'Plans' },
+    ],
+  },
+  {
+    label: 'Billing',
+    items: [
+      { to: '/invoices', icon: FileText,  label: 'Invoices' },
+      { to: '/payments', icon: CreditCard, label: 'Payments' },
+    ],
+  },
+  {
+    label: 'Support',
+    items: [
+      { to: '/tickets',  icon: Ticket,       label: 'Tickets' },
+      { to: '/sms',      icon: MessageSquare, label: 'SMS' },
+    ],
+  },
+  {
+    label: 'Network',
+    items: [
+      { to: '/routers',   icon: Router,  label: 'Routers' },
+      { to: '/inventory', icon: Package, label: 'Inventory' },
+    ],
+  },
+  {
+    label: 'Analytics',
+    items: [
+      { to: '/finance', icon: DollarSign, label: 'Finance' },
+      { to: '/reports', icon: BarChart2,  label: 'Reports' },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { to: '/logs',     icon: ScrollText, label: 'System Logs' },
+      { to: '/settings', icon: Settings,   label: 'Settings' },
+    ],
+  },
 ]
 
-export default function Sidebar() {
+export default function Sidebar({ open, onClose }) {
   const { user, logout } = useAuth()
 
   return (
-    <aside className="w-64 bg-gray-900 text-white flex flex-col h-screen fixed left-0 top-0">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-700">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-            <Wifi size={18} className="text-white" />
+    <>
+      {/* Sidebar panel */}
+      <aside
+        className={`
+          fixed left-0 top-0 z-30 h-screen w-64 flex flex-col
+          transition-transform duration-300 ease-in-out
+          lg:translate-x-0 lg:z-auto
+          ${open ? 'translate-x-0' : '-translate-x-full'}
+        `}
+        style={{
+          backgroundColor: 'var(--pb-sidebar-bg)',
+          borderRight: '1px solid rgba(30,41,59,0.8)',
+          boxShadow: '4px 0 24px rgba(0,0,0,0.4)',
+        }}
+      >
+        {/* Logo */}
+        <div className="flex items-center justify-between px-5 py-5 shrink-0"
+          style={{ borderBottom: '1px solid rgba(30,41,59,0.6)' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: 'linear-gradient(135deg, #2563eb, #06b6d4)', boxShadow: '0 0 12px rgba(37,99,235,0.4)' }}>
+              <Wifi size={18} className="text-white" />
+            </div>
+            <div>
+              <h1 className="font-bold text-white text-base leading-none tracking-tight">PrimeBill</h1>
+              <p className="text-xs mt-0.5" style={{ color: '#475569' }}>ISP Management</p>
+            </div>
           </div>
-          <div>
-            <h1 className="font-bold text-lg leading-none">PrimeBill</h1>
-            <p className="text-xs text-gray-400">ISP Billing</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg mb-1 text-sm transition-colors ${
-                isActive
-                  ? 'bg-primary-600 text-white'
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-              }`
-            }
+          {/* Mobile close */}
+          <button
+            onClick={onClose}
+            className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors"
+            aria-label="Close sidebar"
           >
-            <Icon size={18} />
-            {label}
-          </NavLink>
-        ))}
-      </nav>
-
-      {/* User */}
-      <div className="p-4 border-t border-gray-700">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 bg-primary-500 rounded-full flex items-center justify-center text-sm font-bold">
-            {user?.name?.charAt(0)}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{user?.name}</p>
-            <p className="text-xs text-gray-400 truncate">{user?.email}</p>
-          </div>
+            <X size={18} />
+          </button>
         </div>
-        <button
-          onClick={logout}
-          className="flex items-center gap-2 text-gray-400 hover:text-white text-sm w-full px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors"
-        >
-          <LogOut size={16} />
-          Logout
-        </button>
-      </div>
-    </aside>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
+          {NAV_SECTIONS.map(({ label, items }) => (
+            <div key={label}>
+              <p className="px-3 mb-1.5 text-2xs font-semibold uppercase tracking-widest"
+                style={{ color: '#334155', fontSize: '0.65rem' }}>
+                {label}
+              </p>
+              <div className="space-y-0.5">
+                {items.map(({ to, icon: Icon, label: itemLabel }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    onClick={onClose}
+                    className={({ isActive }) =>
+                      `nav-link ${isActive ? 'active' : ''}`
+                    }
+                  >
+                    <Icon size={16} className="shrink-0" />
+                    <span>{itemLabel}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        {/* User profile + logout */}
+        <div className="shrink-0 px-3 py-4" style={{ borderTop: '1px solid rgba(30,41,59,0.6)' }}>
+          <div className="flex items-center gap-3 px-3 py-3 rounded-xl mb-1"
+            style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.1)' }}>
+            {/* Avatar */}
+            <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
+              style={{ background: 'linear-gradient(135deg, #2563eb, #06b6d4)' }}>
+              {user?.name?.charAt(0)?.toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white truncate leading-none">{user?.name}</p>
+              <p className="text-xs truncate mt-0.5" style={{ color: '#475569' }}>{user?.email}</p>
+            </div>
+          </div>
+          <button
+            onClick={logout}
+            className="nav-link w-full mt-1 hover:text-red-400"
+            style={{ color: '#475569' }}
+          >
+            <LogOut size={15} />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </aside>
+    </>
   )
 }

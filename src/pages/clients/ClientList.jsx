@@ -21,7 +21,6 @@ export default function ClientList() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['clients', page, search, status],
-    // getClients returns normalized { data: [], meta: {} } via unwrapList
     queryFn: () => getClients({ page, search, status, per_page: 15 }),
   })
 
@@ -44,34 +43,64 @@ export default function ClientList() {
   })
 
   const columns = [
-    { key: 'name',       label: 'Client',  render: (r) => `${r.first_name} ${r.last_name}` },
-    { key: 'phone',      label: 'Phone' },
-    { key: 'email',      label: 'Email',   render: (r) => r.email || '—' },
-    { key: 'town',       label: 'Town',    render: (r) => r.town || '—' },
+    { key: 'name',       label: 'Client',  render: (r) => (
+      <span className="font-medium" style={{ color: 'var(--pb-text-1)' }}>
+        {r.first_name} {r.last_name}
+      </span>
+    )},
+    { key: 'phone',      label: 'Phone',   render: (r) => <span style={{ color: 'var(--pb-text-2)' }}>{r.phone}</span> },
+    { key: 'email',      label: 'Email',   render: (r) => <span style={{ color: 'var(--pb-text-2)' }}>{r.email || '—'}</span> },
+    { key: 'town',       label: 'Town',    render: (r) => <span style={{ color: 'var(--pb-text-2)' }}>{r.town || '—'}</span> },
     { key: 'status',     label: 'Status',  render: (r) => (
       <span className={clientStatusBadge(r.status)}>{r.status}</span>
     )},
-    { key: 'created_at', label: 'Joined',  render: (r) => formatDate(r.created_at) },
-    { key: 'actions',    label: 'Actions', render: (r) => (
-      <div className="flex items-center gap-2">
-        <button onClick={() => navigate(`/clients/${r.id}`)} className="p-1 text-blue-600 hover:bg-blue-50 rounded" title="View">
-          <Eye size={16} />
+    { key: 'created_at', label: 'Joined',  render: (r) => (
+      <span style={{ color: 'var(--pb-text-3)' }}>{formatDate(r.created_at)}</span>
+    )},
+    { key: 'actions',    label: '',        render: (r) => (
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => navigate(`/clients/${r.id}`)}
+          className="p-1.5 rounded-lg transition-colors"
+          title="View"
+          style={{ color: '#60a5fa' }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(37,99,235,0.1)'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+        >
+          <Eye size={15} />
         </button>
         {r.status === 'active' ? (
-          <button onClick={() => suspendMutation.mutate(r.id)} className="p-1 text-orange-600 hover:bg-orange-50 rounded" title="Suspend">
-            <UserX size={16} />
+          <button
+            onClick={() => suspendMutation.mutate(r.id)}
+            className="p-1.5 rounded-lg transition-colors"
+            title="Suspend"
+            style={{ color: '#fbbf24' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(245,158,11,0.1)'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <UserX size={15} />
           </button>
         ) : (
-          <button onClick={() => activateMutation.mutate(r.id)} className="p-1 text-green-600 hover:bg-green-50 rounded" title="Activate">
-            <UserCheck size={16} />
+          <button
+            onClick={() => activateMutation.mutate(r.id)}
+            className="p-1.5 rounded-lg transition-colors"
+            title="Activate"
+            style={{ color: '#34d399' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(16,185,129,0.1)'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <UserCheck size={15} />
           </button>
         )}
         <button
           onClick={() => { if (confirm('Delete this client?')) deleteMutation.mutate(r.id) }}
-          className="p-1 text-red-600 hover:bg-red-50 rounded"
+          className="p-1.5 rounded-lg transition-colors"
           title="Delete"
+          style={{ color: '#f87171' }}
+          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.1)'}
+          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
         >
-          <Trash2 size={16} />
+          <Trash2 size={15} />
         </button>
       </div>
     )},
@@ -79,21 +108,25 @@ export default function ClientList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
+          {/* Search */}
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2"
+              style={{ color: 'var(--pb-text-3)' }} />
             <input
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1) }}
               placeholder="Search clients..."
-              className="pl-9 pr-4 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 w-64"
+              className="input pl-9 w-56"
             />
           </div>
+          {/* Status filter */}
           <select
             value={status}
             onChange={(e) => { setStatus(e.target.value); setPage(1) }}
-            className="text-sm border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="input w-auto"
           >
             <option value="">All Status</option>
             <option value="active">Active</option>
@@ -102,21 +135,22 @@ export default function ClientList() {
             <option value="overdue">Overdue</option>
           </select>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary flex items-center gap-2">
-          <Plus size={16} /> Add Client
+        <button onClick={() => setShowForm(true)} className="btn-primary">
+          <Plus size={15} /> Add Client
         </button>
       </div>
 
-      <div className="card p-0 overflow-hidden">
+      {/* Table card */}
+      <div className="section">
         <Table columns={columns} data={data?.data} loading={isLoading} />
         <Pagination meta={data?.meta} onPageChange={setPage} />
       </div>
 
+      {/* Add Client Modal */}
       <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Add New Client" size="lg">
         <ClientForm onSuccess={() => {
           setShowForm(false)
           queryClient.invalidateQueries(['clients'])
-          toast.success('Client created successfully!')
         }} />
       </Modal>
     </div>
