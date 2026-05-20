@@ -77,8 +77,11 @@
   --pb-text-1:      #0f172a;
   --pb-text-2:      #475569;
   --pb-text-3:      #94a3b8;
-  --pb-sidebar-bg:  #0b1120;
-  --pb-sidebar-txt: #94a3b8;
+
+  /* FIXED: Sidebar is now light in light mode */
+  --pb-sidebar-bg:  #ffffff;
+  --pb-sidebar-txt: #475569;
+
   --pb-topnav-bg:   #ffffff;
   color-scheme: light;
 }
@@ -92,8 +95,11 @@
   --pb-text-1:      #e5e7eb;
   --pb-text-2:      #94a3b8;
   --pb-text-3:      #475569;
+
+  /* Sidebar stays dark in dark mode */
   --pb-sidebar-bg:  #070d1a;
-  --pb-sidebar-txt: #64748b;
+  --pb-sidebar-txt: #94a3b8;
+
   --pb-topnav-bg:   #111827;
   color-scheme: dark;
 }
@@ -102,37 +108,20 @@
    BASE STYLES
    ============================================================ */
 @layer base {
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
-
-  html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    scroll-behavior: smooth;
-  }
-
+  *, *::before, *::after { box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; scroll-behavior: smooth; }
   body {
     background-color: var(--pb-bg);
     color: var(--pb-text-1);
     font-family: var(--font-sans);
     transition: background-color 0.2s ease, color 0.2s ease;
   }
-
-  /* Scrollbar — dark surfaces */
-  ::-webkit-scrollbar        { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track  { background: transparent; }
-  ::-webkit-scrollbar-thumb  { background: #334155; border-radius: 3px; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: #475569; }
-
-  /* Selection */
   ::selection { background: rgba(37, 99, 235, 0.3); color: #e5e7eb; }
-
-  /* Focus ring reset */
-  :focus-visible {
-    outline: 2px solid #2563eb;
-    outline-offset: 2px;
-  }
+  :focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
 }
 
 /* ============================================================
