@@ -180,7 +180,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ```
 Email:    admin@primebill.co.ke
-Password: Admin@1234
+Password: Admin@123
 ```
 
 ---
