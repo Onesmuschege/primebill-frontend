@@ -8,23 +8,21 @@ import toast from 'react-hot-toast'
 import Spinner from '../../components/common/Spinner'
 
 // ─── Unit helpers ────────────────────────────────────────────────────────────
-// DB stores Kbps. UI shows Mbps.
 const toMbps  = (kbps) => (kbps  ? (kbps  / 1024).toFixed(2).replace(/\.00$/, '') : '')
 const toKbps  = (mbps) => (mbps  ? Math.round(parseFloat(mbps) * 1024) : null)
 const fmtMbps = (kbps) => kbps   ? `${(kbps / 1024).toFixed(1)} Mbps` : '—'
 const fmtGB   = (mb)   => mb     ? `${(mb   / 1024).toFixed(1)} GB`   : '—'
 
-// ─── Blank form (all speed fields in Mbps for the UI) ───────────────────────
+// ─── Blank form ──────────────────────────────────────────────────────────────
 const EMPTY_FORM = {
   name: '', type: 'pppoe',
   speed_up: '', speed_down: '',
   burst_up: '', burst_down: '',
-  fup_limit_gb: '',          // shown as GB in UI, stored as MB in DB
+  fup_limit_gb: '',
   fup_speed_up: '', fup_speed_down: '',
   validity_days: 30, price: '', is_active: true,
 }
 
-// Convert a saved plan (Kbps in DB) → form state (Mbps in UI)
 function planToForm(plan) {
   return {
     name:          plan.name,
@@ -42,7 +40,6 @@ function planToForm(plan) {
   }
 }
 
-// Convert form state (Mbps in UI) → API payload (Kbps for backend)
 function formToPayload(form) {
   return {
     name:           form.name,
@@ -68,14 +65,24 @@ function typeIcon(type) {
 }
 function typeBadge(type) {
   const map = {
-    pppoe:   'bg-blue-100 text-blue-700',
-    hotspot: 'bg-purple-100 text-purple-700',
-    static:  'bg-orange-100 text-orange-700',
+    pppoe:   'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    hotspot: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+    static:  'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
   }
-  return `text-xs font-semibold px-2 py-0.5 rounded-full ${map[type] ?? 'bg-gray-100 text-gray-600'}`
+  return `text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 ${map[type] ?? 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`
 }
 
-// ─── Form fields component (outside parent to avoid focus-loss) ──────────────
+// ─── Active-state helper ──────────────────────────────────────────────────────
+// Checks a few common field-name variants so the UI degrades gracefully even
+// if the API field doesn't exactly match `is_active`.
+function isPlanActive(plan) {
+  if (plan.is_active !== undefined) return !!plan.is_active
+  if (plan.active !== undefined) return !!plan.active
+  if (plan.status !== undefined) return plan.status === 'active' || plan.status === 1
+  return true
+}
+
+// ─── Form fields component ───────────────────────────────────────────────────
 function PlanFormFields({ form, onChange, errors }) {
   const f = (key) => ({
     value: form[key],
@@ -84,8 +91,6 @@ function PlanFormFields({ form, onChange, errors }) {
 
   return (
     <div className="space-y-4">
-
-      {/* Name + Type */}
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
           <label className="form-label">Plan Name <span className="text-red-500">*</span></label>
@@ -110,8 +115,7 @@ function PlanFormFields({ form, onChange, errors }) {
         </div>
       </div>
 
-      {/* Speed — Mbps */}
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Speed (Mbps)</p>
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Speed (Mbps)</p>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="form-label">Upload <span className="text-red-500">*</span></label>
@@ -135,8 +139,7 @@ function PlanFormFields({ form, onChange, errors }) {
         </div>
       </div>
 
-      {/* Burst — Mbps, optional */}
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Burst Speed — optional</p>
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Burst Speed — optional</p>
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="form-label">Burst Upload</label>
@@ -156,8 +159,7 @@ function PlanFormFields({ form, onChange, errors }) {
         </div>
       </div>
 
-      {/* FUP — optional */}
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Fair Usage Policy — optional</p>
+      <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Fair Usage Policy — optional</p>
       <div className="grid grid-cols-3 gap-4">
         <div>
           <label className="form-label">FUP Limit</label>
@@ -185,7 +187,6 @@ function PlanFormFields({ form, onChange, errors }) {
         </div>
       </div>
 
-      {/* Validity + Active */}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <label className="form-label">Validity (Days) <span className="text-red-500">*</span></label>
@@ -195,10 +196,9 @@ function PlanFormFields({ form, onChange, errors }) {
           <input type="checkbox" id="is_active" checked={form.is_active}
             onChange={(e) => onChange('is_active', e.target.checked)}
             className="w-4 h-4 accent-primary-600" />
-          <label htmlFor="is_active" className="text-sm text-gray-700">Active (visible to clients)</label>
+          <label htmlFor="is_active" className="text-sm text-gray-700 dark:text-gray-300">Active (visible to clients)</label>
         </div>
       </div>
-
     </div>
   )
 }
@@ -267,79 +267,94 @@ export default function PlanList() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{plans.length} plan{plans.length !== 1 ? 's' : ''} configured</p>
+        <p className="text-sm" style={{ color: 'var(--pb-text-2)' }}>{plans.length} plan{plans.length !== 1 ? 's' : ''} configured</p>
         <button onClick={openAdd} className="btn-primary flex items-center gap-2">
           <Plus size={16} /> Add Plan
         </button>
       </div>
 
       {plans.length === 0 ? (
-        <div className="card text-center py-16 text-gray-400">
+        <div className="card text-center py-16" style={{ color: 'var(--pb-text-3)' }}>
           <Wifi size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">No plans yet</p>
+          <p className="font-medium" style={{ color: 'var(--pb-text-2)' }}>No plans yet</p>
           <p className="text-sm mt-1">Click "Add Plan" to get started</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {plans.map(plan => (
-            <div key={plan.id} className={`card hover:shadow-md transition-shadow ${!plan.is_active ? 'opacity-60' : ''}`}>
-              <div className="flex items-start justify-between mb-3">
-                <div className="p-2 bg-primary-50 rounded-lg text-primary-600">
-                  {typeIcon(plan.type)}
+        <div className="card p-0 divide-y overflow-hidden" style={{ borderColor: 'var(--pb-border)' }}>
+          {plans.map(plan => {
+            const active = isPlanActive(plan)
+            return (
+              <div
+                key={plan.id}
+                className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6 px-4 py-4 transition-colors hover:[background-color:var(--pb-raised)]"
+                style={{ borderColor: 'var(--pb-border)' }}
+              >
+                {/* Icon + Name + Badges */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="p-2 bg-primary-50 dark:bg-primary-900/30 rounded-lg text-primary-600 dark:text-primary-400 shrink-0">
+                    {typeIcon(plan.type)}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold truncate" style={{ color: 'var(--pb-text-1)' }}>{plan.name}</h3>
+                      <span className={typeBadge(plan.type)}>{plan.type.toUpperCase()}</span>
+                      {!active && (
+                        <span
+                          className="text-xs px-2 py-0.5 rounded-full shrink-0"
+                          style={{ backgroundColor: 'var(--pb-raised)', color: 'var(--pb-text-2)' }}
+                        >
+                          Inactive
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={typeBadge(plan.type)}>{plan.type.toUpperCase()}</span>
+
+                {/* Speed / FUP stats */}
+                <div className="flex items-center gap-5 text-sm shrink-0">
+                  <div>
+                    <span className="block text-xs" style={{ color: 'var(--pb-text-3)' }}>Upload</span>
+                    <span className="font-medium" style={{ color: 'var(--pb-text-1)' }}>{fmtMbps(plan.speed_up)}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs" style={{ color: 'var(--pb-text-3)' }}>Download</span>
+                    <span className="font-medium" style={{ color: 'var(--pb-text-1)' }}>{fmtMbps(plan.speed_down)}</span>
+                  </div>
+                  {plan.fup_limit && (
+                    <div>
+                      <span className="block text-xs" style={{ color: 'var(--pb-text-3)' }}>FUP</span>
+                      <span className="font-medium" style={{ color: 'var(--pb-text-1)' }}>{fmtGB(plan.fup_limit)}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Validity */}
+                <div className="text-sm shrink-0 sm:w-20">
+                  <span className="block text-xs" style={{ color: 'var(--pb-text-3)' }}>Validity</span>
+                  <span className="font-medium" style={{ color: 'var(--pb-text-1)' }}>{plan.validity_days} days</span>
+                </div>
+
+                {/* Price */}
+                <div className="text-left sm:text-right shrink-0 sm:w-28">
+                  <p className="text-lg font-bold text-primary-600 dark:text-primary-400">{formatKES(plan.price)}</p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 shrink-0 sm:ml-1">
                   <button onClick={() => openEdit(plan)}
-                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded" title="Edit">
-                    <Pencil size={14} />
+                    className="p-2 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
+                    style={{ color: 'var(--pb-text-3)' }} title="Edit">
+                    <Pencil size={15} />
                   </button>
                   <button onClick={() => { if (confirm(`Delete "${plan.name}"?`)) deleteMutation.mutate(plan.id) }}
-                    className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded" title="Delete">
-                    <Trash2 size={14} />
+                    className="p-2 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
+                    style={{ color: 'var(--pb-text-3)' }} title="Delete">
+                    <Trash2 size={15} />
                   </button>
                 </div>
               </div>
-
-              <h3 className="font-semibold text-gray-900 mb-3">{plan.name}</h3>
-
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Upload</span>
-                  <span className="font-medium">{fmtMbps(plan.speed_up)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Download</span>
-                  <span className="font-medium">{fmtMbps(plan.speed_down)}</span>
-                </div>
-                {plan.burst_up && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Burst</span>
-                    <span className="font-medium">{fmtMbps(plan.burst_up)} ↑ / {fmtMbps(plan.burst_down)} ↓</span>
-                  </div>
-                )}
-                {plan.fup_limit && (
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">FUP Limit</span>
-                    <span className="font-medium">{fmtGB(plan.fup_limit)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-gray-500">Validity</span>
-                  <span className="font-medium">{plan.validity_days} days</span>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t flex items-end justify-between">
-                <div>
-                  <p className="text-xl font-bold text-primary-600">{formatKES(plan.price)}</p>
-                  <p className="text-xs text-gray-400">per {plan.validity_days} days</p>
-                </div>
-                {!plan.is_active && (
-                  <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full">Inactive</span>
-                )}
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
@@ -347,7 +362,7 @@ export default function PlanList() {
         title={editPlan ? `Edit — ${editPlan.name}` : 'Add New Plan'} size="lg">
         <form onSubmit={handleSubmit}>
           <PlanFormFields form={form} onChange={handleChange} errors={errors} />
-          <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-gray-100">
+          <div className="flex justify-end gap-3 pt-4 mt-4 border-t border-gray-100 dark:border-gray-700">
             <button type="button" onClick={() => setShowForm(false)} className="btn-secondary">Cancel</button>
             <button type="submit" disabled={saveMutation.isPending} className="btn-primary min-w-[100px]">
               {saveMutation.isPending ? 'Saving...' : editPlan ? 'Update Plan' : 'Save Plan'}
