@@ -13,11 +13,13 @@ import Dashboard       from '../pages/dashboard/Dashboard'
 import ClientList      from '../pages/clients/ClientList'
 import ClientDetail    from '../pages/clients/ClientDetail'
 import PlanList        from '../pages/plans/PlanList'
+import FupManagement   from '../pages/plans/FupManagement'
 import InvoiceList     from '../pages/invoices/InvoiceList'
 import PaymentList     from '../pages/payments/PaymentList'
 import TicketList      from '../pages/tickets/TicketList'
 import TicketDetail    from '../pages/tickets/TicketDetail'
 import SmsDashboard    from '../pages/sms/SmsDashboard'
+import VoucherList     from '../pages/vouchers/VoucherList'
 import RouterList      from '../pages/routers/RouterList'
 import InventoryList   from '../pages/inventory/InventoryList'
 import FinanceOverview from '../pages/finance/FinanceOverview'
@@ -45,11 +47,13 @@ export default function AppRoutes() {
         <Route path="/clients"     element={<ClientList />} />
         <Route path="/clients/:id" element={<ClientDetail />} />
         <Route path="/plans"       element={<PlanList />} />
+        <Route path="/plans/fup"   element={<FupManagement />} />
         <Route path="/invoices"    element={<InvoiceList />} />
         <Route path="/payments"    element={<PaymentList />} />
         <Route path="/tickets"     element={<TicketList />} />
         <Route path="/tickets/:id" element={<TicketDetail />} />
         <Route path="/sms"         element={<SmsDashboard />} />
+        <Route path="/vouchers"    element={<VoucherList />} />
         <Route path="/routers"     element={<RouterList />} />
         <Route path="/inventory"   element={<InventoryList />} />
         <Route path="/finance"     element={<FinanceOverview />} />
