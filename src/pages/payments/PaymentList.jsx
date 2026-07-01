@@ -5,6 +5,7 @@ import Table from '../../components/common/Table'
 import Pagination from '../../components/common/Pagination'
 import { formatKES } from '../../utils/formatCurrency'
 import { formatDateTime } from '../../utils/formatDate'
+import { paymentMethodBadge } from '../../utils/statusColors'
 import { DollarSign, Smartphone, Banknote } from 'lucide-react'
 
 export default function PaymentList() {
@@ -13,7 +14,7 @@ export default function PaymentList() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['payments', page, method],
-    queryFn: () => getPayments({ page, method, per_page: 15 }).then(r => r.data.data),
+    queryFn: () => getPayments({ page, method, per_page: 50 }),
   })
 
   const { data: summary } = useQuery({
@@ -25,7 +26,7 @@ export default function PaymentList() {
     { key: 'client',     label: 'Client',    render: (r) => `${r.client?.first_name} ${r.client?.last_name}` },
     { key: 'amount',     label: 'Amount',    render: (r) => <span className="font-semibold text-primary-600">{formatKES(r.amount)}</span> },
     { key: 'method',     label: 'Method',    render: (r) => (
-      <span className={`badge-${r.method === 'mpesa' ? 'active' : 'inactive'}`}>{r.method.toUpperCase()}</span>
+      <span className={paymentMethodBadge(r.method)}>{r.method.toUpperCase()}</span>
     )},
     { key: 'mpesa_code', label: 'Reference', render: (r) => r.mpesa_code || r.reference || '—' },
     { key: 'created_at', label: 'Date',      render: (r) => formatDateTime(r.created_at) },
@@ -38,7 +39,7 @@ export default function PaymentList() {
         <div className="card flex items-center gap-4">
           <div className="p-3 bg-primary-50 rounded-xl text-primary-600"><DollarSign size={22} /></div>
           <div>
-            <p className="text-sm text-gray-500">Today's Total</p>
+            <p className="text-sm text-gray-500">Total Payments</p>
             <p className="text-xl font-bold">{formatKES(summary?.total)}</p>
           </div>
         </div>
