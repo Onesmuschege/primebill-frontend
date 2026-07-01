@@ -25,8 +25,8 @@ import Reports         from '../pages/reports/Reports'
 import SystemLogs      from '../pages/logs/SystemLogs'
 import Settings        from '../pages/settings/Settings'
 
-// BrowserRouter  — moved to main.jsx (AuthContext uses useNavigate, requires Router ancestor)
-// AuthProvider   — moved to main.jsx (same reason — must be inside BrowserRouter)
+// Captive portal
+import CaptivePortal   from '../pages/portal/CaptivePortal'
 
 export default function AppRoutes() {
   return (
@@ -36,18 +36,10 @@ export default function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password"  element={<ResetPassword />} />
       <Route path="/unauthorized"    element={<Unauthorized />} />
+      <Route path="/captive"         element={<CaptivePortal />} />
       <Route path="/"                element={<Navigate to="/dashboard" replace />} />
 
       {/* ── Protected app routes ──────────────────────────────────────── */}
-      {/*
-        Layout route: ProtectedRoute guards the shell, AdminLayout renders
-        the sidebar + topnav + <Outlet /> where child routes mount.
-
-        To restrict individual routes by role, wrap the element instead:
-          <Route path="/settings" element={
-            <ProtectedRoute minimumRole="admin"><Settings /></ProtectedRoute>
-          } />
-      */}
       <Route element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
         <Route path="/dashboard"   element={<Dashboard />} />
         <Route path="/clients"     element={<ClientList />} />
