@@ -73,17 +73,14 @@ function DeepSpaceCanvas() {
     function draw(ts) {
       const W = canvas.width, H = canvas.height
 
-      // Deep space bg — very dark navy, consistent across full width
       ctx.fillStyle = '#010510'
       ctx.fillRect(0, 0, W, H)
 
-      // Subtle radial centre-glow so the middle feels deeper
       const centre = ctx.createRadialGradient(W*0.5, H*0.5, 0, W*0.5, H*0.5, W*0.7)
       centre.addColorStop(0, 'rgba(3,9,28,0)')
       centre.addColorStop(1, 'rgba(0,2,10,0.5)')
       ctx.fillStyle = centre; ctx.fillRect(0, 0, W, H)
 
-      // Nebulae — spread across full width
       NEBULAE.forEach((neb, i) => {
         nebulaPhase[i] += neb.speed * 0.016
         const drift = Math.sin(nebulaPhase[i]) * 0.022
@@ -102,7 +99,6 @@ function DeepSpaceCanvas() {
         ctx.restore()
       })
 
-      // Stars — full width
       layers.forEach(layer => {
         layer.forEach(s => {
           s.x -= s.speed * 0.00042
@@ -125,7 +121,6 @@ function DeepSpaceCanvas() {
         })
       })
 
-      // Shooting stars
       shooterTimer += 16
       if (shooterTimer > 3200 + Math.random() * 5000) { spawnShooter(); shooterTimer = 0 }
       for (let i = shooters.length - 1; i >= 0; i--) {
@@ -147,7 +142,6 @@ function DeepSpaceCanvas() {
         ctx.stroke(); ctx.restore()
       }
 
-      // Vignette
       const vig = ctx.createRadialGradient(W*0.5, H*0.5, H*0.12, W*0.5, H*0.5, H*0.92)
       vig.addColorStop(0, 'rgba(0,0,0,0)')
       vig.addColorStop(1, 'rgba(0,0,14,0.72)')
@@ -159,7 +153,6 @@ function DeepSpaceCanvas() {
     return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize) }
   }, [])
 
-  // fixed + z-0 = sits behind everything, covers full screen
   return (
     <canvas
       ref={canvasRef}
@@ -173,22 +166,44 @@ function DeepSpaceCanvas() {
 export default function Login() {
   const [form, setForm]         = useState({ email: '', password: '', remember: false })
   const [showPass, setShowPass] = useState(false)
+  const [hasError, setHasError] = useState(false)
   const { login, loading }      = useAuth()
   const navigate                = useNavigate()
 
+  // FIX 1: force dark mode on this route regardless of stored theme preference,
+  // without touching the user's saved pb-theme. This is what was causing the
+  // white input fields — .input reads --pb-raised / --pb-text-1 which resolve
+  // to light-mode values unless `.dark` is present on <html>.
+  useEffect(() => {
+    const root = document.documentElement
+    const hadDark = root.classList.contains('dark')
+    root.classList.add('dark')
+    return () => { if (!hadDark) root.classList.remove('dark') }
+  }, [])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setHasError(false)
     const result = await login({ email: form.email, password: form.password })
-    if (result.success) { toast.success('Welcome back!'); navigate('/dashboard') }
-    else toast.error(result.message)
+    if (result.success) {
+      toast.success('Welcome back!')
+      navigate('/dashboard')
+    } else {
+      setHasError(true)
+      toast.error(result.message)
+    }
+  }
+
+  // clear the error state as soon as the person starts correcting input
+  const updateField = (field) => (e) => {
+    setForm({ ...form, [field]: e.target.value })
+    if (hasError) setHasError(false)
   }
 
   return (
     <>
-      {/* Canvas sits fixed behind everything */}
       <DeepSpaceCanvas />
 
-      {/* Page layout — sits above canvas via z-index, background: transparent */}
       <div
         className="min-h-screen flex overflow-hidden"
         style={{
@@ -198,15 +213,11 @@ export default function Login() {
         }}
       >
         {/* ══════════════════════════════════════════════════
-            LEFT PANEL — transparent overlay on the canvas
+            LEFT PANEL
         ══════════════════════════════════════════════════ */}
-        <div
-          className="hidden lg:flex flex-col"
-          style={{ width: '55%', minHeight: '100vh' }}
-        >
+        <div className="hidden lg:flex flex-col" style={{ width: '55%', minHeight: '100vh' }}>
           <div className="flex flex-col h-full px-12 py-10" style={{ minHeight: '100vh' }}>
 
-            {/* Brand */}
             <div className="flex items-center gap-3 shrink-0">
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -224,10 +235,8 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Centre content */}
             <div className="flex-1 flex flex-col justify-center gap-8 max-w-sm">
 
-              {/* Live pill */}
               <div className="flex items-center gap-2 w-fit px-3 py-1.5 rounded-full text-xs font-medium"
                 style={{
                   background: 'rgba(16,185,129,0.08)',
@@ -238,7 +247,6 @@ export default function Login() {
                 All Systems Operational
               </div>
 
-              {/* Headline */}
               <div className="space-y-4">
                 <h1 className="text-4xl font-bold text-white leading-tight tracking-tight"
                   style={{ fontFamily: "'DM Mono', monospace" }}>
@@ -255,7 +263,6 @@ export default function Login() {
                 </p>
               </div>
 
-              {/* Feature list */}
               <ul className="space-y-2.5">
                 {FEATURES.map(f => (
                   <li key={f} className="flex items-center gap-2.5 text-sm" style={{ color: '#94a3b8' }}>
@@ -265,7 +272,6 @@ export default function Login() {
                 ))}
               </ul>
 
-              {/* Stats */}
               <div className="grid grid-cols-2 gap-2.5">
                 {STATS.map(({ icon: Icon, label, value }) => (
                   <div key={label} className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl"
@@ -287,7 +293,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Footer */}
             <p className="shrink-0 text-xs" style={{ color: '#7a96b8'}}>
               © 2026 DarkOpsHub · PrimeBill ISP Platform
             </p>
@@ -295,18 +300,15 @@ export default function Login() {
         </div>
 
         {/* ══════════════════════════════════════════════════
-            RIGHT PANEL — glassmorphism card over the canvas
-            NO solid background — the stars show through
+            RIGHT PANEL
         ══════════════════════════════════════════════════ */}
         <div
           className="flex flex-col items-center justify-center flex-1 lg:flex-none px-8 py-10 relative"
           style={{ width: '45%', minHeight: '100vh' }}
         >
-          {/* Thin frosted divider line */}
           <div className="hidden lg:block absolute left-0 inset-y-0 w-px"
             style={{ background: 'linear-gradient(to bottom, transparent, rgba(37,99,235,0.25) 30%, rgba(6,182,212,0.2) 70%, transparent)' }} />
 
-          {/* Mobile logo */}
           <div className="lg:hidden absolute top-6 left-8 flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{ background: 'linear-gradient(135deg, #2563eb, #06b6d4)' }}>
@@ -317,151 +319,185 @@ export default function Login() {
             </span>
           </div>
 
-          {/* ── Login card — glass over the stars ── */}
-          <div
-            className="w-full max-w-[380px] rounded-2xl p-8"
-            style={{
-              background: 'rgba(4, 8, 24, 0.72)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              backdropFilter: 'blur(28px)',
-              WebkitBackdropFilter: 'blur(28px)',
-              boxShadow: '0 8px 48px rgba(0,0,0,0.55), 0 0 0 1px rgba(37,99,235,0.1), inset 0 1px 0 rgba(255,255,255,0.05)',
-            }}
-          >
-            {/* Card header */}
-            <div className="mb-7">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ background: 'rgba(37,99,235,0.14)', border: '1px solid rgba(37,99,235,0.28)' }}>
-                  <Shield size={15} style={{ color: '#60a5fa' }} />
-                </div>
-                <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#3b82f6' }}>
-                  Secure Access
-                </span>
-              </div>
-              <h2 className="text-2xl font-bold text-white tracking-tight"
-                style={{ fontFamily: "'DM Mono', monospace" }}>
-                Welcome back
-              </h2>
-              <p className="text-sm mt-1.5" style={{ color: '#64748b' }}>
-                Sign in to your admin dashboard
-              </p>
-            </div>
+          {/* FIX 3: animated conic-gradient border ring wraps the card */}
+          <div className="relative w-full max-w-[380px]">
+            <div
+              className="absolute -inset-px rounded-2xl pointer-events-none"
+              style={{
+                background: 'conic-gradient(from 0deg, transparent 0%, rgba(37,99,235,0.55) 12%, transparent 26%)',
+                animation: 'pb-border-spin 7s linear infinite',
+                opacity: 0.8,
+              }}
+            />
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
-                  style={{ color: '#64748b' }}>
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
-                  className="input"
-                  placeholder="admin@primebill.co.ke"
-                  autoComplete="email"
-                  required
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold uppercase tracking-wider"
-                    style={{ color: '#64748b' }}>
-                    Password
-                  </label>
-                  <Link to="/forgot-password"
-                    className="text-xs transition-colors hover:text-blue-300"
-                    style={{ color: '#3b82f6' }}>
-                    Forgot password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <input
-                    type={showPass ? 'text' : 'password'}
-                    value={form.password}
-                    onChange={e => setForm({ ...form, password: e.target.value })}
-                    className="input pr-10"
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPass(!showPass)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors hover:text-slate-300"
-                    style={{ color: '#4b6080' }}
-                    aria-label={showPass ? 'Hide password' : 'Show password'}
-                  >
-                    {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
-                  </button>
-                </div>
-              </div>
-
-              <label className="flex items-center gap-3 cursor-pointer pt-0.5">
-                <div className="relative shrink-0">
-                  <input
-                    type="checkbox"
-                    checked={form.remember}
-                    onChange={e => setForm({ ...form, remember: e.target.checked })}
-                    className="sr-only"
-                  />
-                  <div className="w-4 h-4 rounded-[4px] border transition-all flex items-center justify-center"
-                    style={{
-                      borderColor: form.remember ? '#2563eb' : '#1e293b',
-                      backgroundColor: form.remember ? '#2563eb' : 'transparent',
-                    }}>
-                    {form.remember && (
-                      <svg viewBox="0 0 10 8" className="w-2.5 h-2 text-white" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M1 4l2.5 2.5L9 1" />
-                      </svg>
-                    )}
+            <div
+              className="relative w-full rounded-2xl p-8"
+              style={{
+                background: 'rgba(4, 8, 24, 0.88)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                backdropFilter: 'blur(28px)',
+                WebkitBackdropFilter: 'blur(28px)',
+                boxShadow: '0 8px 48px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.05)',
+              }}
+            >
+              <div className="mb-7">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center"
+                    style={{ background: 'rgba(37,99,235,0.14)', border: '1px solid rgba(37,99,235,0.28)' }}>
+                    <Shield size={15} style={{ color: '#60a5fa' }} />
                   </div>
+                  <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: '#3b82f6' }}>
+                    Secure Access
+                  </span>
                 </div>
-                <span className="text-sm select-none" style={{ color: '#64748b' }}>
-                  Remember me for 30 days
-                </span>
-              </label>
+                <h2 className="text-2xl font-bold text-white tracking-tight"
+                  style={{ fontFamily: "'DM Mono', monospace" }}>
+                  Welcome back
+                </h2>
+                <p className="text-sm mt-1.5" style={{ color: '#64748b' }}>
+                  Sign in to your admin dashboard
+                </p>
+              </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-2.5 rounded-lg font-semibold text-sm text-white
-                           flex items-center justify-center gap-2 mt-1
-                           transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
-                style={{
-                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-                  boxShadow: loading ? 'none' : '0 0 32px rgba(37,99,235,0.45), 0 2px 4px rgba(0,0,0,0.4)',
-                }}
-              >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Authenticating…</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Sign In</span>
-                    <ArrowRight size={15} />
-                  </>
-                )}
-              </button>
-            </form>
+              <form onSubmit={handleSubmit} className={`space-y-4 ${hasError ? 'pb-shake' : ''}`}>
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
+                    style={{ color: '#64748b' }}>
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={updateField('email')}
+                    className="input"
+                    placeholder="admin@primebill.co.ke"
+                    autoComplete="email"
+                    required
+                    aria-invalid={hasError}
+                    style={hasError ? {
+                      borderColor: 'rgba(239,68,68,0.6)',
+                      boxShadow: '0 0 0 3px rgba(239,68,68,0.12)',
+                    } : undefined}
+                  />
+                </div>
 
-            <div className="mt-7 pt-5 text-center"
-              style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-              <p className="text-xs" style={{ color: '#7a96b8' }}>
-                Powered by <span style={{ color: '#8ab3f0' }}>DarkOpsHub</span>
-              </p>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wider"
+                      style={{ color: '#64748b' }}>
+                      Password
+                    </label>
+                    <Link to="/forgot-password"
+                      className="text-xs transition-colors hover:text-blue-300"
+                      style={{ color: '#3b82f6' }}>
+                      Forgot password?
+                    </Link>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPass ? 'text' : 'password'}
+                      value={form.password}
+                      onChange={updateField('password')}
+                      className="input pr-10"
+                      placeholder="••••••••"
+                      autoComplete="current-password"
+                      required
+                      aria-invalid={hasError}
+                      style={hasError ? {
+                        borderColor: 'rgba(239,68,68,0.6)',
+                        boxShadow: '0 0 0 3px rgba(239,68,68,0.12)',
+                      } : undefined}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPass(!showPass)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors hover:text-slate-300"
+                      style={{ color: '#4b6080' }}
+                      aria-label={showPass ? 'Hide password' : 'Show password'}
+                    >
+                      {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                  {hasError && (
+                    <p className="text-xs mt-1.5" style={{ color: '#f87171' }}>
+                      Incorrect email or password. Try again.
+                    </p>
+                  )}
+                </div>
+
+                <label className="flex items-center gap-3 cursor-pointer pt-0.5">
+                  <div className="relative shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={form.remember}
+                      onChange={e => setForm({ ...form, remember: e.target.checked })}
+                      className="sr-only"
+                    />
+                    <div className="w-4 h-4 rounded-[4px] border transition-all flex items-center justify-center"
+                      style={{
+                        borderColor: form.remember ? '#2563eb' : '#1e293b',
+                        backgroundColor: form.remember ? '#2563eb' : 'transparent',
+                      }}>
+                      {form.remember && (
+                        <svg viewBox="0 0 10 8" className="w-2.5 h-2 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M1 4l2.5 2.5L9 1" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-sm select-none" style={{ color: '#64748b' }}>
+                    Remember me for 30 days
+                  </span>
+                </label>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-2.5 rounded-lg font-semibold text-sm text-white
+                             flex items-center justify-center gap-2 mt-1
+                             transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{
+                    background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                    boxShadow: loading ? 'none' : '0 0 32px rgba(37,99,235,0.45), 0 2px 4px rgba(0,0,0,0.4)',
+                  }}
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Authenticating…</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Sign In</span>
+                      <ArrowRight size={15} />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              <div className="mt-7 pt-5 text-center"
+                style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <p className="text-xs" style={{ color: '#7a96b8' }}>
+                  Powered by <span style={{ color: '#8ab3f0' }}>DarkOpsHub</span>
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500;600;700&display=swap');
+        @keyframes pb-border-spin {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes pb-shake {
+          0%, 100% { transform: translateX(0); }
+          20% { transform: translateX(-6px); }
+          40% { transform: translateX(5px); }
+          60% { transform: translateX(-3px); }
+          80% { transform: translateX(2px); }
+        }
+        .pb-shake { animation: pb-shake 0.4s ease-in-out; }
       `}</style>
     </>
   )

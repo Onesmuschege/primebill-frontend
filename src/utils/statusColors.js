@@ -43,3 +43,12 @@ export function ticketStatusBadge(status) {
   }
   return map[status] ?? 'badge badge-inactive'
 }
+
+export function paymentMethodBadge(method) {
+  const map = {
+    mpesa: 'badge badge-paid',   // green
+    cash:  'badge badge-info',   // blue
+    bank:  'badge badge-unpaid', // amber
+  }
+  return map[method] ?? 'badge badge-inactive'
+}

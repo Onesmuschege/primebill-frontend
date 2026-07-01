@@ -6,7 +6,7 @@ import { getClients } from '../../api/clients.api'
 import Table from '../../components/common/Table'
 import Pagination from '../../components/common/Pagination'
 import Modal from '../../components/common/Modal'
-import { ticketPriorityColor } from '../../utils/statusColors'
+import { ticketPriorityColor, ticketStatusBadge } from '../../utils/statusColors'
 import { formatDateTime } from '../../utils/formatDate'
 import { Eye, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -65,11 +65,11 @@ export default function TicketList() {
     { key: 'subject',    label: 'Subject',  render: (r) => <span className="font-medium">{r.subject}</span> },
     { key: 'client',     label: 'Client',   render: (r) => `${r.client?.first_name} ${r.client?.last_name}` },
     { key: 'priority',   label: 'Priority', render: (r) => (
-      <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${ticketPriorityColor(r.priority)}`}>
-        {r.priority}
-      </span>
+      <span className={ticketPriorityColor(r.priority)}>{r.priority}</span>
     )},
-    { key: 'status',     label: 'Status',   render: (r) => <span className="badge-inactive">{r.status}</span> },
+    { key: 'status',     label: 'Status',   render: (r) => (
+      <span className={ticketStatusBadge(r.status)}>{r.status}</span>
+    )},
     { key: 'created_at', label: 'Created',  render: (r) => formatDateTime(r.created_at) },
     { key: 'actions',    label: '',         render: (r) => (
       <button onClick={() => navigate(`/tickets/${r.id}`)} className="p-1 text-blue-600 hover:bg-blue-50 rounded">

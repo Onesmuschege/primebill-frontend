@@ -96,23 +96,59 @@ api.interceptors.response.use(
 // ---------------------------------------------------------------------------
 // unwrapList — normalise paginated API responses
 //
-// Handles three shapes Laravel can return:
-//   1. { data: [] }                        — plain array
-//   2. { data: [], meta: {} }              — flat paginated
-//   3. { data: { data: [], meta: {} } }    — double-wrapped resource collection
+// Handles the shapes Laravel can return:
+//   1. { data: [] }                                    — plain array
+//   2. { data: [], meta: {} }                           — flat paginated w/ nested meta
+//   3. { data: { data: [], meta: {} } }                 — double-wrapped resource collection
+//   4. { data: { data: [], current_page, total, ... } } — Laravel's DEFAULT
+//      paginate() shape, where pagination fields sit flat on the paginator
+//      object itself rather than nested under a `meta` key. This is the
+//      actual shape returned by Client/Invoice/Payment/Ticket controllers,
+//      since they just do `return response()->json(['data' => $paginator])`
+//      without wrapping it in a Resource Collection.
+//
+//   Without handling case 4, `meta` always resolved to `{}` for these pages,
+//   which silently broke the "Showing X–Y of Z results" footer and page
+//   buttons in Pagination.jsx (it bails out early when meta.last_page is
+//   falsy), even though the underlying data and filtering were correct.
 // ---------------------------------------------------------------------------
+const PAGINATOR_META_KEYS = [
+  'current_page', 'last_page', 'per_page', 'total', 'from', 'to',
+]
+
+function extractFlatMeta(obj) {
+  const meta = {}
+  let found = false
+  for (const key of PAGINATOR_META_KEYS) {
+    if (obj[key] !== undefined) {
+      meta[key] = obj[key]
+      found = true
+    }
+  }
+  return found ? meta : null
+}
+
 export function unwrapList(response) {
   const body = response.data
 
   if (Array.isArray(body)) {
     return { data: body, meta: {} }
   }
+
   if (Array.isArray(body.data)) {
-    return { data: body.data, meta: body.meta || {} }
+    // body.data is the array itself — meta may be nested on body.meta,
+    // or flat directly on body (rare, but handled defensively).
+    const meta = body.meta || extractFlatMeta(body) || {}
+    return { data: body.data, meta }
   }
+
   if (body.data && Array.isArray(body.data.data)) {
-    return { data: body.data.data, meta: body.data.meta || {} }
+    // body.data is a paginator object — meta may be nested under
+    // body.data.meta, or flat on body.data itself (Laravel default).
+    const meta = body.data.meta || extractFlatMeta(body.data) || {}
+    return { data: body.data.data, meta }
   }
+
   return { data: [], meta: {} }
 }
 
