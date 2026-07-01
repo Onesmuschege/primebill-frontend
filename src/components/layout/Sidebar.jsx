@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Users, Wifi, FileText, CreditCard,
   Ticket, MessageSquare, Router, BarChart2, Settings,
-  Package, DollarSign, ScrollText, LogOut, X,
+  Package, DollarSign, ScrollText, LogOut, X, Zap, Gift,
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 
@@ -16,6 +16,7 @@ const NAV_SECTIONS = [
     items: [
       { to: '/clients', icon: Users, label: 'Clients' },
       { to: '/plans',   icon: Wifi,  label: 'Plans' },
+      { to: '/vouchers', icon: Gift, label: 'Vouchers' },
     ],
   },
   {
@@ -36,6 +37,7 @@ const NAV_SECTIONS = [
     label: 'Network',
     items: [
       { to: '/routers',   icon: Router,  label: 'Routers' },
+      { to: '/plans/fup', icon: Zap,    label: 'FUP Management' },
       { to: '/inventory', icon: Package, label: 'Inventory' },
     ],
   },
