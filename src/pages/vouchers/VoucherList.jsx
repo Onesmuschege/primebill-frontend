@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getVouchers, bulkGenerateVouchers, deleteVoucher, getVoucherStats } from '../../api/vouchers.api'
+import { getPlans } from '../../api/plans.api'
 import Modal from '../../components/common/Modal'
 import { Plus, Trash2, Copy, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -30,9 +31,21 @@ export default function VoucherList() {
     queryFn: () => getVoucherStats(),
   })
 
-  const vouchers = Array.isArray(vouchersData?.data) ? vouchersData.data
-    : vouchersData?.data?.data || []
+  const { data: plans } = useQuery({
+    queryKey: ['plans-for-vouchers'],
+    queryFn: () => getPlans(),
+  })
+
+  // Handles both a flat paginator ({ success, data: { data: [...] } })
+  // and a double-nested paginator ({ success, data: { data: { data: [...] } } })
+  const vouchers = Array.isArray(vouchersData?.data?.data?.data)
+    ? vouchersData.data.data.data
+    : Array.isArray(vouchersData?.data?.data)
+      ? vouchersData.data.data
+      : []
+
   const stats = statsData?.data?.data || {}
+  const planList = Array.isArray(plans?.data) ? plans.data : []
 
   const generateMutation = useMutation({
     mutationFn: (data) => bulkGenerateVouchers(data),
@@ -78,9 +91,9 @@ export default function VoucherList() {
   const exportCodes = () => {
     const csv = vouchers
       .filter(v => v.status === 'unused')
-      .map(v => `"${v.code}","${v.plan.name}","${v.expires_at}"`)
+      .map(v => `"${v.code}","${v.plan?.name ?? ''}","${v.expires_at}"`)
       .join('\n')
-    
+
     const blob = new Blob([`Code,Plan,ExpiresAt\n${csv}`], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -146,7 +159,7 @@ export default function VoucherList() {
             <div key={v.id} className="flex items-center justify-between px-4 py-3 hover:[background-color:var(--pb-raised)]">
               <div className="flex-1 min-w-0">
                 <p className="font-mono font-medium text-sm" style={{ color: 'var(--pb-text-1)' }}>{v.code}</p>
-                <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>{v.plan.name}</p>
+                <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>{v.plan?.name ?? '—'}</p>
               </div>
               <div className="flex items-center gap-2 text-xs">
                 <span className={`px-2 py-1 rounded-full ${
@@ -192,7 +205,11 @@ export default function VoucherList() {
               required
             >
               <option value="">Select a plan...</option>
-              {/* TODO: fetch and populate plans */}
+              {planList.map(plan => (
+                <option key={plan.id} value={plan.id}>
+                  {plan.name}
+                </option>
+              ))}
             </select>
             {errors.plan_id && <p className="text-xs text-red-500 mt-1">{errors.plan_id}</p>}
           </div>
