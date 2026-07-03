@@ -154,7 +154,7 @@ export default function Dashboard() {
         {trafficData.length > 0 ? (
           <ResponsiveContainer width="100%" height={250}>
             <AreaChart data={trafficData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(156,163,175,0.2)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" vertical={false} />
               <XAxis
                 dataKey="timeLabel"
                 tick={{ fontSize: 11, fill: 'currentColor' }}
