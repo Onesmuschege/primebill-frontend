@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import api from '../../api/axiosInstance'
+import api, { unwrapList } from '../../api/axiosInstance'
 import Table from '../../components/common/Table'
 import Pagination from '../../components/common/Pagination'
 import { formatDateTime } from '../../utils/formatDate'
@@ -27,7 +27,7 @@ export default function RadiusPage() {
     queryKey: ['radius-sessions', page, search],
     queryFn: () =>
       api.get('/radius/sessions', { params: { page, search, per_page: 20 } })
-        .then(r => r.data),
+        .then(unwrapList),
   })
 
   const { data: stats } = useQuery({
