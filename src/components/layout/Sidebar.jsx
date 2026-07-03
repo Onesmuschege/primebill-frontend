@@ -1,72 +1,96 @@
-import { NavLink } from 'react-router-dom'
+import { useState } from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import {
   LayoutDashboard, Users, Wifi, FileText, CreditCard,
-  Ticket, MessageSquare, Router, BarChart2, Settings,
-  Package, DollarSign, ScrollText, LogOut, X, Zap, Gift,
+  Ticket, MessageSquare, Router, Package, DollarSign,
+  BarChart2, Settings, LogOut, Shield, Tag, Zap,
+  TrendingUp, Gift, ScrollText, UserCog,
+  ChevronDown, ChevronRight, X,
 } from 'lucide-react'
-import { useAuth } from '../../context/AuthContext'
 
-const NAV_SECTIONS = [
+const NAV = [
   {
-    label: 'Overview',
-    items: [{ to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' }],
-  },
-  {
-    label: 'Subscribers',
+    group: 'Overview',
     items: [
-      { to: '/clients', icon: Users, label: 'Clients' },
-      { to: '/plans',   icon: Wifi,  label: 'Plans' },
-      { to: '/vouchers', icon: Gift, label: 'Vouchers' },
+      { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     ],
   },
   {
-    label: 'Billing',
+    group: 'Subscribers',
+    items: [
+      { to: '/clients',  icon: Users, label: 'Clients' },
+      { to: '/plans',    icon: Wifi,  label: 'Plans' },
+      { to: '/vouchers', icon: Tag,   label: 'Vouchers' },
+      { to: '/fup',      icon: Zap,   label: 'FUP' },
+    ],
+  },
+  {
+    group: 'Billing',
     items: [
       { to: '/invoices', icon: FileText,   label: 'Invoices' },
       { to: '/payments', icon: CreditCard, label: 'Payments' },
     ],
   },
   {
-    label: 'Support',
+    group: 'Support',
     items: [
-      { to: '/tickets', icon: Ticket,       label: 'Tickets' },
+      { to: '/tickets', icon: Ticket,        label: 'Tickets' },
       { to: '/sms',     icon: MessageSquare, label: 'SMS' },
     ],
   },
   {
-    label: 'Network',
+    group: 'Network',
     items: [
       { to: '/routers',   icon: Router,  label: 'Routers' },
-      { to: '/plans/fup', icon: Zap,    label: 'FUP Management' },
       { to: '/inventory', icon: Package, label: 'Inventory' },
     ],
   },
   {
-    label: 'Analytics',
+    group: 'Analytics',
     items: [
-      { to: '/finance', icon: DollarSign, label: 'Finance' },
-      { to: '/reports', icon: BarChart2,  label: 'Reports' },
+      { to: '/finance',   icon: DollarSign, label: 'Finance' },
+      { to: '/reports',   icon: BarChart2,  label: 'Reports' },
+      { to: '/analytics', icon: TrendingUp, label: 'Analytics' },
     ],
   },
   {
-    label: 'System',
+    group: 'Engagement',
     items: [
-      { to: '/logs',     icon: ScrollText, label: 'System Logs' },
-      { to: '/settings', icon: Settings,   label: 'Settings' },
+      { to: '/loyalty', icon: Gift, label: 'Loyalty Points' },
+    ],
+  },
+  {
+    group: 'System',
+    items: [
+      { to: '/admin/users', icon: UserCog,    label: 'Admin Users' },
+      { to: '/admin/roles', icon: Shield,     label: 'Roles & Permissions' },
+      { to: '/logs',        icon: ScrollText, label: 'System Logs' },
+      { to: '/settings',    icon: Settings,   label: 'Settings' },
     ],
   },
 ]
 
 export default function Sidebar({ open, onClose }) {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  const [collapsed, setCollapsed] = useState({})
+
+  const toggleGroup = (group) =>
+    setCollapsed(p => ({ ...p, [group]: !p[group] }))
+
+  const handleLogout = () => { logout(); navigate('/login') }
+  const handleNavClick = () => { if (onClose) onClose() }
 
   return (
+    // Always fixed — AdminLayout compensates with lg:ml-64 on the content div.
+    // Never use lg:static here; that pulls the sidebar into the flex flow and
+    // the parent's overflow-hidden clips the bottom nav groups.
     <aside
       className={`
         fixed left-0 top-0 z-30 h-screen w-64 flex flex-col
         transition-transform duration-300 ease-in-out
-        lg:translate-x-0 lg:z-auto
-        ${open ? 'translate-x-0' : '-translate-x-full'}
+        ${open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}
       style={{
         backgroundColor: 'var(--pb-sidebar-bg)',
@@ -74,7 +98,7 @@ export default function Sidebar({ open, onClose }) {
         boxShadow: '4px 0 24px rgba(0,0,0,0.4)',
       }}
     >
-      {/* ── Logo ── */}
+      {/* ── Brand ── */}
       <div
         className="flex items-center justify-between px-5 py-5 shrink-0"
         style={{ borderBottom: '1px solid var(--pb-border)' }}
@@ -83,15 +107,17 @@ export default function Sidebar({ open, onClose }) {
           <div
             className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
             style={{
-              background: 'linear-gradient(135deg, #2563eb, #06b6d4)',
+              background: 'linear-gradient(135deg,#2563eb,#06b6d4)',
               boxShadow: 'var(--shadow-glow-primary)',
             }}
           >
             <Wifi size={18} className="text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-base leading-none tracking-tight"
-              style={{ color: 'var(--pb-text-1)' }}>
+            <h1
+              className="font-bold text-base leading-none tracking-tight"
+              style={{ color: 'var(--pb-text-1)' }}
+            >
               PrimeBill
             </h1>
             <p className="text-xs mt-0.5" style={{ color: 'var(--pb-sidebar-txt)' }}>
@@ -100,7 +126,7 @@ export default function Sidebar({ open, onClose }) {
           </div>
         </div>
 
-        {/* Mobile close */}
+        {/* Mobile close button */}
         <button
           onClick={onClose}
           className="lg:hidden p-1.5 rounded-lg transition-colors"
@@ -119,29 +145,40 @@ export default function Sidebar({ open, onClose }) {
         </button>
       </div>
 
-      {/* ── Navigation ── */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
-        {NAV_SECTIONS.map(({ label, items }) => (
-          <div key={label}>
-            <p
-              className="px-3 mb-1.5 font-semibold uppercase tracking-widest"
-              style={{ color: 'var(--pb-sidebar-txt)', fontSize: '0.65rem' }}
+      {/* ── Navigation — overflow-y-auto here, NOT on the parent ── */}
+      <nav className="flex-1 overflow-y-auto px-2 py-4">
+        {NAV.map(({ group, items }) => (
+          <div key={group} className="mb-1">
+            <button
+              onClick={() => toggleGroup(group)}
+              className="w-full flex items-center justify-between px-3 py-1.5 mb-0.5 rounded-md transition-colors"
+              style={{ color: 'var(--pb-text-3)' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--pb-raised)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-              {label}
-            </p>
-            <div className="space-y-0.5">
-              {items.map(({ to, icon: Icon, label: itemLabel }) => (
-                <NavLink
-                  key={to}
-                  to={to}
-                  onClick={onClose}
-                  className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                >
-                  <Icon size={16} className="shrink-0" />
-                  <span>{itemLabel}</span>
-                </NavLink>
-              ))}
-            </div>
+              <span className="text-xs font-semibold uppercase tracking-wider">
+                {group}
+              </span>
+              {collapsed[group]
+                ? <ChevronRight size={12} />
+                : <ChevronDown size={12} />}
+            </button>
+
+            {!collapsed[group] && (
+              <div className="space-y-0.5">
+                {items.map(({ to, icon: Icon, label }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    onClick={handleNavClick}
+                    className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                  >
+                    <Icon size={16} className="shrink-0" />
+                    <span className="text-sm">{label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </nav>
@@ -152,7 +189,7 @@ export default function Sidebar({ open, onClose }) {
         style={{ borderTop: '1px solid var(--pb-border)' }}
       >
         <div
-          className="flex items-center gap-3 px-3 py-3 rounded-xl mb-1"
+          className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl mb-1"
           style={{
             background: 'rgba(37,99,235,0.06)',
             border: '1px solid rgba(37,99,235,0.1)',
@@ -160,13 +197,15 @@ export default function Sidebar({ open, onClose }) {
         >
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-            style={{ background: 'linear-gradient(135deg, #2563eb, #06b6d4)' }}
+            style={{ background: 'linear-gradient(135deg,#2563eb,#06b6d4)' }}
           >
             {user?.name?.charAt(0)?.toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold truncate leading-none"
-              style={{ color: 'var(--pb-text-1)' }}>
+            <p
+              className="text-sm font-semibold truncate leading-none"
+              style={{ color: 'var(--pb-text-1)' }}
+            >
               {user?.name}
             </p>
             <p className="text-xs truncate mt-0.5" style={{ color: 'var(--pb-sidebar-txt)' }}>
@@ -175,13 +214,12 @@ export default function Sidebar({ open, onClose }) {
           </div>
         </div>
 
-        {/* Sign Out */}
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className="nav-link w-full mt-1"
           style={{ color: 'var(--pb-sidebar-txt)' }}
           onMouseEnter={e => {
-            e.currentTarget.style.color = 'var(--color-danger)'
+            e.currentTarget.style.color = '#ef4444'
             e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.06)'
           }}
           onMouseLeave={e => {
@@ -190,7 +228,7 @@ export default function Sidebar({ open, onClose }) {
           }}
         >
           <LogOut size={15} />
-          <span>Sign Out</span>
+          <span className="text-sm">Sign Out</span>
         </button>
       </div>
     </aside>
