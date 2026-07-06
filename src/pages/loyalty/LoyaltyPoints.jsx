@@ -19,7 +19,7 @@ export default function LoyaltyPoints() {
 
   const { data: clientsData } = useQuery({
     queryKey: ['clients-list'],
-    queryFn: () => getClients({ per_page: 100 }).then(r => r.data.data?.data),
+    queryFn: () => getClients({ per_page: 100 }).then(r => r.data),
   })
 
   const { data: loyaltyData } = useQuery({
