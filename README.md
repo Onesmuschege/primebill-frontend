@@ -2,40 +2,49 @@
 
 > A modern, full-featured ISP Billing & Management System built with React, Vite, and TailwindCSS.
 
-![PrimeBill Dashboard](https://img.shields.io/badge/Status-Active-brightgreen) ![React](https://img.shields.io/badge/React-18.x-blue) ![Vite](https://img.shields.io/badge/Vite-5.x-purple) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.x-cyan) ![License](https://img.shields.io/badge/License-Proprietary-red)
+![React](https://img.shields.io/badge/React-18.x-blue) ![Vite](https://img.shields.io/badge/Vite-5.x-purple) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.x-cyan) ![License](https://img.shields.io/badge/License-Proprietary-red)
 
 ---
 
 ## Overview
 
-PrimeBill is a comprehensive ISP billing and network management platform designed for small to mid-size Internet Service Providers in Kenya. The frontend provides a clean, responsive admin dashboard and a client self-service portal — covering everything from subscriber management and automated billing to MikroTik router integration and M-Pesa payment processing.
+PrimeBill is a comprehensive ISP billing and network management platform for small-to-mid-size ISPs in Kenya. The frontend is a single-page admin dashboard plus a client self-service portal and a public captive-portal payment flow — covering subscriber management, billing, vouchers, loyalty/referrals, FUP enforcement, MikroTik router integration, RADIUS status, and M-Pesa payments.
 
 ---
 
 ## Features
 
 ### Admin Dashboard
-- **Real-time Statistics** — Income today/monthly, active users, ticket counts, network status
-- **Client Management** — Full CRUD, account suspension/activation, account history
-- **Plans & Services** — PPPoE, Hotspot, and Static IP plan management with FUP configuration
-- **Invoicing Engine** — Auto-generated invoice numbers, bulk invoice generation, PDF export
-- **Payments** — M-Pesa STK Push, cash, and bank transfer recording with daily summaries
-- **Ticketing System** — Open/Pending/Solved workflow with threaded replies and escalation
-- **SMS Notifications** — Single and bulk SMS via Africa's Talking or Hostpinnacle
-- **Router Management** — MikroTik RouterOS API integration with live session monitoring
-- **Network Traffic** — Daily and weekly Tx/Rx graphs per router
+- **Real-time Statistics** — Income today/monthly, active users, ticket counts, traffic and top-downloader widgets
+- **Client Management** — Full CRUD, account suspension/activation, account/invoice/payment/ticket history per client
+- **Plans & Services** — PPPoE, Hotspot, and Static IP plan cards with FUP, burst, and upload/download speed fields
+- **Vouchers** — Stats cards, status filter, per-row copy/delete, CSV export, and a generate modal (plan/quantity/expiry)
+- **FUP Management** — Throttle event stats, per-account FUP status table, and manual reset action
+- **Invoicing** — Filter by status, record payment inline, bulk-generate
+- **Payments** — M-Pesa STK Push, cash, and bank transfer recording with daily summaries and receipts
+- **Ticketing System** — Open/Pending/Solved workflow, threaded replies, assignment, and an escalate action
+- **SMS Notifications** — Single and bulk SMS composer via Africa's Talking or Hostpinnacle
+- **Router Management** — MikroTik RouterOS API integration with connection test and live session monitoring
+- **RADIUS** — Session/status view wired to the backend RADIUS controller
+- **Loyalty Points** — Client balance display, point history, manual adjust modal, and leaderboard
+- **Analytics** — Monthly revenue bar chart, client growth trend, payment-method breakdown, and plan distribution (Recharts)
+- **Admin Users & Roles** — User management and a permission-toggle UI backed by Spatie roles
+- **Network Traffic** — Daily/weekly Tx/Rx graphs per router
 - **Inventory** — Equipment tracking, assignment to clients, low-stock alerts
 - **Finance & Expenditure** — Income vs expenditure summaries, sales commissions
 - **Reports** — Income, clients, invoices, SMS, network, and inventory reports with CSV export
-- **System Logs** — Full audit trail of all admin actions
-- **Settings** — Company info, M-Pesa credentials, SMS gateway, billing configuration
+- **System Logs** — Full audit trail of admin actions
+- **Settings** — Company info, M-Pesa credentials, SMS, and a RADIUS tab with per-tab test actions and sensitive-field reveal toggles
 
 ### Client Portal
-- Account status and expiry countdown
-- Invoice history and PDF download
+- Account status and expiry countdown, balance view
+- Invoice history
 - M-Pesa STK Push self-payment
 - Ticket submission and reply
 - Profile and password management
+
+### Public Captive Portal
+- `/captive` route for hotspot users to view plans, check status, pay via M-Pesa, and redeem vouchers — no login required, matching the backend's public `portal/captive/*` endpoints
 
 ---
 
@@ -45,14 +54,16 @@ PrimeBill is a comprehensive ISP billing and network management platform designe
 |---|---|
 | **React 18** | UI framework |
 | **Vite 5** | Build tool & dev server |
-| **TailwindCSS 4** | Utility-first styling |
-| **React Router DOM** | Client-side routing |
-| **TanStack Query** | Server state management & caching |
-| **Axios** | HTTP client with interceptors |
-| **Recharts** | Dashboard charts & graphs |
+| **TailwindCSS 4** | Utility-first styling (`@custom-variant dark` strategy) |
+| **React Router DOM 7** | Client-side routing |
+| **TanStack Query 5** | Server state management & caching |
+| **Axios** | HTTP client with auth interceptors |
+| **Recharts 3** | Dashboard charts & graphs |
 | **Zustand** | Lightweight global state |
 | **Lucide React** | Icon library |
 | **React Hot Toast** | Toast notifications |
+
+Dev tooling includes ESLint 9, Vitest + `@vitest/ui`, Testing Library, and MSW — installed for testing, though no test files or `npm test` script exist in the repo yet (see [Known Issues](#known-issues--tech-debt)).
 
 ---
 
@@ -65,47 +76,50 @@ primebill-frontend/
 │   ├── api/                    # Axios API call functions
 │   │   ├── axiosInstance.js    # Base Axios config + auth interceptors
 │   │   ├── auth.api.js
+│   │   ├── admin.api.js
 │   │   ├── clients.api.js
 │   │   ├── dashboard.api.js
+│   │   ├── fup.api.js
 │   │   ├── invoices.api.js
+│   │   ├── loyalty.api.js
+│   │   ├── Logs.api.js
 │   │   ├── payments.api.js
 │   │   ├── plans.api.js
+│   │   ├── radius.api.js
 │   │   ├── routers.api.js
 │   │   ├── sms.api.js
-│   │   └── tickets.api.js
+│   │   ├── tickets.api.js
+│   │   └── vouchers.api.js
 │   │
 │   ├── components/
-│   │   ├── common/             # Reusable UI components
-│   │   │   ├── Badge.jsx
-│   │   │   ├── Modal.jsx
-│   │   │   ├── Pagination.jsx
-│   │   │   ├── Spinner.jsx
-│   │   │   └── Table.jsx
-│   │   ├── dashboard/          # Dashboard-specific widgets
-│   │   │   └── StatCard.jsx
-│   │   └── layout/             # App shell components
-│   │       ├── AdminLayout.jsx
-│   │       ├── Sidebar.jsx
-│   │       └── TopNav.jsx
+│   │   ├── common/             # Reusable UI components (Badge, Modal, Pagination, Spinner, Table, ...)
+│   │   ├── dashboard/          # Dashboard-specific widgets (StatCard, ...)
+│   │   └── layout/             # App shell components (AdminLayout, Sidebar, TopNav)
 │   │
 │   ├── context/
 │   │   └── AuthContext.jsx     # Auth state, login, logout, permissions
 │   │
 │   ├── pages/                  # One folder per feature
-│   │   ├── auth/               # Login page
-│   │   ├── clients/            # Client list, detail, form
-│   │   ├── dashboard/          # Main dashboard
-│   │   ├── finance/            # Finance overview
-│   │   ├── inventory/          # Inventory management
-│   │   ├── invoices/           # Invoice list & payment modal
-│   │   ├── logs/               # System logs
-│   │   ├── payments/           # Payment list & summaries
-│   │   ├── plans/              # Plan cards & creation
-│   │   ├── reports/            # All report types
-│   │   ├── routers/            # Router management
-│   │   ├── settings/           # System settings
-│   │   ├── sms/                # SMS composer
-│   │   └── tickets/            # Ticket list & threaded detail
+│   │   ├── admin/               # AdminUsers, AdminRoles
+│   │   ├── analytics/           # Analytics (Recharts dashboards)
+│   │   ├── auth/                 # Login, ForgotPassword, ResetPassword, Unauthorized
+│   │   ├── clients/               # ClientList, ClientDetail, ClientForm
+│   │   ├── dashboard/             # Dashboard
+│   │   ├── finance/                # FinanceOverview
+│   │   ├── fup/                     # FupManagement
+│   │   ├── inventory/                # InventoryList
+│   │   ├── invoices/                  # InvoiceList
+│   │   ├── loyalty/                    # LoyaltyPoints
+│   │   ├── payments/                    # PaymentList
+│   │   ├── plans/                        # PlanList (+ a stale duplicate FupManagement.jsx — see Known Issues)
+│   │   ├── portal/                        # CaptivePortal (public)
+│   │   ├── radius/                         # RadiusPage
+│   │   ├── reports/                         # Reports
+│   │   ├── routers/                          # RouterList
+│   │   ├── settings/                          # Settings, RadiusTab
+│   │   ├── sms/                                 # SmsDashboard
+│   │   ├── tickets/                              # TicketList, TicketDetail, TicketListWithEscalate
+│   │   └── vouchers/                              # VoucherList
 │   │
 │   ├── routes/
 │   │   ├── AppRoutes.jsx       # All route definitions
@@ -131,8 +145,6 @@ primebill-frontend/
 
 ## Prerequisites
 
-Make sure you have the following installed:
-
 - **Node.js** v20.x or higher
 - **npm** v10.x or higher
 - **PrimeBill API** (Laravel backend) running on `http://127.0.0.1:8000`
@@ -156,17 +168,13 @@ npm install
 
 ### 3. Configure environment
 
-Create a `.env` file in the root:
+There is no `.env.example` in the repo yet — create a `.env` file in the root yourself:
 
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
 ```
 
-Then update `src/api/axiosInstance.js` to use:
-
-```js
-baseURL: import.meta.env.VITE_API_BASE_URL,
-```
+`src/api/axiosInstance.js` already reads `import.meta.env.VITE_API_BASE_URL`, falling back to `http://127.0.0.1:8000/api` if the variable is unset — no code change needed, just set the `.env`.
 
 ### 4. Start the development server
 
@@ -182,6 +190,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 Email:    admin@primebill.co.ke
 Password: Admin@123
 ```
+(Set via `SEED_ADMIN_PASSWORD` when seeding the backend — change after first login.)
 
 ---
 
@@ -200,10 +209,10 @@ Password: Admin@123
 
 This frontend connects to the **PrimeBill Laravel API**. Make sure the backend is running before starting the frontend.
 
-Backend repository: [github.com/Onesmuschege/primebill](https://github.com/Onesmuschege/primebill)
+Backend repository: [github.com/Onesmuschege/primebill-api](https://github.com/Onesmuschege/primebill-api)
 
 The Axios instance is pre-configured with:
-- **Base URL** — `http://127.0.0.1:8000/api`
+- **Base URL** — `VITE_API_BASE_URL`, defaulting to `http://127.0.0.1:8000/api`
 - **Auth interceptor** — Automatically attaches Bearer token from `localStorage`
 - **401 handler** — Clears token and redirects to login on session expiry
 
@@ -213,7 +222,7 @@ The Axios instance is pre-configured with:
 
 Authentication is handled via **Laravel Sanctum** token-based auth. On login, the token is stored in `localStorage` and automatically attached to all subsequent API requests via the Axios interceptor.
 
-Roles supported:
+Roles supported (matching the backend's Spatie roles):
 - `super_admin` — Full access to all modules
 - `admin` — Most modules except system settings
 - `staff` — Client management, billing, tickets
@@ -230,6 +239,8 @@ Roles supported:
 | `/clients` | Client List | Search, filter, suspend, activate clients |
 | `/clients/:id` | Client Detail | Accounts, invoices, payments, tickets |
 | `/plans` | Plans | PPPoE/Hotspot plan cards with pricing |
+| `/vouchers` | Vouchers | Batch generation, stats, redemption, CSV export |
+| `/fup` | FUP Management | Throttle stats, per-account status, manual reset |
 | `/invoices` | Invoices | Filter by status, record payment inline |
 | `/payments` | Payments | Daily summary, M-Pesa/cash breakdown |
 | `/tickets` | Tickets | Priority-coded list with stats |
@@ -238,9 +249,14 @@ Roles supported:
 | `/routers` | Routers | MikroTik connection status & test |
 | `/inventory` | Inventory | Stock management with low-stock alerts |
 | `/finance` | Finance | Income vs expenditure, net revenue |
-| `/reports` | Reports | 6 report types with date range filter |
+| `/reports` | Reports | Report types with date range filter |
+| `/analytics` | Analytics | Revenue/growth/payment-method/plan-distribution charts |
+| `/loyalty` | Loyalty Points | Client balances, history, leaderboard |
+| `/admin/users` | Admin Users | User management |
+| `/admin/roles` | Admin Roles | Role & permission management |
 | `/logs` | System Logs | Full audit trail |
-| `/settings` | Settings | Company, M-Pesa, SMS, billing config |
+| `/settings` | Settings | Company, M-Pesa, SMS, RADIUS config |
+| `/captive` | Captive Portal | Public hotspot plan browsing, payment, and voucher redemption |
 
 ---
 
@@ -265,6 +281,8 @@ server {
 }
 ```
 
+Deployment target: **Vercel** (with the backend on Railway) — set `VITE_API_BASE_URL` as a Vercel environment variable pointing at the Railway backend URL.
+
 ---
 
 ## Environment Variables
@@ -272,6 +290,16 @@ server {
 | Variable | Default | Description |
 |---|---|---|
 | `VITE_API_BASE_URL` | `http://127.0.0.1:8000/api` | Laravel API base URL |
+
+---
+
+## Known Issues / Tech Debt
+
+Found while auditing the codebase for this README update:
+
+- **Duplicate FUP page:** `src/pages/fup/FupManagement.jsx` is the one actually routed in `AppRoutes.jsx`; `src/pages/plans/FupManagement.jsx` appears to be a leftover from an earlier route layout and isn't referenced anywhere. Safe to remove once confirmed unused.
+- **No `.env.example`:** the repo has no committed environment template, so a fresh clone needs `VITE_API_BASE_URL` set manually (see [Getting Started](#getting-started)).
+- **Testing tooling installed but unused:** Vitest, `@vitest/ui`, Testing Library, and MSW are devDependencies, but there's no `test` script in `package.json` and no `*.test.jsx` files in `src/` yet.
 
 ---
 
@@ -283,7 +311,7 @@ This is a proprietary project. For feature requests or bug reports, please conta
 
 ## Related Repositories
 
-- **Backend API:** [github.com/Onesmuschege/primebill](https://github.com/Onesmuschege/primebill)
+- **Backend API:** [github.com/Onesmuschege/primebill-api](https://github.com/Onesmuschege/primebill-api)
 - **Frontend:** [github.com/Onesmuschege/primebill-frontend](https://github.com/Onesmuschege/primebill-frontend)
 
 ---
@@ -297,8 +325,8 @@ Proprietary — All rights reserved. Unauthorized copying, distribution, or use 
 ## Author
 
 **Onesmus Chege**
-Built with for Kenyan ISPs
+Built for Kenyan ISPs
 
 ---
 
-*PrimeBill v1.0 — DarkOpsHub*
+*PrimeBill Frontend — DarkOpsHub*
