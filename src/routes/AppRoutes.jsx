@@ -48,6 +48,9 @@ import AdminRoles from '../pages/admin/AdminRoles'
 import SystemLogs from '../pages/logs/SystemLogs'
 import Settings from '../pages/settings/Settings'
 
+// Platform (cross-tenant PrimeBill-operator view)
+import PlatformDashboard from '../pages/platform/PlatformDashboard'
+
 // Public Portal
 import CaptivePortal from '../pages/portal/CaptivePortal'
 
@@ -107,6 +110,21 @@ export default function AppRoutes() {
         <Route path="/admin/roles" element={<AdminRoles />} />
         <Route path="/logs" element={<SystemLogs />} />
         <Route path="/settings" element={<Settings />} />
+
+        {/* Platform — cross-tenant PrimeBill-operator view. Wrapped in its
+            OWN ProtectedRoute with requirePlatformAdmin, nested inside the
+            outer auth-only guard above. The outer guard only checks that
+            someone is logged in; this inner one additionally checks
+            users.is_platform_admin before rendering. Anyone logged in but
+            not a platform admin is bounced to /unauthorized. */}
+        <Route
+          path="/platform"
+          element={
+            <ProtectedRoute requirePlatformAdmin>
+              <PlatformDashboard />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
