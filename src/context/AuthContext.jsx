@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import { login as loginApi, logout as logoutApi } from '../api/auth.api'
+import { login as loginApi, logout as logoutApi, registerTenant as registerTenantApi } from '../api/auth.api'
 import { SESSION_EXPIRED_EVENT } from '../api/axiosInstance'
 
 const AuthContext = createContext(null)
@@ -90,6 +90,32 @@ export function AuthProvider({ children }) {
   }
 
   // ---------------------------------------------------------------------------
+  // registerTenant — ISP self-signup. Same session-setting shape as login,
+  // since the new admin is logged straight into their fresh workspace.
+  // ---------------------------------------------------------------------------
+  const registerTenant = async (payload) => {
+    setLoading(true)
+    try {
+      const res = await registerTenantApi(payload)
+      const { user, token, tenant } = res.data.data
+      setUser(user)
+      setToken(token)
+      localStorage.setItem('user', JSON.stringify(user))
+      localStorage.setItem('token', token)
+      return { success: true, tenant }
+    } catch (err) {
+      const errors = err.response?.data?.errors
+      const firstError = errors ? Object.values(errors)[0]?.[0] : null
+      return {
+        success: false,
+        message: firstError || err.response?.data?.message || 'Could not create your workspace. Please try again.',
+      }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // logout — explicit user-initiated logout
   // ---------------------------------------------------------------------------
   const logout = useCallback(async () => {
@@ -140,6 +166,7 @@ export function AuthProvider({ children }) {
       loading,
       login,
       logout,
+      registerTenant,
       hasRole,
       hasPermission,
       isAtLeast,

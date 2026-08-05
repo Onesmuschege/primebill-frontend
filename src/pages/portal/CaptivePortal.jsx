@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useParams } from 'react-router-dom'
 import { Wifi, CheckCircle2, Loader2, Phone, ArrowRight, Clock, Zap, Shield } from 'lucide-react'
 import axios from 'axios'
 import toast, { Toaster } from 'react-hot-toast'
@@ -31,7 +31,7 @@ function formatPhone(raw) {
 
 // ─── Plan card ───────────────────────────────────────────────────────────────
 
-function PlanCard({ plan, selected, onSelect }) {
+function PlanCard({ plan, selected, onSelect, primary, secondary }) {
   const isPopular = plan.validity_days === 1 && plan.price <= 180
 
   return (
@@ -39,17 +39,17 @@ function PlanCard({ plan, selected, onSelect }) {
       onClick={() => onSelect(plan)}
       className="relative w-full text-left rounded-2xl border-2 p-5 transition-all duration-200"
       style={{
-        borderColor: selected ? '#2563eb' : 'rgba(255,255,255,0.1)',
+        borderColor: selected ? primary : 'rgba(255,255,255,0.1)',
         background: selected
-          ? 'linear-gradient(135deg, rgba(37,99,235,0.18), rgba(6,182,212,0.08))'
+          ? `linear-gradient(135deg, ${primary}2e, ${secondary}14)`
           : 'rgba(255,255,255,0.04)',
-        boxShadow: selected ? '0 0 0 1px rgba(37,99,235,0.4), 0 4px 24px rgba(37,99,235,0.15)' : 'none',
+        boxShadow: selected ? `0 0 0 1px ${primary}66, 0 4px 24px ${primary}26` : 'none',
       }}
     >
       {isPopular && (
         <span
           className="absolute -top-3 left-4 text-xs font-bold px-3 py-0.5 rounded-full"
-          style={{ background: 'linear-gradient(90deg,#2563eb,#06b6d4)', color: '#fff' }}
+          style={{ background: `linear-gradient(90deg,${primary},${secondary})`, color: '#fff' }}
         >
           POPULAR
         </span>
@@ -71,7 +71,7 @@ function PlanCard({ plan, selected, onSelect }) {
         </div>
         <div className="text-right shrink-0">
           <p className="text-2xl font-black" style={{
-            background: 'linear-gradient(90deg,#60a5fa,#22d3ee)',
+            background: `linear-gradient(90deg,${primary},${secondary})`,
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
           }}>
@@ -82,7 +82,7 @@ function PlanCard({ plan, selected, onSelect }) {
 
       {selected && (
         <div className="absolute right-3 top-3">
-          <CheckCircle2 size={18} style={{ color: '#22d3ee' }} />
+          <CheckCircle2 size={18} style={{ color: secondary }} />
         </div>
       )}
     </button>
@@ -94,6 +94,7 @@ function PlanCard({ plan, selected, onSelect }) {
 
 export default function CaptivePortal() {
   const [searchParams] = useSearchParams()
+  const { tenantSlug } = useParams()
 
   // MikroTik injects these into the redirect URL
   const username  = searchParams.get('username') || ''
@@ -101,15 +102,16 @@ export default function CaptivePortal() {
   const linkOrig  = searchParams.get('link-orig') || 'http://google.com'
 
   const [plans, setPlans]           = useState([])
+  const [theme, setTheme]           = useState(null)
   const [selected, setSelected]     = useState(null)
   const [phone, setPhone]           = useState('')
   const [stage, setStage]           = useState('selecting') // selecting | paying | polling | success
   const [pollCount, setPollCount]   = useState(0)
   const pollRef                     = useRef(null)
 
-  // Load plans on mount
+  // Load plans + branding on mount
   useEffect(() => {
-    axios.get(`${API}/portal/captive/plans`)
+    axios.get(`${API}/portal/${tenantSlug}/captive/plans`)
       .then(r => {
         setPlans(r.data.data || [])
         // Pre-select the daily plan as default
@@ -117,7 +119,11 @@ export default function CaptivePortal() {
         if (daily) setSelected(daily)
       })
       .catch(() => toast.error('Failed to load plans. Please refresh.'))
-  }, [])
+
+    axios.get(`${API}/portal/${tenantSlug}/captive/theme`)
+      .then(r => setTheme(r.data.data))
+      .catch(() => {}) // silent — Screen falls back to default brand colors
+  }, [tenantSlug])
 
   // Kick off status polling after STK push
   useEffect(() => {
@@ -125,7 +131,7 @@ export default function CaptivePortal() {
 
     pollRef.current = setInterval(async () => {
       try {
-        const r = await axios.get(`${API}/portal/captive/status/${username}`)
+        const r = await axios.get(`${API}/portal/${tenantSlug}/captive/status/${username}`)
         const { is_active } = r.data.data
 
         setPollCount(c => c + 1)
@@ -156,7 +162,7 @@ export default function CaptivePortal() {
     setStage('paying')
 
     try {
-      await axios.post(`${API}/portal/captive/pay`, {
+      await axios.post(`${API}/portal/${tenantSlug}/captive/pay`, {
         phone:    formatted,
         plan_id:  selected.id,
         username: username,
@@ -238,6 +244,10 @@ export default function CaptivePortal() {
   }
 
   // ── Main plan-picker screen ─────────────────────────────────────────────────
+  const primary   = theme?.primary_color   || '#2563eb'
+  const secondary = theme?.secondary_color || '#06b6d4'
+  const businessName = theme?.business_name || 'PrimeBill ISP'
+
   return (
     <Screen>
       <Toaster position="top-center" toastOptions={{
@@ -246,13 +256,19 @@ export default function CaptivePortal() {
 
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-          style={{ background: 'linear-gradient(135deg,#2563eb,#06b6d4)', boxShadow: '0 0 32px rgba(37,99,235,0.45)' }}>
-          <Wifi size={26} className="text-white" />
-        </div>
-        <h1 className="text-2xl font-black text-white tracking-tight">Get Online</h1>
+        {theme?.logo_url ? (
+          <img src={theme.logo_url} alt={businessName}
+            className="w-14 h-14 rounded-2xl object-cover mx-auto mb-4"
+            style={{ boxShadow: `0 0 32px ${primary}73` }} />
+        ) : (
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            style={{ background: `linear-gradient(135deg,${primary},${secondary})`, boxShadow: `0 0 32px ${primary}73` }}>
+            <Wifi size={26} className="text-white" />
+          </div>
+        )}
+        <h1 className="text-2xl font-black text-white tracking-tight">{businessName}</h1>
         <p className="text-sm mt-1" style={{ color: '#94a3b8' }}>
-          Select a plan and pay via M-Pesa
+          {theme?.welcome_message || 'Select a plan and pay via M-Pesa'}
         </p>
         {username && (
           <p className="text-xs mt-1.5 font-mono" style={{ color: '#475569' }}>
@@ -274,6 +290,8 @@ export default function CaptivePortal() {
               plan={plan}
               selected={selected?.id === plan.id}
               onSelect={setSelected}
+              primary={primary}
+              secondary={secondary}
             />
           ))
         )}
@@ -295,10 +313,17 @@ export default function CaptivePortal() {
             background: 'rgba(255,255,255,0.05)',
             border: '1px solid rgba(255,255,255,0.1)',
           }}
-          onFocus={e => e.target.style.borderColor = 'rgba(37,99,235,0.6)'}
+          onFocus={e => e.target.style.borderColor = `${primary}99`}
           onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
         />
       </div>
+
+      {/* Terms, if the ISP has set any */}
+      {theme?.terms_text && (
+        <p className="text-xs text-center mb-4" style={{ color: '#64748b' }}>
+          {theme.terms_text}
+        </p>
+      )}
 
       {/* Pay button */}
       <button
@@ -306,8 +331,8 @@ export default function CaptivePortal() {
         disabled={!selected || !phone}
         className="w-full py-3.5 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
         style={{
-          background: 'linear-gradient(135deg,#2563eb,#1d4ed8)',
-          boxShadow: selected && phone ? '0 0 32px rgba(37,99,235,0.45)' : 'none',
+          background: `linear-gradient(135deg,${primary},${secondary})`,
+          boxShadow: selected && phone ? `0 0 32px ${primary}73` : 'none',
         }}
       >
         {selected
@@ -317,11 +342,18 @@ export default function CaptivePortal() {
       </button>
 
       {/* Footer trust badge */}
-      <div className="flex items-center justify-center gap-1.5 mt-6">
-        <Shield size={12} style={{ color: '#475569' }} />
-        <p className="text-xs" style={{ color: '#475569' }}>
-          Secured by PrimeBill · Powered by DarkOpsHub
-        </p>
+      <div className="flex flex-col items-center gap-1 mt-6">
+        <div className="flex items-center justify-center gap-1.5">
+          <Shield size={12} style={{ color: '#475569' }} />
+          <p className="text-xs" style={{ color: '#475569' }}>
+            Secured by {businessName}
+          </p>
+        </div>
+        {theme?.support_phone && (
+          <p className="text-xs" style={{ color: '#475569' }}>
+            Need help? Call {theme.support_phone}
+          </p>
+        )}
       </div>
     </Screen>
   )

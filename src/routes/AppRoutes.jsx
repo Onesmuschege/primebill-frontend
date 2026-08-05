@@ -4,6 +4,7 @@ import AdminLayout from '../components/layout/AdminLayout'
 
 // Auth
 import Login from '../pages/auth/Login'
+import TenantSignup from '../pages/auth/TenantSignup'
 import ForgotPassword from '../pages/auth/ForgotPassword'
 import ResetPassword from '../pages/auth/ResetPassword'
 import Unauthorized from '../pages/auth/Unauthorized'
@@ -55,10 +56,11 @@ export default function AppRoutes() {
     <Routes>
       {/* Public */}
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<TenantSignup />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
-      <Route path="/captive" element={<CaptivePortal />} />
+      <Route path="/captive/:tenantSlug" element={<CaptivePortal />} />
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
       {/* Protected */}
