@@ -139,10 +139,17 @@ export function AuthProvider({ children }) {
   //
   // Role hierarchy (least → most privileged):
   //   client → staff → admin → super_admin
+  //
+  // isPlatformAdmin — deliberately NOT part of the role hierarchy above.
+  // It's PrimeBill's own cross-tenant operator flag (users.is_platform_admin
+  // on the backend), orthogonal to a user's tenant-scoped role. A user can
+  // be 'staff' in their home tenant AND a platform admin at the same time.
+  // Only gates the /platform/* routes — never implied by any role check.
   // ---------------------------------------------------------------------------
   const ROLE_LEVELS = { client: 0, staff: 1, admin: 2, super_admin: 3 }
 
   const primaryRole = user?.roles?.[0] ?? 'client'
+  const isPlatformAdmin = user?.is_platform_admin === true
 
   const hasRole = useCallback((role) => {
     return user?.roles?.includes(role) ?? false
@@ -171,6 +178,7 @@ export function AuthProvider({ children }) {
       hasPermission,
       isAtLeast,
       primaryRole,
+      isPlatformAdmin,
     }}>
       {children}
     </AuthContext.Provider>

@@ -23,6 +23,7 @@ const pageTitles = {
   '/admin/roles': 'Roles & Permissions',
   '/logs':        'System Logs',
   '/settings':    'Settings',
+  '/platform':    'Platform Admin',
 }
 
 export default function AdminLayout() {
