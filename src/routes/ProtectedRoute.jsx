@@ -26,19 +26,30 @@ import { useAuth } from '../context/AuthContext'
  *     <Reports />
  *   </ProtectedRoute>
  *
+ *   // Platform-admin only (cross-tenant PrimeBill-operator routes)
+ *   <ProtectedRoute requirePlatformAdmin>
+ *     <PlatformDashboard />
+ *   </ProtectedRoute>
+ *
  * Redirect behaviour:
  *   - Not logged in             → /login     (with `from` state for post-login redirect)
  *   - Logged in but wrong role  → /unauthorized
+ *   - Logged in, not a platform admin → /unauthorized
  *
  * Props:
- *   children      ReactNode   Required. The page component to render.
- *   minimumRole   string      Optional. Least-privileged role allowed (inclusive).
- *   roles         string[]    Optional. Exact roles allowed. Overrides minimumRole
- *                             if both are provided (prefer minimumRole for most cases).
- *   permission    string      Optional. Spatie permission string that must be present.
+ *   children             ReactNode   Required. The page component to render.
+ *   minimumRole           string      Optional. Least-privileged role allowed (inclusive).
+ *   roles                 string[]    Optional. Exact roles allowed. Overrides minimumRole
+ *                                     if both are provided (prefer minimumRole for most cases).
+ *   permission             string      Optional. Spatie permission string that must be present.
+ *   requirePlatformAdmin   boolean     Optional. Gates on users.is_platform_admin — deliberately
+ *                                     independent of roles/permission, which are always
+ *                                     tenant-scoped. Checked client-side here as a UX guard;
+ *                                     the backend's platform_admin middleware is the real
+ *                                     enforcement and re-checks this on every request.
  */
-export default function ProtectedRoute({ children, minimumRole, roles, permission }) {
-  const { token, hasRole, hasPermission, isAtLeast } = useAuth()
+export default function ProtectedRoute({ children, minimumRole, roles, permission, requirePlatformAdmin }) {
+  const { token, hasRole, hasPermission, isAtLeast, isPlatformAdmin } = useAuth()
   const location = useLocation()
 
   // Step 1: Not authenticated at all → redirect to login.
@@ -62,6 +73,12 @@ export default function ProtectedRoute({ children, minimumRole, roles, permissio
 
   // Step 4: Permission check (Spatie permission string).
   if (permission && !hasPermission(permission)) {
+    return <Navigate to="/unauthorized" replace />
+  }
+
+  // Step 5: Platform-admin check — independent of the role/permission checks
+  // above, since is_platform_admin sits outside the tenant-scoped hierarchy.
+  if (requirePlatformAdmin && !isPlatformAdmin) {
     return <Navigate to="/unauthorized" replace />
   }
 
