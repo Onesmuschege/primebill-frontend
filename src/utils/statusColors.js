@@ -52,3 +52,16 @@ export function paymentMethodBadge(method) {
   }
   return map[method] ?? 'badge badge-inactive'
 }
+
+// Tenant status — active/trial/suspended, matches the Tenant model's
+// status enum on the backend (see the multi-tenant SaaS foundation
+// migration). Distinct from clientStatusBadge: a tenant is an ISP running
+// on PrimeBill, not a client of one.
+export function tenantStatusBadge(status) {
+  const map = {
+    active:    'badge badge-active',
+    trial:     'badge badge-info',
+    suspended: 'badge badge-suspended',
+  }
+  return map[status] ?? 'badge badge-inactive'
+}
