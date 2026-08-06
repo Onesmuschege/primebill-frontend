@@ -50,6 +50,8 @@ import Settings from '../pages/settings/Settings'
 
 // Platform (cross-tenant PrimeBill-operator view)
 import PlatformDashboard from '../pages/platform/PlatformDashboard'
+import PlatformSubscriptions from '../pages/platform/PlatformSubscriptions'
+import PlatformSubscriptionAnalytics from '../pages/platform/PlatformSubscriptionAnalytics'
 
 // Public Portal
 import CaptivePortal from '../pages/portal/CaptivePortal'
@@ -117,11 +119,27 @@ export default function AppRoutes() {
             someone is logged in; this inner one additionally checks
             users.is_platform_admin before rendering. Anyone logged in but
             not a platform admin is bounced to /unauthorized. */}
-        <Route
+<Route
           path="/platform"
           element={
             <ProtectedRoute requirePlatformAdmin>
               <PlatformDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform/subscriptions"
+          element={
+            <ProtectedRoute requirePlatformAdmin>
+              <PlatformSubscriptions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform/analytics"
+          element={
+            <ProtectedRoute requirePlatformAdmin>
+              <PlatformSubscriptionAnalytics />
             </ProtectedRoute>
           }
         />
