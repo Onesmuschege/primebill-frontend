@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import {
   getPlatformStats,
   getPlatformTenants,
+  getPlatformTenant,
   suspendTenant,
   activateTenant,
 } from '../../api/platform.api'
@@ -12,24 +13,54 @@ import Modal from '../../components/common/Modal'
 import StatCard from '../../components/dashboard/StatCard'
 import Spinner from '../../components/common/Spinner'
 import { formatKES, formatNumber } from '../../utils/formatCurrency'
-import { formatDate } from '../../utils/formatDate'
+import { formatDate, formatDateTime } from '../../utils/formatDate'
 import { tenantStatusBadge } from '../../utils/statusColors'
 import {
   Globe, Building2, Users, DollarSign, AlertCircle,
-  Search, UserX, UserCheck, ShieldAlert,
+  Search, UserX, UserCheck, ShieldAlert, Activity,
+  Server, CreditCard, ShieldCheck, Clock, TrendingUp,
+  Wifi, Eye, ArrowLeft, Mail, Phone, MapPin, Database,
 } from 'lucide-react'
+
+// ── Small helpers ────────────────────────────────────────────────────────
+function HealthDot({ ok }) {
+  return (
+    <span
+      className="inline-block w-2.5 h-2.5 rounded-full mr-1.5"
+      style={{
+        backgroundColor: ok ? '#34d399' : '#f87171',
+        boxShadow: ok ? '0 0 8px rgba(52,211,153,0.6)' : '0 0 8px rgba(248,113,113,0.6)',
+      }}
+    />
+  )
+}
+
+function ActivityIcon({ action }) {
+  const a = action || ''
+  let cls = 'rgba(148,163,184,0.15)'
+  let color = '#94a3b8'
+  if (a.includes('payment')) { cls = 'rgba(16,185,129,0.15)';  color = '#34d399' }
+  else if (a.includes('tenant')) { cls = 'rgba(139,92,246,0.15)'; color = '#a78bfa' }
+  else if (a.includes('login')) { cls = 'rgba(37,99,235,0.15)';  color = '#60a5fa' }
+  else if (a.includes('security')) { cls = 'rgba(239,68,68,0.15)'; color = '#f87171' }
+  else if (a.includes('invoice')) { cls = 'rgba(245,158,11,0.15)'; color = '#fbbf24' }
+  return (
+    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+      style={{ backgroundColor: cls }}>
+      <Activity size={14} style={{ color }} />
+    </div>
+  )
+}
 
 export default function PlatformDashboard() {
   const queryClient = useQueryClient()
   const [search, setSearch]         = useState('')
   const [statusFilter, setStatusFilter] = useState('')
-  const [confirmTarget, setConfirmTarget] = useState(null) // { tenant, action: 'suspend' | 'activate' }
+  const [confirmTarget, setConfirmTarget] = useState(null) // { tenant, action }
+  const [detailTenant, setDetailTenant] = useState(null)   // tenant object
+  const [showDetail, setShowDetail] = useState(false)
 
   // ── Data ────────────────────────────────────────────────────────────────
-  // No 'tenant' or 'permission' middleware on these — the backend gates
-  // everything through platform_admin (users.is_platform_admin). A 403 here
-  // means the flag was revoked server-side after this page already loaded;
-  // the ProtectedRoute guard covers the normal entry path.
   const { data: statsData, isLoading: statsLoading } = useQuery({
     queryKey: ['platform-stats'],
     queryFn: () => getPlatformStats().then(r => r.data.data),
@@ -42,20 +73,27 @@ export default function PlatformDashboard() {
     refetchInterval: 60000,
   })
 
+  const { data: tenantDetail, isLoading: detailLoading } = useQuery({
+    queryKey: ['platform-tenant-detail', detailTenant?.id],
+    queryFn: () => getPlatformTenant(detailTenant.id).then(r => r.data.data),
+    enabled: !!showDetail && !!detailTenant?.id,
+  })
+
   // ── Mutations ───────────────────────────────────────────────────────────
+  const refresh = () => {
+    queryClient.invalidateQueries({ queryKey: ['platform-tenants'] })
+    queryClient.invalidateQueries({ queryKey: ['platform-stats'] })
+  }
+
   const suspendMutation = useMutation({
     mutationFn: suspendTenant,
     onSuccess: (_, tenantId) => {
       const tenant = (tenantsData || []).find(t => t.id === tenantId)
       toast.success(`${tenant?.name ?? 'Tenant'} suspended`)
-      queryClient.invalidateQueries({ queryKey: ['platform-tenants'] })
-      queryClient.invalidateQueries({ queryKey: ['platform-stats'] })
+      refresh()
       setConfirmTarget(null)
     },
-    onError: () => {
-      toast.error('Failed to suspend tenant')
-      setConfirmTarget(null)
-    },
+    onError: () => { toast.error('Failed to suspend tenant'); setConfirmTarget(null) },
   })
 
   const activateMutation = useMutation({
@@ -63,27 +101,43 @@ export default function PlatformDashboard() {
     onSuccess: (_, tenantId) => {
       const tenant = (tenantsData || []).find(t => t.id === tenantId)
       toast.success(`${tenant?.name ?? 'Tenant'} activated`)
-      queryClient.invalidateQueries({ queryKey: ['platform-tenants'] })
-      queryClient.invalidateQueries({ queryKey: ['platform-stats'] })
+      refresh()
       setConfirmTarget(null)
     },
-    onError: () => {
-      toast.error('Failed to activate tenant')
-      setConfirmTarget(null)
-    },
+    onError: () => { toast.error('Failed to activate tenant'); setConfirmTarget(null) },
   })
 
   const isMutating = suspendMutation.isPending || activateMutation.isPending
 
+  // ── Derived stats ───────────────────────────────────────────────────────
+  const overview  = statsData?.overview  || {}
+  const tenantSt  = statsData?.tenants   || {}
+  const revenue   = statsData?.revenue   || {}
+  const clients   = statsData?.clients   || {}
+  const infra     = statsData?.infrastructure || {}
+  const security  = statsData?.security  || {}
+  const activity  = Array.isArray(statsData?.activity) ? statsData.activity : []
+
+  const revenueByMethod = Object.entries(revenue.by_method || {})
+    .map(([method, amount]) => ({ method, amount }))
+
+  const revenueMethodTotal = revenueByMethod.reduce((s, m) => s + m.amount, 0) || 1
+
+  const planDist = Object.entries(tenantSt.by_plan || {})
+    .map(([plan, count]) => ({ plan: plan || 'n/a', count }))
+  const planTotal = planDist.reduce((s, p) => s + p.count, 0) || 1
+
+  const clientStatus = Object.entries(clients.by_status || {})
+    .map(([status, count]) => ({ status, count }))
+
+// Revenue time series (monthly 12m)
+  const monthlyRevenue = Array.isArray(revenue.monthly) ? revenue.monthly : []
+  const maxMonthly = Math.max(1, ...monthlyRevenue.map(m => m.total))
+
   // ── Client-side filtering ──────────────────────────────────────────────
-  // The /platform/tenants endpoint returns every tenant unpaginated — the
-  // platform is expected to have dozens to low hundreds of ISPs, not the
-  // volume that would need server-side pagination. Filtering client-side
-  // keeps the tenant list snappy with no extra round-trips.
   const filteredTenants = useMemo(() => {
     const list = Array.isArray(tenantsData) ? tenantsData : []
     const term = search.trim().toLowerCase()
-
     return list.filter(t => {
       const matchesSearch = !term
         || t.name.toLowerCase().includes(term)
@@ -96,11 +150,8 @@ export default function PlatformDashboard() {
   const handleConfirmAction = () => {
     if (!confirmTarget) return
     const { tenant, action } = confirmTarget
-    if (action === 'suspend') {
-      suspendMutation.mutate(tenant.id)
-    } else {
-      activateMutation.mutate(tenant.id)
-    }
+    if (action === 'suspend') suspendMutation.mutate(tenant.id)
+    else activateMutation.mutate(tenant.id)
   }
 
   // ── Table columns ───────────────────────────────────────────────────────
@@ -124,22 +175,31 @@ export default function PlatformDashboard() {
       key: 'plan',
       label: 'Plan',
       render: (t) => (
-        <span className="capitalize" style={{ color: 'var(--pb-text-2)' }}>{t.plan}</span>
+        <span className="capitalize" style={{ color: 'var(--pb-text-2)' }}>{t.plan || '—'}</span>
       ),
     },
     {
       key: 'client_count',
       label: 'Clients',
       render: (t) => (
-        <span style={{ color: 'var(--pb-text-2)' }}>{formatNumber(t.client_count)}</span>
+        <span style={{ color: 'var(--pb-text-2)' }}>
+          {formatNumber(t.client_count)}{t.max_clients ? ` / ${formatNumber(t.max_clients)}` : ''}
+        </span>
       ),
     },
     {
       key: 'revenue',
       label: 'Revenue',
       render: (t) => (
-        <span className="font-medium" style={{ color: 'var(--pb-text-1)' }}>
-          {formatKES(t.revenue)}
+        <span className="font-medium" style={{ color: 'var(--pb-text-1)' }}>{formatKES(t.revenue)}</span>
+      ),
+    },
+    {
+      key: 'outstanding_invoices',
+      label: 'Outstanding',
+      render: (t) => (
+        <span style={{ color: t.outstanding_invoices > 0 ? '#fbbf24' : 'var(--pb-text-3)' }}>
+          {formatKES(t.outstanding_invoices)}
         </span>
       ),
     },
@@ -155,6 +215,16 @@ export default function PlatformDashboard() {
       label: '',
       render: (t) => (
         <div className="flex items-center gap-1">
+          <button
+            onClick={() => { setDetailTenant(t); setShowDetail(true) }}
+            className="p-1.5 rounded-lg transition-colors"
+            title="View tenant"
+            style={{ color: '#60a5fa' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(37,99,235,0.1)'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <Eye size={15} />
+          </button>
           {t.status === 'suspended' ? (
             <button
               onClick={() => setConfirmTarget({ tenant: t, action: 'activate' })}
@@ -188,10 +258,7 @@ export default function PlatformDashboard() {
   return (
     <div className="space-y-6">
 
-      {/* ── Platform banner ──────────────────────────────────────────────
-          Deliberately distinct from every other page in the app — a violet
-          accent bar signals "you are outside your tenant" at a glance. This
-          is the one screen in PrimeBill that shows data across every ISP. */}
+      {/* ── Platform banner ────────────────────────────────────────────── */}
       <div
         className="rounded-xl p-5 flex items-center gap-4 relative overflow-hidden"
         style={{
@@ -210,7 +277,7 @@ export default function PlatformDashboard() {
             Platform Admin
           </h2>
           <p className="text-sm mt-0.5" style={{ color: 'var(--pb-text-2)' }}>
-            Cross-tenant view — every ISP running on PrimeBill, not just your own workspace.
+            Cross-tenant command center — every ISP running on PrimeBill, not just your own workspace.
           </p>
         </div>
         <div
@@ -222,40 +289,340 @@ export default function PlatformDashboard() {
         </div>
       </div>
 
-      {/* ── Stats cards ── */}
+      {/* ── Overview KPI cards ── */}
       {statsLoading ? (
         <div className="py-10"><Spinner size="lg" /></div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Total Tenants"
-            value={formatNumber(statsData?.tenants?.total)}
-            subtitle={`${statsData?.tenants?.active ?? 0} active · ${statsData?.tenants?.trial ?? 0} trial · ${statsData?.tenants?.suspended ?? 0} suspended`}
-            icon={Building2}
-            color="purple"
-          />
-          <StatCard
-            title="Total Clients"
-            value={formatNumber(statsData?.total_clients)}
-            subtitle="Across every tenant"
-            icon={Users}
-            color="blue"
-          />
-          <StatCard
-            title="Platform Revenue"
-            value={formatKES(statsData?.total_platform_revenue)}
-            subtitle="Completed payments, all tenants"
-            icon={DollarSign}
-            color="green"
-          />
-          <StatCard
-            title="Outstanding Invoices"
-            value={formatKES(statsData?.outstanding_invoices)}
-            subtitle="Pending & overdue, all tenants"
-            icon={AlertCircle}
-            color="orange"
-          />
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title="Total Tenants"
+              value={formatNumber(overview.total_tenants)}
+              subtitle={`${overview.active_tenants ?? 0} active · ${overview.trial_tenants ?? 0} trial · ${overview.suspended_tenants ?? 0} suspended`}
+              icon={Building2}
+              color="purple"
+            />
+            <StatCard
+              title="Total Clients"
+              value={formatNumber(clients.total)}
+              subtitle={`${clients.new_this_month ?? 0} new this month`}
+              icon={Users}
+              color="blue"
+            />
+            <StatCard
+              title="Platform MRR"
+              value={formatKES(overview.mrr)}
+              subtitle={`ARR ${formatKES(overview.arr)}`}
+              icon={DollarSign}
+              color="green"
+            />
+            <StatCard
+              title="Outstanding Invoices"
+              value={formatKES(overview.outstanding_invoices)}
+              subtitle="Pending & overdue, all tenants"
+              icon={AlertCircle}
+              color="orange"
+            />
+          </div>
+
+          {/* ── Secondary metrics row ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title="Revenue Today"
+              value={formatKES(revenue.today)}
+              subtitle={`This month ${formatKES(revenue.this_month)}`}
+              icon={CreditCard}
+              color="cyan"
+            />
+            <StatCard
+              title="Total Payments"
+              value={formatNumber(overview.total_payments)}
+              subtitle={`Total revenue ${formatKES(overview.total_revenue)}`}
+              icon={TrendingUp}
+              color="green"
+            />
+            <StatCard
+              title="Tenant Growth"
+              value={`${tenantSt.growth_rate ?? 0}%`}
+              subtitle={`${tenantSt.new_this_month ?? 0} new tenants this month`}
+              icon={Activity}
+              color="blue"
+            />
+            <StatCard
+              title="Client Growth"
+              value={`${clients.growth_rate ?? 0}%`}
+              subtitle={`${clients.new_this_month ?? 0} new clients this month`}
+              icon={Users}
+              color="purple"
+            />
+          </div>
+
+          {/* ── Revenue & usage visualization row ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Monthly revenue bar chart */}
+            <div className="card p-5 lg:col-span-2">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--pb-text-1)' }}>
+                  Monthly Platform Revenue (12 months)
+                </h3>
+                <span className="text-xs" style={{ color: 'var(--pb-text-3)' }}>
+                  {formatKES(revenue.this_year)} this year
+                </span>
+              </div>
+              {monthlyRevenue.length === 0 ? (
+                <p className="text-sm py-8 text-center" style={{ color: 'var(--pb-text-3)' }}>
+                  No revenue data yet
+                </p>
+              ) : (
+                <div className="flex items-end gap-1 h-40">
+                  {monthlyRevenue.map((m, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
+                      <span className="text-[9px] opacity-0 group-hover:opacity-100 transition-opacity"
+                        style={{ color: 'var(--pb-text-2)' }}>
+                        {formatKES(m.total)}
+                      </span>
+                      <div
+                        className="w-full rounded-t"
+                        style={{
+                          height: `${(m.total / maxMonthly) * 100}%`,
+                          minHeight: '4px',
+                          background: 'linear-gradient(180deg,#7c3aed,#06b6d4)',
+                          opacity: 0.85,
+                        }}
+                      />
+                      <span className="text-[9px]" style={{ color: 'var(--pb-text-3)' }}>
+                        {m.month?.slice(5) || ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Revenue by payment method */}
+            <div className="card p-5">
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--pb-text-1)' }}>
+                Revenue by Payment Method
+              </h3>
+              {revenueByMethod.length === 0 ? (
+                <p className="text-sm py-8 text-center" style={{ color: 'var(--pb-text-3)' }}>
+                  No payment data
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {revenueByMethod.map(({ method, amount }) => (
+                    <div key={method}>
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="capitalize" style={{ color: 'var(--pb-text-2)' }}>{method}</span>
+                        <span className="font-medium" style={{ color: 'var(--pb-text-1)' }}>
+                          {formatKES(amount)} · {Math.round((amount / revenueMethodTotal) * 100)}%
+                        </span>
+                      </div>
+                      <div className="w-full bg-black/20 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${(amount / revenueMethodTotal) * 100}%`,
+                            background: 'linear-gradient(90deg,#34d399,#06b6d4)',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Plans / clients / infrastructure / security row ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Plan distribution */}
+            <div className="card p-5">
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--pb-text-1)' }}>
+                Tenants by Plan
+              </h3>
+              <div className="space-y-3">
+                {planDist.map(({ plan, count }) => (
+                  <div key={plan}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="capitalize" style={{ color: 'var(--pb-text-2)' }}>{plan}</span>
+                      <span style={{ color: 'var(--pb-text-1)' }}>{count}</span>
+                    </div>
+                    <div className="w-full bg-black/20 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${(count / planTotal) * 100}%`, background: '#a78bfa' }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                {planDist.length === 0 && (
+                  <p className="text-sm" style={{ color: 'var(--pb-text-3)' }}>No tenants</p>
+                )}
+              </div>
+            </div>
+
+            {/* Client status */}
+            <div className="card p-5">
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--pb-text-1)' }}>
+                Clients by Status
+              </h3>
+              <div className="space-y-3">
+                {clientStatus.map(({ status, count }) => (
+                  <div key={status}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="capitalize" style={{ color: 'var(--pb-text-2)' }}>{status}</span>
+                      <span style={{ color: 'var(--pb-text-1)' }}>{formatNumber(count)}</span>
+                    </div>
+                    <div className="w-full bg-black/20 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${(count / Math.max(1, clients.total)) * 100}%`,
+                          background: status === 'active' ? '#34d399' : status === 'suspended' ? '#fbbf24' : '#94a3b8',
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Infrastructure health */}
+            <div className="card p-5">
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--pb-text-1)' }}>
+                Infrastructure Health
+              </h3>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center" style={{ color: 'var(--pb-text-2)' }}>
+                    <Server size={14} className="mr-2" style={{ color: '#a78bfa' }} />
+                    Routers
+                  </span>
+                  <div className="text-right">
+                    <div className="flex items-center justify-end" style={{ color: 'var(--pb-text-1)' }}>
+                      <HealthDot ok={(infra.routers?.online ?? 0) > 0 || (infra.routers?.total ?? 0) === 0} />
+                      {formatNumber(infra.routers?.online ?? 0)} online / {formatNumber(infra.routers?.total ?? 0)}
+                    </div>
+                    <span className="text-xs" style={{ color: 'var(--pb-text-3)' }}>
+                      {infra.routers?.health_percentage ?? 100}% healthy
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center" style={{ color: 'var(--pb-text-2)' }}>
+                    <Database size={14} className="mr-2" style={{ color: '#60a5fa' }} />
+                    Database
+                  </span>
+                  <span className="capitalize" style={{ color: 'var(--pb-text-1)' }}>
+                    <HealthDot ok={infra.database?.status === 'connected'} />
+                    {infra.database?.driver}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center" style={{ color: 'var(--pb-text-2)' }}>
+                    <Clock size={14} className="mr-2" style={{ color: '#34d399' }} />
+                    Queue
+                  </span>
+                  <span className="capitalize" style={{ color: 'var(--pb-text-1)' }}>
+                    <HealthDot ok={infra.queue?.status === 'running'} />
+                    {infra.queue?.default}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center" style={{ color: 'var(--pb-text-2)' }}>
+                    <Activity size={14} className="mr-2" style={{ color: '#fbbf24' }} />
+                    Cache
+                  </span>
+                  <span className="capitalize" style={{ color: 'var(--pb-text-1)' }}>
+                    <HealthDot ok={infra.cache?.status === 'healthy'} />
+                    {infra.cache?.driver}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Security metrics */}
+            <div className="card p-5">
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--pb-text-1)' }}>
+                Security Overview
+              </h3>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div
+                  className="rounded-lg p-3"
+                  style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)' }}
+                >
+                  <p className="text-2xl font-bold" style={{ color: '#f87171' }}>
+                    {formatNumber(security.failed_logins_today)}
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--pb-text-3)' }}>Failed logins today</p>
+                </div>
+                <div
+                  className="rounded-lg p-3"
+                  style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}
+                >
+                  <p className="text-2xl font-bold" style={{ color: '#34d399' }}>
+                    {formatNumber(security.successful_logins_today)}
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--pb-text-3)' }}>Successful logins today</p>
+                </div>
+                <div
+                  className="rounded-lg p-3"
+                  style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)' }}
+                >
+                  <p className="text-2xl font-bold" style={{ color: '#60a5fa' }}>
+                    {formatNumber(security.security_events_this_week)}
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--pb-text-3)' }}>Security events this week</p>
+                </div>
+                <div
+                  className="rounded-lg p-3"
+                  style={{ background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.15)' }}
+                >
+                  <p className="text-2xl font-bold" style={{ color: '#a78bfa' }}>
+                    {formatNumber(security.platform_admins)}
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--pb-text-3)' }}>Platform admins</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Recent activity feed ── */}
+          <div className="card p-5">
+            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--pb-text-1)' }}>
+              <ShieldCheck size={16} style={{ color: '#a78bfa' }} />
+              Recent Platform Activity
+            </h3>
+            {activity.length === 0 ? (
+              <p className="text-sm py-6 text-center" style={{ color: 'var(--pb-text-3)' }}>
+                No recent activity logged
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {activity.map((log) => (
+                  <div key={log.id}
+                    className="flex items-center gap-3 p-2.5 rounded-lg"
+                    style={{ borderBottom: '1px solid var(--pb-border)' }}
+                  >
+                    <ActivityIcon action={log.action} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate" style={{ color: 'var(--pb-text-1)' }}>
+                        {log.user}
+                      </p>
+                      <p className="text-xs truncate" style={{ color: 'var(--pb-text-3)' }}>
+                        {log.action} · {log.model ? `${log.model}#${log.model_id}` : ''}
+                      </p>
+                    </div>
+                    <span className="text-xs shrink-0" style={{ color: 'var(--pb-text-3)' }}>
+                      {formatDateTime(log.created_at)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
       )}
 
       {/* ── Tenant table ── */}
@@ -302,18 +669,14 @@ export default function PlatformDashboard() {
         />
       </div>
 
-      {/* ── Suspend/activate confirmation ──────────────────────────────
-          Suspending a tenant suspends an entire ISP's operations for every
-          one of their clients — deliberately requires an explicit confirm
-          step, unlike the single-client suspend/activate buttons elsewhere
-          in the app which act immediately on click. */}
+      {/* ── Suspend/activate confirmation ── */}
       <Modal
         isOpen={!!confirmTarget}
         onClose={() => !isMutating && setConfirmTarget(null)}
         title={confirmTarget?.action === 'suspend' ? 'Suspend tenant' : 'Activate tenant'}
         size="sm"
       >
-        <div className="p-6 space-y-4">
+        <div className="space-y-4">
           <p style={{ color: 'var(--pb-text-2)' }}>
             {confirmTarget?.action === 'suspend' ? (
               <>
@@ -330,11 +693,7 @@ export default function PlatformDashboard() {
           </p>
 
           <div className="flex items-center justify-end gap-2 pt-2">
-            <button
-              onClick={() => setConfirmTarget(null)}
-              disabled={isMutating}
-              className="btn-secondary"
-            >
+            <button onClick={() => setConfirmTarget(null)} disabled={isMutating} className="btn-secondary">
               Cancel
             </button>
             <button
@@ -349,6 +708,151 @@ export default function PlatformDashboard() {
           </div>
         </div>
       </Modal>
+
+      {/* ── Tenant detail modal ── */}
+      <Modal
+        isOpen={showDetail}
+        onClose={() => !detailLoading && setShowDetail(false)}
+        title={detailTenant?.name}
+        size="xl"
+      >
+        {detailLoading || !tenantDetail ? (
+          <div className="py-10 flex justify-center"><Spinner size="lg" /></div>
+        ) : (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg,#7c3aed,#06b6d4)' }}
+                >
+                  <Wifi size={20} className="text-white" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold" style={{ color: 'var(--pb-text-1)' }}>{tenantDetail.name}</p>
+                  <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>{tenantDetail.slug}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={tenantStatusBadge(tenantDetail.status)}>{tenantDetail.status}</span>
+                <span className="badge badge-info capitalize">{tenantDetail.plan || 'No plan'}</span>
+              </div>
+            </div>
+
+            {/* Contact / company */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+              <div className="rounded-lg p-3" style={{ background: 'var(--pb-raised)', border: '1px solid var(--pb-border)' }}>
+                <p className="text-xs mb-2 flex items-center gap-1.5" style={{ color: 'var(--pb-text-3)' }}>
+                  <Mail size={13} /> Contact
+                </p>
+                <p style={{ color: 'var(--pb-text-1)' }}>{tenantDetail.contact_email || '—'}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--pb-text-2)' }}>{tenantDetail.contact_phone || '—'}</p>
+              </div>
+              <div className="rounded-lg p-3" style={{ background: 'var(--pb-raised)', border: '1px solid var(--pb-border)' }}>
+                <p className="text-xs mb-2 flex items-center gap-1.5" style={{ color: 'var(--pb-text-3)' }}>
+                  <MapPin size={13} /> Location
+                </p>
+                <p style={{ color: 'var(--pb-text-1)' }}>{tenantDetail.address || '—'}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--pb-text-2)' }}>
+                  {tenantDetail.timezone} · {tenantDetail.currency}
+                </p>
+              </div>
+              <div className="rounded-lg p-3" style={{ background: 'var(--pb-raised)', border: '1px solid var(--pb-border)' }}>
+                <p className="text-xs mb-2 flex items-center gap-1.5" style={{ color: 'var(--pb-text-3)' }}>
+                  <Phone size={13} /> Billing
+                </p>
+                <p style={{ color: 'var(--pb-text-1)' }}>{tenantDetail.billing_email || '—'}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--pb-text-2)' }}>
+                  Tax: {tenantDetail.tax_rate ? `${tenantDetail.tax_rate}%` : '—'} · {tenantDetail.tax_name || ''}
+                </p>
+              </div>
+            </div>
+
+            {/* Subscription / quotas */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+              <div>
+                <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>Plan Price</p>
+                <p className="font-semibold" style={{ color: 'var(--pb-text-1)' }}>{formatKES(tenantDetail.monthly_price)}</p>
+              </div>
+              <div>
+                <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>Plan Expires</p>
+                <p className="font-semibold" style={{ color: 'var(--pb-text-1)' }}>
+                  {tenantDetail.plan_expires_at ? formatDate(tenantDetail.plan_expires_at) : '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>Trial Ends</p>
+                <p className="font-semibold" style={{ color: 'var(--pb-text-1)' }}>
+                  {tenantDetail.trial_ends_at ? formatDate(tenantDetail.trial_ends_at) : '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>Joined</p>
+                <p className="font-semibold" style={{ color: 'var(--pb-text-1)' }}>{formatDate(tenantDetail.created_at)}</p>
+              </div>
+            </div>
+
+            {/* Quota usage */}
+            <div>
+              <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--pb-text-1)' }}>Quota Usage</h4>
+              <div className="space-y-3">
+                <QuotaBar label="Clients" used={tenantDetail.client_count} limit={tenantDetail.max_clients} />
+                <QuotaBar label="Storage" used={tenantDetail.storage_used_mb} limit={tenantDetail.storage_quota_gb ? tenantDetail.storage_quota_gb * 1024 : 0} unit="MB" />
+                <QuotaBar label="API Calls" used={tenantDetail.api_calls_used} limit={tenantDetail.api_calls_per_month} />
+                <QuotaBar label="Max Users" used={null} limit={tenantDetail.max_users} />
+              </div>
+            </div>
+
+            {/* Recent payments */}
+            <div>
+              <h4 className="text-sm font-semibold mb-3" style={{ color: 'var(--pb-text-1)' }}>
+                Recent Payments · {formatKES(tenantDetail.revenue)} total
+              </h4>
+              {tenantDetail.recent_payments?.length === 0 ? (
+                <p className="text-sm" style={{ color: 'var(--pb-text-3)' }}>No payments recorded</p>
+              ) : (
+                <Table
+                  columns={[
+                    { key: 'amount', label: 'Amount', render: (p) => <span style={{ color: 'var(--pb-text-1)' }}>{formatKES(p.amount)}</span> },
+                    { key: 'method', label: 'Method', render: (p) => <span className="capitalize" style={{ color: 'var(--pb-text-2)' }}>{p.method}</span> },
+                    { key: 'created_at', label: 'Date', render: (p) => <span style={{ color: 'var(--pb-text-3)' }}>{formatDate(p.created_at)}</span> },
+                  ]}
+                  data={tenantDetail.recent_payments || []}
+                />
+              )}
+            </div>
+
+            <button onClick={() => setShowDetail(false)} className="btn-secondary w-full">
+              <ArrowLeft size={15} className="mr-2" /> Close
+            </button>
+          </div>
+        )}
+      </Modal>
+    </div>
+  )
+}
+
+// ── Quota bar helper ─────────────────────────────────────────────────────
+function QuotaBar({ label, used, limit, unit = '' }) {
+  const pct = limit > 0 ? ((used ?? 0) / limit) * 100 : 0
+  return (
+    <div>
+      <div className="flex justify-between text-xs mb-1">
+        <span style={{ color: 'var(--pb-text-2)' }}>{label}</span>
+        <span style={{ color: 'var(--pb-text-3)' }}>
+          {used !== null && used !== undefined ? `${formatNumber(used)} / ${formatNumber(limit)} ${unit}` : `${formatNumber(limit)} ${unit}`}
+        </span>
+      </div>
+      <div className="w-full bg-black/20 rounded-full h-1.5 overflow-hidden">
+        <div
+          className="h-full rounded-full"
+          style={{
+            width: `${Math.min(pct, 100)}%`,
+            background: pct > 90 ? '#f87171' : pct > 70 ? '#fbbf24' : '#34d399',
+          }}
+        />
+      </div>
     </div>
   )
 }
