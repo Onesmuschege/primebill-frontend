@@ -5,8 +5,8 @@ import {
   LayoutDashboard, Users, Wifi, FileText, CreditCard,
   Ticket, MessageSquare, Router, Package, DollarSign,
   BarChart2, Settings, LogOut, Shield, Tag, Zap,
-  TrendingUp, Gift, ScrollText, UserCog, Globe,
-  ChevronDown, ChevronRight, X,
+TrendingUp, Gift, ScrollText, UserCog, Globe,
+ChevronDown, ChevronRight, X, Radio, Wrench, Activity, Cable, MapPin,
 } from 'lucide-react'
 
 const NAV = [
@@ -40,10 +40,27 @@ const NAV = [
     ],
   },
   {
-    group: 'Network',
+group: 'Network',
     items: [
-      { to: '/routers',   icon: Router,  label: 'Routers' },
-      { to: '/inventory', icon: Package, label: 'Inventory' },
+      { to: '/routers',   icon: Router,   label: 'Routers' },
+      { to: '/radius',    icon: Radio,    label: 'RADIUS' },
+      { to: '/inventory', icon: Package,  label: 'Inventory' },
+      { to: '/noc',       icon: Activity, label: 'NOC' },
+      { to: '/fiber/olts',icon: Cable,    label: 'Fiber / OLT' },
+      { to: '/fiber/map', icon: MapPin,   label: 'Fiber Map' },
+    ],
+  },
+  {
+    group: 'Field Operations',
+    items: [
+      { to: '/work-orders', icon: Wrench, label: 'Work Orders' },
+    ],
+  },
+  {
+    group: 'Platform Subscription',
+    items: [
+      { to: '/subscription/my',    icon: CreditCard, label: 'My Subscription' },
+      { to: '/subscription/plans', icon: Zap,        label: 'Plans & Pricing' },
     ],
   },
   {
