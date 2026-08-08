@@ -65,3 +65,40 @@ export function tenantStatusBadge(status) {
   }
   return map[status] ?? 'badge badge-inactive'
 }
+
+// Lead status — new/contacted/qualified/survey_required/converted/lost
+export function leadStatusBadge(status) {
+  const map = {
+    new:             'badge badge-info',
+    contacted:       'badge badge-unpaid',
+    qualified:       'badge badge-active',
+    survey_required: 'badge badge-overdue',
+    converted:       'badge badge-paid',
+    lost:            'badge badge-inactive',
+  }
+  return map[status] ?? 'badge badge-inactive'
+}
+
+// Prospect pipeline stage — new/negotiation/survey_scheduled/survey_completed/installation_scheduled/won/lost
+export function prospectStageBadge(stage) {
+  const map = {
+    new:                    'badge badge-info',
+    negotiation:            'badge badge-unpaid',
+    survey_scheduled:       'badge badge-overdue',
+    survey_completed:       'badge badge-active',
+    installation_scheduled: 'badge badge-active',
+    won:                    'badge badge-paid',
+    lost:                   'badge badge-inactive',
+  }
+  return map[stage] ?? 'badge badge-inactive'
+}
+
+// Prospect status — active/converted/lost
+export function prospectStatusBadge(status) {
+  const map = {
+    active:    'badge badge-active',
+    converted: 'badge badge-paid',
+    lost:      'badge badge-inactive',
+  }
+  return map[status] ?? 'badge badge-inactive'
+}
