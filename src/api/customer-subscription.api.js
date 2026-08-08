@@ -1,4 +1,4 @@
-import api from '../utils/api';
+import api from './axiosInstance';
 
 export const customerSubscriptionApi = {
   // List subscriptions for a client

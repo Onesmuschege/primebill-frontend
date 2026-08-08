@@ -59,3 +59,48 @@ export const createClientAccount = async (clientId, data) => {
   const response = await api.post(`/clients/${clientId}/accounts`, data)
   return response.data
 }
+
+// CRM — Notes
+export const getClientNotes = async (clientId, params) => {
+  const response = await api.get(`/clients/${clientId}/notes`, { params })
+  return response.data
+}
+
+export const createClientNote = async (clientId, data) => {
+  const response = await api.post(`/clients/${clientId}/notes`, data)
+  return response.data
+}
+
+export const toggleNotePin = async (clientId, noteId) => {
+  const response = await api.post(`/clients/${clientId}/notes/${noteId}/pin`)
+  return response.data
+}
+
+// CRM — Tags
+export const getClientTags = async (clientId) => {
+  const response = await api.get(`/clients/${clientId}/tags`)
+  return response.data
+}
+
+export const assignTagToClient = async (clientId, clientTagId) => {
+  const response = await api.post(`/clients/${clientId}/tags/assign`, { client_tag_id: clientTagId })
+  return response.data
+}
+
+export const removeTagFromClient = async (clientId, tagId) => {
+  const response = await api.delete(`/clients/${clientId}/tags/remove`, {
+    data: { client_tag_id: tagId }
+  })
+  return response.data
+}
+
+// CRM — Custom Fields
+export const getClientCustomFieldValues = async (clientId) => {
+  const response = await api.get(`/clients/${clientId}/custom-fields`)
+  return response.data
+}
+
+export const updateClientCustomFieldValues = async (clientId, values) => {
+  const response = await api.put(`/clients/${clientId}/custom-fields`, { values })
+  return response.data
+}
