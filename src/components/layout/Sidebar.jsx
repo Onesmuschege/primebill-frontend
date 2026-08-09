@@ -5,8 +5,8 @@ import {
   LayoutDashboard, Users, Wifi, FileText, CreditCard,
   Ticket, MessageSquare, Router, Package, DollarSign,
   BarChart2, Settings, LogOut, Shield, Tag, Zap,
-TrendingUp, Gift, ScrollText, UserCog, Globe,
-ChevronDown, ChevronRight, X, Radio, Wrench, Activity, Cable, MapPin,
+  TrendingUp, Gift, ScrollText, UserCog,
+  ChevronDown, ChevronRight, X, Radio, Wrench, Activity, Cable, MapPin, Database,
 } from 'lucide-react'
 
 const NAV = [
@@ -84,27 +84,17 @@ group: 'Network',
       { to: '/admin/roles', icon: Shield,     label: 'Roles & Permissions' },
       { to: '/logs',        icon: ScrollText, label: 'System Logs' },
       { to: '/settings',    icon: Settings,   label: 'Settings' },
+      { to: '/catalog',     icon: Database,   label: 'Catalog' },
     ],
   },
 ]
 
-// Platform-admin group — cross-tenant PrimeBill-operator view. Deliberately
-// kept separate from NAV above (not just appended as another group) and
-// only ever spread in when isPlatformAdmin is true, so a regular tenant
-// admin never even sees this link exists.
-const PLATFORM_GROUP = {
-  group: 'Platform',
-  items: [
-    { to: '/platform', icon: Globe, label: 'Platform Admin' },
-  ],
-}
-
 export default function Sidebar({ open, onClose }) {
-  const { user, logout, isPlatformAdmin } = useAuth()
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState({})
 
-  const nav = isPlatformAdmin ? [PLATFORM_GROUP, ...NAV] : NAV
+  const nav = NAV
 
   const toggleGroup = (group) =>
     setCollapsed(p => ({ ...p, [group]: !p[group] }))
@@ -177,51 +167,40 @@ export default function Sidebar({ open, onClose }) {
 
       {/* ── Navigation — overflow-y-auto here, NOT on the parent ── */}
       <nav className="flex-1 overflow-y-auto px-2 py-4">
-        {nav.map(({ group, items }) => {
-          const isPlatformGroup = group === 'Platform'
-          return (
-            <div key={group} className="mb-1">
-              <button
-                onClick={() => toggleGroup(group)}
-                className="w-full flex items-center justify-between px-3 py-1.5 mb-0.5 rounded-md transition-colors"
-                style={{ color: isPlatformGroup ? '#a78bfa' : 'var(--pb-text-3)' }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--pb-raised)'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <span className="text-xs font-semibold uppercase tracking-wider">
-                  {group}
-                </span>
-                {collapsed[group]
-                  ? <ChevronRight size={12} />
-                  : <ChevronDown size={12} />}
-              </button>
+        {nav.map(({ group, items }) => (
+          <div key={group} className="mb-1">
+            <button
+              onClick={() => toggleGroup(group)}
+              className="w-full flex items-center justify-between px-3 py-1.5 mb-0.5 rounded-md transition-colors"
+              style={{ color: 'var(--pb-text-3)' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--pb-raised)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <span className="text-xs font-semibold uppercase tracking-wider">
+                {group}
+              </span>
+              {collapsed[group]
+                ? <ChevronRight size={12} />
+                : <ChevronDown size={12} />}
+            </button>
 
-              {!collapsed[group] && (
-                <div className="space-y-0.5">
-                  {items.map(({ to, icon: Icon, label }) => (
-                    <NavLink
-                      key={to}
-                      to={to}
-                      onClick={handleNavClick}
-                      className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                      style={isPlatformGroup ? { color: '#a78bfa' } : undefined}
-                    >
-                      <Icon size={16} className="shrink-0" />
-                      <span className="text-sm">{label}</span>
-                    </NavLink>
-                  ))}
-                </div>
-              )}
-
-              {isPlatformGroup && (
-                <div
-                  className="mx-3 mt-2 mb-3"
-                  style={{ height: 1, background: 'linear-gradient(90deg, rgba(167,139,250,0.4), transparent)' }}
-                />
-              )}
-            </div>
-          )
-        })}
+            {!collapsed[group] && (
+              <div className="space-y-0.5">
+                {items.map(({ to, icon: Icon, label }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    onClick={handleNavClick}
+                    className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                  >
+                    <Icon size={16} className="shrink-0" />
+                    <span className="text-sm">{label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
       </nav>
 
       {/* ── User profile + logout ── */}

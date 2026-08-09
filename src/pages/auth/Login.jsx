@@ -183,11 +183,13 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    setHasError(false)
+setHasError(false)
     const result = await login({ email: form.email, password: form.password })
     if (result.success) {
       toast.success('Welcome back!')
-      navigate('/dashboard')
+      // Platform admins land on the Platform Console; tenant users land on
+      // their tenant dashboard. Same /login flow, different destination.
+      navigate(result.user?.is_platform_admin ? '/platform' : '/dashboard')
     } else {
       setHasError(true)
       toast.error(result.message)

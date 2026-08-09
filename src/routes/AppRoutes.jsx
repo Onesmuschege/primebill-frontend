@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
 import AdminLayout from '../components/layout/AdminLayout'
+import PlatformLayout from '../layouts/PlatformLayout'
 
 // Auth
 import Login from '../pages/auth/Login'
@@ -72,11 +73,15 @@ import AdminUsers from '../pages/admin/AdminUsers'
 import AdminRoles from '../pages/admin/AdminRoles'
 import SystemLogs from '../pages/logs/SystemLogs'
 import Settings from '../pages/settings/Settings'
+import CatalogPage from '../pages/catalog/CatalogPage'
 
 // Platform (cross-tenant PrimeBill-operator view)
 import PlatformDashboard from '../pages/platform/PlatformDashboard'
+import PlatformTenants from '../pages/platform/PlatformTenants'
+import PlatformTenantDetail from '../pages/platform/PlatformTenantDetail'
 import PlatformSubscriptions from '../pages/platform/PlatformSubscriptions'
 import PlatformSubscriptionAnalytics from '../pages/platform/PlatformSubscriptionAnalytics'
+import PlatformAuditLog from '../pages/platform/PlatformAuditLog'
 
 // Public Portal
 import CaptivePortal from '../pages/portal/CaptivePortal'
@@ -162,40 +167,50 @@ export default function AppRoutes() {
         <Route path="/admin/roles" element={<AdminRoles />} />
         <Route path="/logs" element={<SystemLogs />} />
         <Route path="/settings" element={<Settings />} />
+        <Route
+          path="/catalog"
+          element={
+            <ProtectedRoute minimumRole="admin">
+              <CatalogPage />
+            </ProtectedRoute>
+          }
+        />
 
-        {/* Platform — cross-tenant PrimeBill-operator view. Wrapped in its
-            OWN ProtectedRoute with requirePlatformAdmin, nested inside the
-            outer auth-only guard above. The outer guard only checks that
-            someone is logged in; this inner one additionally checks
-            users.is_platform_admin before rendering. Anyone logged in but
-            not a platform admin is bounced to /unauthorized. */}
-<Route
-          path="/platform"
-          element={
-            <ProtectedRoute requirePlatformAdmin>
-              <PlatformDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/platform/subscriptions"
-          element={
-            <ProtectedRoute requirePlatformAdmin>
-              <PlatformSubscriptions />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/platform/analytics"
-          element={
-            <ProtectedRoute requirePlatformAdmin>
-              <PlatformSubscriptionAnalytics />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/platform" element={<Navigate to="/platform" replace />} />
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Route>
+
+      {/* PLATFORM CONSOLE — a dedicated shell OUTSIDE the tenant AdminLayout.
+          Requires auth AND users.is_platform_admin (requirePlatformAdmin).
+          Platform admins are PrimeBill's own cross-tenant operators — they
+          never use the tenant sidebar. Every /platform/* route lives here,
+          behind both the Sanctum (`auth`) guard enforced by the backend's
+          platform_admin middleware AND the client-side platform-admin guard. */}
+      <Route
+        element={
+          <ProtectedRoute requirePlatformAdmin>
+            <PlatformLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="/platform" element={<PlatformDashboard />} />
+        <Route path="/platform/tenants" element={<PlatformTenants />} />
+        <Route path="/platform/tenants/:id" element={<PlatformTenantDetail />} />
+        <Route path="/platform/subscriptions" element={<PlatformSubscriptions />} />
+        {/* Reuses PlatformSubscriptionAnalytics for the platform analytics IA. */}
+        <Route path="/platform/analytics" element={<PlatformSubscriptionAnalytics />} />
+        <Route path="/platform/audit-log" element={<PlatformAuditLog />} />
+
+        {/* New-scope placeholder areas — Security Center & System Health are
+            not yet implemented. PlatformLayout detects these paths and renders
+            a clearly-marked placeholder instead of a fabricated page. */}
+        <Route path="/platform/security" element={<PlatformDashboard />} />
+        <Route path="/platform/system" element={<PlatformDashboard />} />
+
+        {/* Platform catch-all — never fall through to the tenant catch-all. */}
+        <Route path="*" element={<Navigate to="/platform" replace />} />
       </Route>
     </Routes>
   )

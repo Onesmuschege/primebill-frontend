@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import TopNav from './TopNav'
+import ImpersonationBanner from './ImpersonationBanner'
 
 const pageTitles = {
   '/dashboard':   'Dashboard',
@@ -27,7 +28,6 @@ const pageTitles = {
   '/admin/roles': 'Roles & Permissions',
   '/logs':        'System Logs',
   '/settings':    'Settings',
-  '/platform':    'Platform Admin',
 }
 
 export default function AdminLayout() {
@@ -52,7 +52,8 @@ export default function AdminLayout() {
 
       {/* Content — lg:ml-64 compensates for the fixed sidebar width */}
       <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
-        <TopNav title={title} onMenuClick={() => setSidebarOpen(true)} />
+<TopNav title={title} onMenuClick={() => setSidebarOpen(true)} />
+        <ImpersonationBanner />
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
           <Outlet />
         </main>

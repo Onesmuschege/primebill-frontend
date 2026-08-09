@@ -2,15 +2,31 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { login as loginApi, logout as logoutApi, registerTenant as registerTenantApi } from '../api/auth.api'
+import { impersonateTenant, endImpersonation as endImpersonationApi } from '../api/platform.api'
 import { SESSION_EXPIRED_EVENT } from '../api/axiosInstance'
 
 const AuthContext = createContext(null)
+
+// Impersonation is stored per-key in localStorage so it survives SPA reloads.
+const IMP_KEY = 'pb-impersonation'
+const ORIG_TOKEN_KEY = 'pb-original-token'
 
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(() => JSON.parse(localStorage.getItem('user')))
   const [token, setToken]     = useState(() => localStorage.getItem('token'))
   const [loading, setLoading] = useState(false)
   const navigate              = useNavigate()
+
+  // ---------------------------------------------------------------------------
+  // Impersonation state — a platform admin temporarily assumes a tenant admin's
+  // identity. We keep the ORIGINAL platform token + user separately so we can
+  // switch back trivially. While impersonating, the AuthContext exposes the
+  // tenant admin's user so the tenant app renders & authorises correctly, and
+  // the PlatformLayout/Tenant shell shows a persistent "Impersonating" banner.
+  // ---------------------------------------------------------------------------
+  const [impersonation, setImpersonation] = useState(() => JSON.parse(localStorage.getItem(IMP_KEY)))
+  const [originalUser, setOriginalUser]   = useState(() => JSON.parse(localStorage.getItem('pb-original-user')))
+  const [originalToken, setOriginalToken] = useState(() => localStorage.getItem(ORIG_TOKEN_KEY))
 
   // ---------------------------------------------------------------------------
   // clearSession — single source of truth for wiping auth state.
@@ -20,8 +36,14 @@ export function AuthProvider({ children }) {
   const clearSession = useCallback(() => {
     setUser(null)
     setToken(null)
+    setImpersonation(null)
+    setOriginalUser(null)
+    setOriginalToken(null)
     localStorage.removeItem('user')
     localStorage.removeItem('token')
+    localStorage.removeItem(IMP_KEY)
+    localStorage.removeItem(ORIG_TOKEN_KEY)
+    localStorage.removeItem('pb-original-user')
   }, [])
 
   // ---------------------------------------------------------------------------
@@ -76,7 +98,9 @@ export function AuthProvider({ children }) {
       setToken(token)
       localStorage.setItem('user', JSON.stringify(user))
       localStorage.setItem('token', token)
-      return { success: true }
+      // Return the resolved user so callers can branch on is_platform_admin
+      // (e.g. Login redirects platform admins to /platform, tenants to /dashboard).
+      return { success: true, user }
     } catch (err) {
       // 401 on login means wrong credentials — the Axios interceptor correctly
       // skips session-expiry logic for auth endpoints, so this catch block runs.
@@ -130,6 +154,102 @@ export function AuthProvider({ children }) {
   }, [clearSession, navigate])
 
   // ---------------------------------------------------------------------------
+  // startImpersonation — platform admin enters a tenant context. Calls the
+  // existing platform endpoint (which issues an impersonation token for the
+  // tenant's admin user), swaps the active token/user to that admin, and keeps
+  // the original platform token+user in storage so we can restore on exit.
+  // ---------------------------------------------------------------------------
+  const startImpersonation = useCallback(async (tenantId, tenantName) => {
+    setLoading(true)
+    try {
+      const res = await impersonateTenant(tenantId)
+      const data = res.data.data
+
+      // Keep the original platform identity so we can switch back.
+      setOriginalUser(user)
+      setOriginalToken(token)
+      localStorage.setItem('pb-original-user', JSON.stringify(user))
+      localStorage.setItem(ORIG_TOKEN_KEY, token)
+
+      // Build the tenant-admin user object from the response and switch to it.
+      const admin = data.admin || {}
+      const tenant = data.tenant || { id: tenantId, name: tenantName }
+      const impersonatedUser = {
+        ...user,
+        id: admin.id,
+        name: admin.name,
+        email: admin.email,
+        // Roles are read from the DB server-side for the impersonated admin; we
+        // fall back to a minimal admin flag so the tenant UI authorises correctly.
+        roles: ['admin'],
+        permissions: [],
+        // SECURITY: an impersonated tenant admin must NEVER inherit the
+        // platform-admin flag from the operator who started the session. The
+        // backend also re-checks is_platform_admin on every /api/platform/*
+        // request via the platform_admin middleware, so this is defence in
+        // depth: it also keeps the tenant UI from even attempting /platform
+        // navigation and matches what the impersonated token can actually do.
+        is_platform_admin: false,
+      }
+
+      setUser(impersonatedUser)
+      setToken(data.token)
+      localStorage.setItem('user', JSON.stringify(impersonatedUser))
+      localStorage.setItem('token', data.token)
+
+      const imp = {
+        tenantId: tenant.id,
+        tenantName: tenant.name || tenantName,
+        adminId: admin.id,
+        adminEmail: admin.email,
+      }
+      setImpersonation(imp)
+      localStorage.setItem(IMP_KEY, JSON.stringify(imp))
+
+      toast.success(`Impersonating ${tenant.name || tenantName}`)
+      return { success: true, tenant }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Could not start impersonation')
+      return { success: false, message: err.response?.data?.message || 'Could not start impersonation' }
+    } finally {
+      setLoading(false)
+    }
+  }, [user, token])
+
+  // ---------------------------------------------------------------------------
+  // endImpersonation — platform admin exits the tenant context and returns to
+  // their own platform identity. Restores the original token+user and ends the
+  // impersonation server-side (which also writes the audit trail).
+  // ---------------------------------------------------------------------------
+  const endImpersonation = useCallback(async () => {
+    try {
+      await endImpersonationApi()
+    } catch {
+      // Swallow — we restore locally regardless.
+    }
+
+    // Restore the original platform identity.
+    if (originalToken) {
+      setToken(originalToken)
+      localStorage.setItem('token', originalToken)
+    }
+    if (originalUser) {
+      setUser(originalUser)
+      localStorage.setItem('user', JSON.stringify(originalUser))
+    }
+
+    setImpersonation(null)
+    setOriginalUser(null)
+    setOriginalToken(null)
+    localStorage.removeItem(IMP_KEY)
+    localStorage.removeItem(ORIG_TOKEN_KEY)
+    localStorage.removeItem('pb-original-user')
+
+    toast.success('Impersonation ended')
+    return { success: true }
+  }, [originalToken, originalUser])
+
+  // ---------------------------------------------------------------------------
   // Role and permission helpers
   //
   // hasRole('admin')         — true if user has that exact role
@@ -174,6 +294,9 @@ export function AuthProvider({ children }) {
       login,
       logout,
       registerTenant,
+      impersonation,
+      startImpersonation,
+      endImpersonation,
       hasRole,
       hasPermission,
       isAtLeast,
