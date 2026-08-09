@@ -47,6 +47,9 @@ export const endImpersonation = () => api.post('/platform/impersonate/end')
 // ── Admin User Management ────────────────────────────────────────────────
 export const createTenantAdmin = (id, payload) => api.post(`/platform/tenants/${id}/admin`, payload)
 
+// ── Audit Log ────────────────────────────────────────────────────────────
+export const getPlatformAuditLog = (params) => api.get('/platform/audit-log', { params })
+
 // ── Subscription Management ──────────────────────────────────────────────
 export const getPlatformSubscriptions = () => api.get('/platform/subscriptions')
 export const getSubscriptionStats = () => api.get('/platform/subscription-stats')
