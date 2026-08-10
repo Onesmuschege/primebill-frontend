@@ -62,6 +62,21 @@ import Analytics from '../pages/analytics/Analytics'
 import LoyaltyPoints from '../pages/loyalty/LoyaltyPoints'
 import VoucherList from '../pages/vouchers/VoucherList'
 
+// Network operations (dedicated pages previously missing entirely)
+import IpamPage from '../pages/ipam/IpamPage'
+import IncidentsPage from '../pages/incidents/IncidentsPage'
+
+// Finance / operating costs
+import ExpendituresPage from '../pages/expenditures/ExpendituresPage'
+
+// Security Center (API keys, sessions, login history, security events)
+import SecurityCenter from '../pages/security/SecurityCenter'
+
+// Referrals / Commissions / MFA (expanded backend parity)
+import ReferralsPage from '../pages/referrals/ReferralsPage'
+import CommissionsPage from '../pages/commissions/CommissionsPage'
+import MfaSettings from '../pages/mfa/MfaSettings'
+
 // Leads (CRM)
 import LeadList from '../pages/leads/LeadList'
 import LeadDetail from '../pages/leads/LeadDetail'
@@ -129,6 +144,8 @@ export default function AppRoutes() {
         <Route path="/routers" element={<RouterList />} />
         <Route path="/inventory" element={<InventoryList />} />
         <Route path="/radius" element={<RadiusPage />} />
+        <Route path="/ipam" element={<IpamPage />} />
+        <Route path="/incidents" element={<IncidentsPage />} />
 
 {/* NOC */}
         <Route path="/noc" element={<NocDashboard />} />
@@ -150,6 +167,7 @@ export default function AppRoutes() {
 
         {/* Analytics */}
         <Route path="/finance" element={<FinanceOverview />} />
+        <Route path="/expenditures" element={<ExpendituresPage />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/analytics" element={<Analytics />} />
 
@@ -166,7 +184,11 @@ export default function AppRoutes() {
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/roles" element={<AdminRoles />} />
         <Route path="/logs" element={<SystemLogs />} />
-        <Route path="/settings" element={<Settings />} />
+                <Route path="/settings" element={<Settings />} />
+        <Route path="/security" element={<SecurityCenter />} />
+        <Route path="/referrals" element={<ReferralsPage />} />
+        <Route path="/commissions" element={<CommissionsPage />} />
+        <Route path="/mfa" element={<MfaSettings />} />
         <Route
           path="/catalog"
           element={

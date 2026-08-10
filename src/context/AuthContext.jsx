@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { login as loginApi, logout as logoutApi, registerTenant as registerTenantApi } from '../api/auth.api'
+import { challengeMfa as challengeMfaApi } from '../api/mfa.api'
 import { impersonateTenant, endImpersonation as endImpersonationApi } from '../api/platform.api'
 import { SESSION_EXPIRED_EVENT } from '../api/axiosInstance'
 
@@ -88,12 +89,31 @@ export function AuthProvider({ children }) {
 
   // ---------------------------------------------------------------------------
   // login
+  //
+  // Returns { success:true, user } on a normal login. If the account has MFA
+  // enabled the backend responds with { mfa_required:true, mfa_token, user } and
+  // NO session token — we must NOT accept that as a completed login. Instead we
+  // remember nothing in localStorage, hold the mfa_token in component state, and
+  // return { success:true, mfaRequired:true, mfaToken, mfaUser } so the Login
+  // page can present the code step and then call completeMfaChallenge().
   // ---------------------------------------------------------------------------
   const login = async (credentials) => {
     setLoading(true)
     try {
       const res = await loginApi(credentials)
-      const { user, token } = res.data.data
+      const data = res.data.data
+
+      // MFA-protected account — pause login for the TOTP/backup-code step.
+      if (data.mfa_required === true) {
+        return {
+          success: true,
+          mfaRequired: true,
+          mfaToken: data.mfa_token,
+          mfaUser: data.user,
+        }
+      }
+
+      const { user, token } = data
       setUser(user)
       setToken(token)
       localStorage.setItem('user', JSON.stringify(user))
@@ -112,6 +132,32 @@ export function AuthProvider({ children }) {
       setLoading(false)
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // completeMfaChallenge — finishes an MFA-paused login. Exchanges the short-lived
+  // mfa_token + TOTP/backup code for the real session token, then sets the session
+  // exactly like a normal login (single source of truth: clearSession never
+  // involved, impersonation keys never written).
+  // ---------------------------------------------------------------------------
+  const completeMfaChallenge = useCallback(async (mfaToken, code) => {
+    setLoading(true)
+    try {
+      const res = await challengeMfaApi(mfaToken, code)
+      const { token, user } = res.data
+      setUser(user)
+      setToken(token)
+      localStorage.setItem('user', JSON.stringify(user))
+      localStorage.setItem('token', token)
+      return { success: true, user }
+    } catch (err) {
+      return {
+        success: false,
+        message: err.response?.data?.message || 'Invalid verification code.',
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   // ---------------------------------------------------------------------------
   // registerTenant — ISP self-signup. Same session-setting shape as login,
@@ -292,6 +338,7 @@ export function AuthProvider({ children }) {
       token,
       loading,
       login,
+      completeMfaChallenge,
       logout,
       registerTenant,
       impersonation,

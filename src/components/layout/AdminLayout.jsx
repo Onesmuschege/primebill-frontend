@@ -12,11 +12,14 @@ const pageTitles = {
   '/fup':         'FUP Management',
   '/invoices':    'Invoices',
   '/payments':    'Payments',
+  '/expenditures': 'Expenditures',
   '/tickets':     'Support Tickets',
   '/sms':         'SMS',
   '/routers':     'Routers',
   '/radius':      'RADIUS',
   '/inventory':   'Inventory',
+  '/ipam':        'IP Address Management',
+  '/incidents':   'Network Incidents',
   '/work-orders': 'Field Operations',
   '/subscription/plans': 'Plans & Pricing',
   '/subscription/my':    'My Subscription',
@@ -27,6 +30,7 @@ const pageTitles = {
   '/admin/users': 'Admin Users',
   '/admin/roles': 'Roles & Permissions',
   '/logs':        'System Logs',
+  '/security':    'Security Center',
   '/settings':    'Settings',
 }
 

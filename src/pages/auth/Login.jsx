@@ -167,7 +167,10 @@ export default function Login() {
   const [form, setForm]         = useState({ email: '', password: '', remember: false })
   const [showPass, setShowPass] = useState(false)
   const [hasError, setHasError] = useState(false)
-  const { login, loading }      = useAuth()
+  const [mfaStep, setMfaStep]   = useState(null) // { mfaToken, mfaUser }
+  const [mfaCode, setMfaCode]   = useState('')
+  const [mfaError, setMfaError] = useState(false)
+  const { login, completeMfaChallenge, loading } = useAuth()
   const navigate                = useNavigate()
 
   // FIX 1: force dark mode on this route regardless of stored theme preference,
@@ -183,8 +186,14 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-setHasError(false)
+    setHasError(false)
     const result = await login({ email: form.email, password: form.password })
+    // MFA-protected account — present the TOTP/backup-code step instead of
+    // granting a session. The backend never issued a token yet.
+    if (result.success && result.mfaRequired) {
+      setMfaStep({ mfaToken: result.mfaToken, mfaUser: result.mfaUser })
+      return
+    }
     if (result.success) {
       toast.success('Welcome back!')
       // Platform admins land on the Platform Console; tenant users land on
@@ -192,6 +201,20 @@ setHasError(false)
       navigate(result.user?.is_platform_admin ? '/platform' : '/dashboard')
     } else {
       setHasError(true)
+      toast.error(result.message)
+    }
+  }
+
+  const handleMfaSubmit = async (e) => {
+    e.preventDefault()
+    setMfaError(false)
+    if (!mfaStep) return
+    const result = await completeMfaChallenge(mfaStep.mfaToken, mfaCode)
+    if (result.success) {
+      toast.success('Welcome back!')
+      navigate(result.user?.is_platform_admin ? '/platform' : '/dashboard')
+    } else {
+      setMfaError(true)
       toast.error(result.message)
     }
   }
@@ -361,7 +384,7 @@ setHasError(false)
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit} className={`space-y-4 ${hasError ? 'pb-shake' : ''}`}>
+              <form onSubmit={mfaStep ? handleMfaSubmit : handleSubmit} className={`space-y-4 ${hasError ? 'pb-shake' : ''}`}>
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5"
                     style={{ color: '#64748b' }}>
@@ -452,6 +475,47 @@ setHasError(false)
                   </span>
                 </label>
 
+                {mfaStep && (
+                  <div className="rounded-lg p-4 space-y-3"
+                    style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.18)' }}>
+                    <div className="flex items-center gap-2">
+                      <Shield size={16} style={{ color: '#3b82f6' }} />
+                      <p className="text-sm font-semibold" style={{ color: '#e2e8f0' }}>
+                        Two-factor authentication required
+                      </p>
+                    </div>
+                    <p className="text-xs" style={{ color: '#64748b' }}>
+                      Enter the 6-digit code from your authenticator app, or a backup code, to continue.
+                    </p>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoFocus
+                      value={mfaCode}
+                      onChange={(e) => { setMfaCode(e.target.value); if (mfaError) setMfaError(false) }}
+                      className="input text-center tracking-[0.5em] text-base"
+                      placeholder="______"
+                      maxLength={12}
+                      autoComplete="one-time-code"
+                      aria-invalid={mfaError}
+                      style={mfaError ? { borderColor: 'rgba(239,68,68,0.6)', boxShadow: '0 0 0 3px rgba(239,68,68,0.12)' } : undefined}
+                    />
+                    {mfaError && (
+                      <p className="text-xs" style={{ color: '#f87171' }}>
+                        Invalid verification code. Try again.
+                      </p>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => { setMfaStep(null); setMfaCode(''); setMfaError(false) }}
+                      className="text-xs transition-colors hover:text-blue-300"
+                      style={{ color: '#3b82f6' }}
+                    >
+                      Use a different account
+                    </button>
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   disabled={loading}
@@ -466,11 +530,11 @@ setHasError(false)
                   {loading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Authenticating…</span>
+                      <span>{mfaStep ? 'Verifying…' : 'Authenticating…'}</span>
                     </>
                   ) : (
                     <>
-                      <span>Sign In</span>
+                      <span>{mfaStep ? 'Verify Code' : 'Sign In'}</span>
                       <ArrowRight size={15} />
                     </>
                   )}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import {
@@ -7,6 +7,7 @@ import {
   BarChart2, Settings, LogOut, Shield, Tag, Zap,
   TrendingUp, Gift, ScrollText, UserCog,
   ChevronDown, ChevronRight, X, Radio, Wrench, Activity, Cable, MapPin, Database,
+     Network, AlertTriangle, Receipt, ShieldCheck, Banknote, Key,
 } from 'lucide-react'
 
 const NAV = [
@@ -30,6 +31,7 @@ const NAV = [
     items: [
       { to: '/invoices', icon: FileText,   label: 'Invoices' },
       { to: '/payments', icon: CreditCard, label: 'Payments' },
+      { to: '/expenditures', icon: Receipt, label: 'Expenditures' },
     ],
   },
   {
@@ -44,6 +46,8 @@ group: 'Network',
     items: [
       { to: '/routers',   icon: Router,   label: 'Routers' },
       { to: '/radius',    icon: Radio,    label: 'RADIUS' },
+      { to: '/ipam',      icon: Network,  label: 'IPAM' },
+      { to: '/incidents', icon: AlertTriangle, label: 'Incidents' },
       { to: '/inventory', icon: Package,  label: 'Inventory' },
       { to: '/noc',       icon: Activity, label: 'NOC' },
       { to: '/fiber/olts',icon: Cable,    label: 'Fiber / OLT' },
@@ -67,6 +71,7 @@ group: 'Network',
     group: 'Analytics',
     items: [
       { to: '/finance',   icon: DollarSign, label: 'Finance' },
+      { to: '/commissions', icon: Banknote, label: 'Commissions' },
       { to: '/reports',   icon: BarChart2,  label: 'Reports' },
       { to: '/analytics', icon: TrendingUp, label: 'Analytics' },
     ],
@@ -75,6 +80,7 @@ group: 'Network',
     group: 'Engagement',
     items: [
       { to: '/loyalty', icon: Gift, label: 'Loyalty Points' },
+      { to: '/referrals', icon: Gift, label: 'Referrals' },
     ],
   },
   {
@@ -84,6 +90,8 @@ group: 'Network',
       { to: '/admin/roles', icon: Shield,     label: 'Roles & Permissions' },
       { to: '/logs',        icon: ScrollText, label: 'System Logs' },
       { to: '/settings',    icon: Settings,   label: 'Settings' },
+      { to: '/security',    icon: ShieldCheck, label: 'Security Center' },
+      { to: '/mfa',         icon: Key,        label: 'MFA' },
       { to: '/catalog',     icon: Database,   label: 'Catalog' },
     ],
   },
