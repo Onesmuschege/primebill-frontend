@@ -8,6 +8,7 @@ import {
   TrendingUp, Gift, ScrollText, UserCog,
   ChevronDown, ChevronRight, X, Radio, Wrench, Activity, Cable, MapPin, Database,
      Network, AlertTriangle, Receipt, ShieldCheck, Banknote, Key,
+     ArrowRightLeft,
 } from 'lucide-react'
 
 const NAV = [
@@ -31,6 +32,7 @@ const NAV = [
     items: [
       { to: '/invoices', icon: FileText,   label: 'Invoices' },
       { to: '/payments', icon: CreditCard, label: 'Payments' },
+      { to: '/payment-allocations', icon: ArrowRightLeft, label: 'Allocations' },
       { to: '/expenditures', icon: Receipt, label: 'Expenditures' },
     ],
   },

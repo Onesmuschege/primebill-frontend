@@ -12,6 +12,7 @@ import { clientStatusBadge, invoiceStatusBadge, ticketPriorityColor } from '../.
 import { formatDate, formatDateTime } from '../../utils/formatDate'
 import { formatKES } from '../../utils/formatCurrency'
 import { ArrowLeft, UserX, UserCheck, Edit2, Plus, Wifi, FileText, CreditCard, Ticket } from 'lucide-react'
+import ServiceNetworkActions from '../../components/clients/ServiceNetworkActions'
 import toast from 'react-hot-toast'
 import Spinner from '../../components/common/Spinner'
 
@@ -158,19 +159,24 @@ export default function ClientDetail() {
             <div className="card text-center py-10" style={{ color: 'var(--pb-text-3)' }}>No internet accounts yet.</div>
           )}
           {accounts?.map(acc => (
-            <div key={acc.id} className="card flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.1)' }}>
-                  <Wifi size={18} style={{ color: '#60a5fa' }} />
+            <div key={acc.id} className="card p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(37,99,235,0.1)' }}>
+                    <Wifi size={18} style={{ color: '#60a5fa' }} />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm" style={{ color: 'var(--pb-text-1)' }}>{acc.username}</p>
+                    <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>{acc.type?.toUpperCase()} · {acc.plan?.name}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-sm" style={{ color: 'var(--pb-text-1)' }}>{acc.username}</p>
-                  <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>{acc.type?.toUpperCase()} · {acc.plan?.name}</p>
+                <div className="text-right">
+                  <p className="text-sm font-bold" style={{ color: '#60a5fa' }}>{formatKES(acc.plan?.price)}<span className="text-xs font-normal" style={{ color: 'var(--pb-text-3)' }}>/mo</span></p>
+                  <span className={acc.status === 'active' ? 'badge badge-active' : 'badge badge-suspended'}>{acc.status}</span>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-bold" style={{ color: '#60a5fa' }}>{formatKES(acc.plan?.price)}<span className="text-xs font-normal" style={{ color: 'var(--pb-text-3)' }}>/mo</span></p>
-                <span className={acc.status === 'active' ? 'badge badge-active' : 'badge badge-suspended'}>{acc.status}</span>
+              <div className="mt-3" style={{ borderTop: '1px solid var(--pb-border)', paddingTop: '0.75rem' }}>
+                <ServiceNetworkActions accountId={acc.id} onChanged={() => queryClient.invalidateQueries(['client-accounts', id])} />
               </div>
             </div>
           ))}

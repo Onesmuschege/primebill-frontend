@@ -52,7 +52,12 @@ export default function CatalogPage() {
   const switchGroup = (g) => {
     setGroup(g)
     setSearch('')
-return (
+    setDebouncedSearch('')
+    setPage(1)
+    setDetail(null)
+  }
+
+  return (
     <div className="space-y-6">
       <div className="card">
         <h2 className="text-lg font-semibold mb-3">Catalog / Reference Data</h2>
@@ -178,7 +183,3 @@ return (
     </div>
   )
 }
-    setDebouncedSearch('')
-    setPage(1)
-    setDetail(null)
-  }
