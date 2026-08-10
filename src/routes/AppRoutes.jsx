@@ -200,8 +200,6 @@ export default function AppRoutes() {
           }
         />
 
-        <Route path="/platform" element={<Navigate to="/platform" replace />} />
-
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Route>
