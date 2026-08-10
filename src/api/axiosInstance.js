@@ -35,8 +35,14 @@ export function dispatchSessionExpired() {
 // Request interceptor — attach Bearer token
 // ---------------------------------------------------------------------------
 api.interceptors.request.use((config) => {
+  // Attach the Bearer token from localStorage UNLESS the caller already set an
+  // explicit Authorization header (e.g. the MFA pre-login flow swaps in the
+  // short-lived `mfa_token` for the /mfa/challenge call, and the portal flow
+  // uses a portal cookie/session). Never overwrite a deliberately-provided
+  // credential with a stale localStorage token.
   const token = localStorage.getItem('token')
-  if (token) {
+  const hasExplicitAuth = typeof config.headers?.Authorization === 'string'
+  if (token && !hasExplicitAuth) {
     config.headers.Authorization = `Bearer ${token}`
   }
   return config

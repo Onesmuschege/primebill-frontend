@@ -26,7 +26,7 @@ const logsApi = {
    */
   getLogById: (id) => axiosInstance.get(`/logs/${id}`),
 
-  /**
+    /**
    * Export logs matching the current filters as CSV.
    */
   exportLogs: (params = {}) =>
@@ -34,6 +34,12 @@ const logsApi = {
       params,
       responseType: 'blob',
     }),
+
+  /**
+   * Log volume / breakdown statistics.
+   * Backend: LogController::stats().
+   */
+  getStats: (params = {}) => axiosInstance.get('/logs/stats', { params }),
 };
 
 export default logsApi;
