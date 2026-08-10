@@ -37,9 +37,6 @@ const NAV = [
   {
     group: 'Security & System',
     items: [
-      // New-scope placeholder areas — intentionally NOT implemented yet.
-      // They exist so the Information Architecture is visible, but they are
-      // clearly marked as future capability and route to the platform root.
       { to: '/platform/security', icon: Lock, label: 'Security Center' },
       { to: '/platform/system', icon: Activity, label: 'System Health' },
     ],
@@ -87,8 +84,6 @@ export default function PlatformLayout() {
     if (pathname.startsWith('/platform/system')) return 'System Health'
     return 'Platform Console'
   })()
-
-  const isNewScope = pathname.startsWith('/platform/security') || pathname.startsWith('/platform/system')
 
   return (
     <div
@@ -308,39 +303,9 @@ export default function PlatformLayout() {
 
         {/* Body */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-          {isNewScope ? (
-            <NewScopePlaceholder
-              title={pageTitle}
-              icon={pathname.startsWith('/platform/security') ? Lock : Activity}
-            />
-          ) : (
-            <Outlet />
-          )}
+          <Outlet />
         </main>
       </div>
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────────────────────
-// NewScopePlaceholder — clearly identifies backend capability not yet present,
-// preventing fabricated metrics/controls.
-// ─────────────────────────────────────────────────────────────────────────
-function NewScopePlaceholder({ title, icon: Icon }) {
-  return (
-    <div className="card p-10 text-center">
-      <div
-        className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-        style={{ background: ACCENT_SOFT, border: '1px solid rgba(167,139,250,0.3)' }}
-      >
-        <Icon size={28} style={{ color: ACCENT }} />
-      </div>
-      <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--pb-text-1)' }}>{title}</h3>
-      <p className="text-sm max-w-md mx-auto leading-relaxed" style={{ color: 'var(--pb-text-3)' }}>
-        This area is identified as <strong className="text-purple-300">new scope</strong> — there is no
-        dedicated backend endpoint for it yet. It is intentionally not fabricated. It will
-        be implemented in a later phase once the corresponding platform API is available.
-      </p>
     </div>
   )
 }

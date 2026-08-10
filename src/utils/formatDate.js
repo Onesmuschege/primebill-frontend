@@ -1,3 +1,13 @@
+export const getInitials = (name) => {
+  if (!name) return '?'
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2)
+}
+
 export const formatDate = (date) => {
   if (!date) return 'N/A'
   return new Date(date).toLocaleDateString('en-KE', {

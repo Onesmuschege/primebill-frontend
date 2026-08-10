@@ -99,6 +99,8 @@ import PlatformTenantDetail from '../pages/platform/PlatformTenantDetail'
 import PlatformSubscriptions from '../pages/platform/PlatformSubscriptions'
 import PlatformSubscriptionAnalytics from '../pages/platform/PlatformSubscriptionAnalytics'
 import PlatformAuditLog from '../pages/platform/PlatformAuditLog'
+import PlatformSecurityCenter from '../pages/platform/PlatformSecurityCenter'
+import PlatformSystemHealth from '../pages/platform/PlatformSystemHealth'
 
 // Public Portal
 import CaptivePortal from '../pages/portal/CaptivePortal'
@@ -227,11 +229,8 @@ export default function AppRoutes() {
         <Route path="/platform/analytics" element={<PlatformSubscriptionAnalytics />} />
         <Route path="/platform/audit-log" element={<PlatformAuditLog />} />
 
-        {/* New-scope placeholder areas — Security Center & System Health are
-            not yet implemented. PlatformLayout detects these paths and renders
-            a clearly-marked placeholder instead of a fabricated page. */}
-        <Route path="/platform/security" element={<PlatformDashboard />} />
-        <Route path="/platform/system" element={<PlatformDashboard />} />
+        <Route path="/platform/security" element={<PlatformSecurityCenter />} />
+        <Route path="/platform/system" element={<PlatformSystemHealth />} />
 
         {/* Platform catch-all — never fall through to the tenant catch-all. */}
         <Route path="*" element={<Navigate to="/platform" replace />} />
