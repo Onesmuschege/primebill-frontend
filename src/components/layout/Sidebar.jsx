@@ -60,6 +60,7 @@ group: 'Network',
     group: 'Field Operations',
     items: [
       { to: '/work-orders', icon: Wrench, label: 'Work Orders' },
+      { to: '/work-orders/technicians', icon: Users, label: 'Technicians' },
     ],
   },
   {

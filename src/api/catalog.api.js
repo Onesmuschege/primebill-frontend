@@ -61,3 +61,5 @@ export const listDepartments = (params = {}) => listCatalog('support-catalog', '
 export const listCampaigns = (params = {}) => listCatalog('communications', 'campaigns', params)
 export const listSavedReports = (params = {}) => listCatalog('reporting', 'saved-reports', params)
 export const listDashboards = (params = {}) => listCatalog('reporting', 'dashboards', params)
+export const listTechnicianLocations = (params = {}) => listCatalog('field-ops', 'technician-locations', params)
+export const listTechnicianAvailabilities = (params = {}) => listCatalog('field-ops', 'technician-availabilities', params)

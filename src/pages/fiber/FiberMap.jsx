@@ -65,34 +65,105 @@ export default function FiberMap() {
 
   const openAdd = () => { setForm({}); setShowForm(true) }
 
+  // Field keys/enums below are kept in exact lockstep with the backend's
+  // validation rules (FiberController@routesStore/splittersStore/
+  // cabinetsStore/dpsStore) and each model's $fillable. Laravel's `sometimes`
+  // rule silently drops any key the request doesn't send — so a mismatched
+  // key here isn't a validation error, it's quiet data loss on save.
   const renderFields = () => {
     if (active === 'routes') return (
       <>
         <div><label className="label">Name *</label><input className="input" value={form.name || ''} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-        <div><label className="label">Start Location</label><input className="input" value={form.start_location || ''} onChange={(e) => setForm({ ...form, start_location: e.target.value })} /></div>
-        <div><label className="label">End Location</label><input className="input" value={form.end_location || ''} onChange={(e) => setForm({ ...form, end_location: e.target.value })} /></div>
-        <div><label className="label">Length (m)</label><input type="number" className="input" value={form.length_meters || ''} onChange={(e) => setForm({ ...form, length_meters: Number(e.target.value) })} /></div>
+        <div><label className="label">Source</label><input className="input" value={form.source || ''} onChange={(e) => setForm({ ...form, source: e.target.value })} /></div>
+        <div><label className="label">Destination</label><input className="input" value={form.destination || ''} onChange={(e) => setForm({ ...form, destination: e.target.value })} /></div>
+        <div><label className="label">Length (km)</label><input type="number" step="0.001" className="input" value={form.length_km ?? ''} onChange={(e) => setForm({ ...form, length_km: e.target.value === '' ? '' : Number(e.target.value) })} /></div>
+        <div><label className="label">Cable Type</label><input className="input" value={form.cable_type || ''} onChange={(e) => setForm({ ...form, cable_type: e.target.value })} /></div>
+        <div>
+          <label className="label">Status</label>
+          <select className="input" value={form.status || 'active'} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+            <option value="active">Active</option>
+            <option value="planned">Planned</option>
+            <option value="maintenance">Maintenance</option>
+          </select>
+        </div>
+        <div className="md:col-span-2"><label className="label">Notes</label><input className="input" value={form.notes || ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
       </>
     )
     if (active === 'splitters') return (
       <>
         <div><label className="label">Name *</label><input className="input" value={form.name || ''} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-        <div><label className="label">Ratio</label><input className="input" value={form.ratio || ''} onChange={(e) => setForm({ ...form, ratio: e.target.value })} placeholder="e.g. 1:32" /></div>
+        <div>
+          <label className="label">Split Ratio</label>
+          <select className="input" value={form.split_ratio || ''} onChange={(e) => setForm({ ...form, split_ratio: e.target.value })}>
+            <option value="">—</option>
+            <option value="1:4">1:4</option>
+            <option value="1:8">1:8</option>
+            <option value="1:16">1:16</option>
+            <option value="1:32">1:32</option>
+            <option value="1:64">1:64</option>
+          </select>
+        </div>
         <div><label className="label">Location</label><input className="input" value={form.location || ''} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
+        <div>
+          <label className="label">Status</label>
+          <select className="input" value={form.status || 'active'} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div><label className="label">Latitude</label><input type="number" step="any" className="input" value={form.location_lat ?? ''} onChange={(e) => setForm({ ...form, location_lat: e.target.value === '' ? '' : Number(e.target.value) })} /></div>
+        <div><label className="label">Longitude</label><input type="number" step="any" className="input" value={form.location_lng ?? ''} onChange={(e) => setForm({ ...form, location_lng: e.target.value === '' ? '' : Number(e.target.value) })} /></div>
       </>
     )
     if (active === 'cabinets') return (
       <>
         <div><label className="label">Name *</label><input className="input" value={form.name || ''} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
+        <div>
+          <label className="label">Type</label>
+          <select className="input" value={form.type || ''} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+            <option value="">—</option>
+            <option value="fiber">Fiber</option>
+            <option value="power">Power</option>
+            <option value="distribution">Distribution</option>
+          </select>
+        </div>
         <div><label className="label">Location</label><input className="input" value={form.location || ''} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
         <div><label className="label">Capacity</label><input className="input" value={form.capacity || ''} onChange={(e) => setForm({ ...form, capacity: e.target.value })} /></div>
+        <div>
+          <label className="label">Status</label>
+          <select className="input" value={form.status || 'active'} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div><label className="label">Latitude</label><input type="number" step="any" className="input" value={form.location_lat ?? ''} onChange={(e) => setForm({ ...form, location_lat: e.target.value === '' ? '' : Number(e.target.value) })} /></div>
+        <div><label className="label">Longitude</label><input type="number" step="any" className="input" value={form.location_lng ?? ''} onChange={(e) => setForm({ ...form, location_lng: e.target.value === '' ? '' : Number(e.target.value) })} /></div>
+        <div className="md:col-span-2"><label className="label">Notes</label><input className="input" value={form.notes || ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
       </>
     )
     return (
       <>
         <div><label className="label">Name *</label><input className="input" value={form.name || ''} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></div>
-        <div><label className="label">Location / Address</label><input className="input" value={form.address || ''} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-        <div><label className="label">Ports</label><input type="number" className="input" value={form.port_count || ''} onChange={(e) => setForm({ ...form, port_count: Number(e.target.value) })} /></div>
+        <div>
+          <label className="label">Type</label>
+          <select className="input" value={form.type || ''} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+            <option value="">—</option>
+            <option value="fiber_hub">Fiber Hub</option>
+            <option value="splice_tray">Splice Tray</option>
+            <option value="drop_point">Drop Point</option>
+          </select>
+        </div>
+        <div><label className="label">Location</label><input className="input" value={form.location || ''} onChange={(e) => setForm({ ...form, location: e.target.value })} /></div>
+        <div>
+          <label className="label">Status</label>
+          <select className="input" value={form.status || 'active'} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div><label className="label">Latitude</label><input type="number" step="any" className="input" value={form.location_lat ?? ''} onChange={(e) => setForm({ ...form, location_lat: e.target.value === '' ? '' : Number(e.target.value) })} /></div>
+        <div><label className="label">Longitude</label><input type="number" step="any" className="input" value={form.location_lng ?? ''} onChange={(e) => setForm({ ...form, location_lng: e.target.value === '' ? '' : Number(e.target.value) })} /></div>
+        <div className="md:col-span-2"><label className="label">Notes</label><input className="input" value={form.notes || ''} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></div>
       </>
     )
   }
@@ -102,7 +173,10 @@ export default function FiberMap() {
       <div key={item.id} className="flex items-center justify-between p-3 rounded-lg border">
         <div>
           <p className="font-medium text-sm">{item.name}</p>
-          <p className="text-xs text-gray-500">{item.start_location || '—'} → {item.end_location || '—'} · {item.length_meters || 0}m</p>
+          <p className="text-xs text-gray-500">
+            {item.source || '—'} → {item.destination || '—'} · {item.length_km ?? 0}km
+            {item.cable_type ? ` · ${item.cable_type}` : ''} · {item.status || 'active'}
+          </p>
         </div>
         <button onClick={() => { if (confirm('Delete?')) deleteMutation.mutate({ key: active, id: item.id }) }} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50"><Trash2 size={15} /></button>
       </div>
@@ -111,7 +185,7 @@ export default function FiberMap() {
       <div key={item.id} className="flex items-center justify-between p-3 rounded-lg border">
         <div>
           <p className="font-medium text-sm">{item.name}</p>
-          <p className="text-xs text-gray-500">{item.ratio || '—'} · {item.location || '—'}</p>
+          <p className="text-xs text-gray-500">{item.split_ratio || '—'} · {item.location || '—'} · {item.status || 'active'}</p>
         </div>
         <button onClick={() => { if (confirm('Delete?')) deleteMutation.mutate({ key: active, id: item.id }) }} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50"><Trash2 size={15} /></button>
       </div>
@@ -120,7 +194,9 @@ export default function FiberMap() {
       <div key={item.id} className="flex items-center justify-between p-3 rounded-lg border">
         <div>
           <p className="font-medium text-sm">{item.name}</p>
-          <p className="text-xs text-gray-500">{item.location || '—'} · Capacity {item.capacity || '—'}</p>
+          <p className="text-xs text-gray-500">
+            {item.type ? `${item.type} · ` : ''}{item.location || '—'} · Capacity {item.capacity || '—'} · {item.status || 'active'}
+          </p>
         </div>
         <button onClick={() => { if (confirm('Delete?')) deleteMutation.mutate({ key: active, id: item.id }) }} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50"><Trash2 size={15} /></button>
       </div>
@@ -129,7 +205,9 @@ export default function FiberMap() {
       <div key={item.id} className="flex items-center justify-between p-3 rounded-lg border">
         <div>
           <p className="font-medium text-sm">{item.name}</p>
-          <p className="text-xs text-gray-500">{item.address || '—'} · {item.port_count || 0} ports</p>
+          <p className="text-xs text-gray-500">
+            {item.type ? `${item.type} · ` : ''}{item.location || '—'} · {item.status || 'active'}
+          </p>
         </div>
         <button onClick={() => { if (confirm('Delete?')) deleteMutation.mutate({ key: active, id: item.id }) }} className="p-1.5 rounded-lg text-red-600 hover:bg-red-50"><Trash2 size={15} /></button>
       </div>

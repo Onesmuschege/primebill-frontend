@@ -49,6 +49,7 @@ import FiberMap from '../pages/fiber/FiberMap'
 
 // Field Operations
 import WorkOrdersPage from '../pages/work-orders/WorkOrdersPage'
+import TechniciansPage from '../pages/field-ops/TechniciansPage'
 
 // Subscription (PrimeBill licensing)
 import SubscriptionPage from '../pages/subscription/SubscriptionPage'
@@ -162,6 +163,7 @@ export default function AppRoutes() {
 
         {/* Field Operations */}
         <Route path="/work-orders" element={<WorkOrdersPage />} />
+        <Route path="/work-orders/technicians" element={<TechniciansPage />} />
 
         {/* Subscription (PrimeBill licensing) */}
         <Route path="/subscription/plans" element={<SubscriptionPage />} />
