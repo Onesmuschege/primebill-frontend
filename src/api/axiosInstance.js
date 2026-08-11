@@ -135,20 +135,20 @@ function extractFlatMeta(obj) {
 }
 
 export function unwrapList(response) {
-  const body = response.data
+  const body = response?.data
 
   if (Array.isArray(body)) {
     return { data: body, meta: {} }
   }
 
-  if (Array.isArray(body.data)) {
+  if (body && Array.isArray(body.data)) {
     // body.data is the array itself — meta may be nested on body.meta,
     // or flat directly on body (rare, but handled defensively).
     const meta = body.meta || extractFlatMeta(body) || {}
     return { data: body.data, meta }
   }
 
-  if (body.data && Array.isArray(body.data.data)) {
+  if (body && body.data && Array.isArray(body.data.data)) {
     // body.data is a paginator object — meta may be nested under
     // body.data.meta, or flat on body.data itself (Laravel default).
     const meta = body.data.meta || extractFlatMeta(body.data) || {}

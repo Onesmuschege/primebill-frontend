@@ -53,14 +53,13 @@ export default function PlatformAuditLog() {
   if (filters.date_from) queryParams.date_from = filters.date_from
   if (filters.date_to) queryParams.date_to = filters.date_to
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, isError } = useQuery({
     queryKey: ['platform-audit-log', queryParams, page],
     queryFn: () => getPlatformAuditLog({ ...queryParams, page }).then((r) => r.data.data),
     keepPreviousData: true,
   })
 
-  const logs = unwrapList({ data }).data
-  const meta = unwrapList({ data }).meta
+  const { data: logs = [], meta = {} } = unwrapList({ data })
 
   return (
     <div className="space-y-6">
@@ -124,6 +123,10 @@ export default function PlatformAuditLog() {
       <div className="card p-0 overflow-hidden">
         {isLoading ? (
           <div className="py-16"><Spinner size="md" /></div>
+        ) : isError ? (
+          <div className="py-16 text-sm text-center" style={{ color: 'var(--pb-text-3)' }}>
+            Failed to load audit log. Please try again.
+          </div>
         ) : (
           <>
             <Table

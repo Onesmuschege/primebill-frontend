@@ -57,14 +57,13 @@ export default function PlatformSecurityCenter() {
 
   const securityStats = statsData?.security || {}
 
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading, isFetching, isError } = useQuery({
     queryKey: ['platform-audit-log-security', queryParams, page],
     queryFn: () => getPlatformAuditLog({ ...queryParams, page }).then(r => r.data.data),
     keepPreviousData: true,
   })
 
-  const logs = unwrapList({ data }).data
-  const meta = unwrapList({ data }).meta
+  const { data: logs = [], meta = {} } = unwrapList({ data })
 
   return (
     <div className="space-y-6">
@@ -86,38 +85,42 @@ export default function PlatformSecurityCenter() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="card flex items-center gap-4">
           <div className="p-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.12)' }}>
-            <AlertTriangle size={20} style={{ color: '#f87171' }} />
+            <AlertTriangle size={24} style={{ color: '#f87171' }} />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--pb-text-3)' }}>Security Events</p>
+            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--pb-text-3)' }}>Failed Logins (24h)</p>
             <p className="text-xl font-bold" style={{ color: 'var(--pb-text-1)' }}>
-              {securityStats.security_events_24h ?? 0}
+              {securityStats.failed_logins_today ?? 0}
             </p>
-            <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>Last 24 hours</p>
+            <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>
+              {securityStats.failed_logins_this_week ?? 0} this week
+            </p>
           </div>
         </div>
         <div className="card flex items-center gap-4">
-          <div className="p-3 rounded-xl" style={{ background: 'rgba(37,99,235,0.12)' }}>
-            <KeyRound size={20} style={{ color: '#60a5fa' }} />
+          <div className="p-3 rounded-xl" style={{ background: 'rgba(96,165,250,0.12)' }}>
+            <KeyRound size={24} style={{ color: '#60a5fa' }} />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--pb-text-3)' }}>Failed Logins</p>
+            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--pb-text-3)' }}>Successful Logins (24h)</p>
             <p className="text-xl font-bold" style={{ color: 'var(--pb-text-1)' }}>
-              {securityStats.failed_logins_24h ?? 0}
+              {securityStats.successful_logins_today ?? 0}
             </p>
-            <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>Last 24 hours</p>
+            <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>
+              {securityStats.successful_logins_this_week ?? 0} this week
+            </p>
           </div>
         </div>
         <div className="card flex items-center gap-4">
-          <div className="p-3 rounded-xl" style={{ background: 'rgba(16,185,129,0.12)' }}>
-            <CheckCircle2 size={20} style={{ color: '#34d399' }} />
+          <div className="p-3 rounded-xl" style={{ background: 'rgba(167,139,250,0.12)' }}>
+            <UserCog size={24} style={{ color: '#a78bfa' }} />
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--pb-text-3)' }}>Active Sessions</p>
+            <p className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--pb-text-3)' }}>Platform Admins</p>
             <p className="text-xl font-bold" style={{ color: 'var(--pb-text-1)' }}>
-              {securityStats.active_sessions ?? 0}
+              {securityStats.platform_admins ?? 0}
             </p>
-            <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>Across all tenants</p>
+            <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>Active sessions</p>
           </div>
         </div>
       </div>
@@ -164,6 +167,10 @@ export default function PlatformSecurityCenter() {
       <div className="card p-0 overflow-hidden">
         {isLoading ? (
           <div className="py-16"><Spinner size="md" /></div>
+        ) : isError ? (
+          <div className="py-16 text-sm text-center" style={{ color: 'var(--pb-text-3)' }}>
+            Failed to load security events. Please try again.
+          </div>
         ) : (
           <>
             <Table
