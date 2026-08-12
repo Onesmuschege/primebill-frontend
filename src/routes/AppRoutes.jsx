@@ -34,6 +34,7 @@ import SmsDashboard from '../pages/sms/SmsDashboard'
 // Network
 import RouterList from '../pages/routers/RouterList'
 import InventoryList from '../pages/inventory/InventoryList'
+import RmaBoard from '../pages/inventory/RmaBoard'
 import RadiusPage from '../pages/radius/RadiusPage'
 
 // NOC
@@ -148,6 +149,7 @@ export default function AppRoutes() {
 {/* Network */}
         <Route path="/routers" element={<RouterList />} />
         <Route path="/inventory" element={<InventoryList />} />
+        <Route path="/inventory/rma" element={<RmaBoard />} />
         <Route path="/radius" element={<RadiusPage />} />
         <Route path="/ipam" element={<IpamPage />} />
         <Route path="/incidents" element={<IncidentsPage />} />
