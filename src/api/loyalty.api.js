@@ -38,8 +38,6 @@ export const joinReferral = (data) =>
 export const getReferralStats = () =>
   api.get('/referral/stats')
 
-// Temporary until backend endpoint exists
-export const adjustPoints = () =>
-  Promise.reject(
-    new Error('Adjust Points endpoint has not been implemented on the backend.')
-  )
+// Admin adjustment of a client's loyalty balance (negative = deduct)
+export const adjustPoints = (clientId, data) =>
+  api.post(`/loyalty/${clientId}/adjust`, data)

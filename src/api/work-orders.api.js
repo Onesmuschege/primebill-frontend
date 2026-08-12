@@ -49,3 +49,24 @@ export const getTechnicianWorkload = async (technicianId) => {
   const response = await api.get(`/technicians/${technicianId}/workload`);
   return response.data;
 };
+
+// ── Materials & Evidence (Release 4 — Field Operations) ─────────────────────
+export const getWorkOrderParts = async (workOrderId) => {
+  const response = await api.get(`/work-orders/${workOrderId}/parts`);
+  return response.data;
+};
+
+export const addWorkOrderPart = async (workOrderId, payload) => {
+  const response = await api.post(`/work-orders/${workOrderId}/parts`, payload);
+  return response.data;
+};
+
+export const getWorkOrderAttachments = async (workOrderId) => {
+  const response = await api.get(`/work-orders/${workOrderId}/attachments`);
+  return response.data;
+};
+
+export const addWorkOrderAttachment = async (workOrderId, payload) => {
+  const response = await api.post(`/work-orders/${workOrderId}/attachments`, payload);
+  return response.data;
+};

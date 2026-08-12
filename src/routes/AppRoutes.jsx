@@ -29,6 +29,7 @@ import PaymentAllocationsPage from '../pages/payment-allocations/PaymentAllocati
 // Support
 import TicketList from '../pages/tickets/TicketList'
 import TicketDetail from '../pages/tickets/TicketDetail'
+import TicketBoard from '../pages/tickets/TicketBoard'
 import SmsDashboard from '../pages/sms/SmsDashboard'
 
 // Network
@@ -47,10 +48,12 @@ import NocLinks from '../pages/noc/NocLinks'
 import OltList from '../pages/fiber/OltList'
 import OltDetail from '../pages/fiber/OltDetail'
 import FiberMap from '../pages/fiber/FiberMap'
+import FiberCapacity from '../pages/fiber/FiberCapacity'
 
 // Field Operations
 import WorkOrdersPage from '../pages/work-orders/WorkOrdersPage'
 import TechniciansPage from '../pages/field-ops/TechniciansPage'
+import WorkOrderDetail from '../pages/work-orders/WorkOrderDetail'
 
 // Subscription (PrimeBill licensing)
 import SubscriptionPage from '../pages/subscription/SubscriptionPage'
@@ -68,6 +71,7 @@ import VoucherList from '../pages/vouchers/VoucherList'
 // Network operations (dedicated pages previously missing entirely)
 import IpamPage from '../pages/ipam/IpamPage'
 import IncidentsPage from '../pages/incidents/IncidentsPage'
+import IncidentBoard from '../pages/incidents/IncidentBoard'
 
 // Finance / operating costs
 import ExpendituresPage from '../pages/expenditures/ExpendituresPage'
@@ -143,7 +147,8 @@ export default function AppRoutes() {
 
         {/* Support */}
         <Route path="/tickets" element={<TicketList />} />
-        <Route path="/tickets/:id" element={<TicketDetail />} />
+                <Route path="/tickets/:id" element={<TicketDetail />} />
+        <Route path="/tickets/board" element={<TicketBoard />} />
         <Route path="/sms" element={<SmsDashboard />} />
 
 {/* Network */}
@@ -152,7 +157,8 @@ export default function AppRoutes() {
         <Route path="/inventory/rma" element={<RmaBoard />} />
         <Route path="/radius" element={<RadiusPage />} />
         <Route path="/ipam" element={<IpamPage />} />
-        <Route path="/incidents" element={<IncidentsPage />} />
+                <Route path="/incidents" element={<IncidentsPage />} />
+        <Route path="/incidents/board" element={<IncidentBoard />} />
 
 {/* NOC */}
         <Route path="/noc" element={<NocDashboard />} />
@@ -163,11 +169,13 @@ export default function AppRoutes() {
         {/* Fiber / OLT */}
         <Route path="/fiber/olts" element={<OltList />} />
         <Route path="/fiber/olts/:id" element={<OltDetail />} />
-        <Route path="/fiber/map" element={<FiberMap />} />
+                <Route path="/fiber/map" element={<FiberMap />} />
+        <Route path="/fiber/capacity" element={<FiberCapacity />} />
 
         {/* Field Operations */}
         <Route path="/work-orders" element={<WorkOrdersPage />} />
-        <Route path="/work-orders/technicians" element={<TechniciansPage />} />
+                <Route path="/work-orders/technicians" element={<TechniciansPage />} />
+        <Route path="/work-orders/:id" element={<WorkOrderDetail />} />
 
         {/* Subscription (PrimeBill licensing) */}
         <Route path="/subscription/plans" element={<SubscriptionPage />} />

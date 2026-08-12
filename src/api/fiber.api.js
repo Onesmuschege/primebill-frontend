@@ -37,3 +37,6 @@ export const deleteFiberCabinet = (id) => api.delete(`/fiber/cabinets/${id}`)
 export const getDistributionPoints = (params) => api.get('/fiber/distribution-points', { params })
 export const createDistributionPoint = (data) => api.post('/fiber/distribution-points', data)
 export const deleteDistributionPoint = (id) => api.delete(`/fiber/distribution-points/${id}`)
+
+// ── Fiber Capacity Analytics (Release 4) ─────────────────────────────────────
+export const getFiberCapacity = (params) => api.get('/fiber/capacity', { params })
