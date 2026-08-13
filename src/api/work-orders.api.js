@@ -70,3 +70,16 @@ export const addWorkOrderAttachment = async (workOrderId, payload) => {
   const response = await api.post(`/work-orders/${workOrderId}/attachments`, payload);
   return response.data;
 };
+
+// ── Completion & Verification (Release 4 — closed-loop field ops) ──────────
+export const verifyWorkOrder = async (workOrderId, verificationNotes) => {
+  const response = await api.post(`/work-orders/${workOrderId}/verify`, {
+    verification_notes: verificationNotes,
+  });
+  return response.data;
+};
+
+export const getWorkOrderStatusHistory = async (workOrderId) => {
+  const response = await api.get(`/work-orders/${workOrderId}/status-history`);
+  return response.data;
+};

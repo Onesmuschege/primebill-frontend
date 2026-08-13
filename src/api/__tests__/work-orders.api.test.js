@@ -33,4 +33,16 @@ describe('work-orders api — materials & evidence (Release 4)', () => {
     await wo.addWorkOrderAttachment(9, payload)
     expect(api.post).toHaveBeenCalledWith('/work-orders/9/attachments', payload)
   })
+
+  it('verifies a completed work order via POST /work-orders/:id/verify', async () => {
+    await wo.verifyWorkOrder(12, 'Signal levels OK')
+    expect(api.post).toHaveBeenCalledWith('/work-orders/12/verify', {
+      verification_notes: 'Signal levels OK',
+    })
+  })
+
+  it('fetches the status-history timeline via GET /work-orders/:id/status-history', async () => {
+    await wo.getWorkOrderStatusHistory(12)
+    expect(api.get).toHaveBeenCalledWith('/work-orders/12/status-history')
+  })
 })

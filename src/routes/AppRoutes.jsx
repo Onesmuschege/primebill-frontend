@@ -55,6 +55,14 @@ import WorkOrdersPage from '../pages/work-orders/WorkOrdersPage'
 import TechniciansPage from '../pages/field-ops/TechniciansPage'
 import WorkOrderDetail from '../pages/work-orders/WorkOrderDetail'
 
+// Automation (Release 5 — event-driven OSS/BSS pipeline)
+import AutomationIndex from '../pages/automation/AutomationIndex'
+import AutomationEvents from '../pages/automation/AutomationEvents'
+import AutomationJobs from '../pages/automation/AutomationJobs'
+import AutomationFailures from '../pages/automation/AutomationFailures'
+import AutomationRules from '../pages/automation/AutomationRules'
+import AutomationHistory from '../pages/automation/AutomationHistory'
+
 // Subscription (PrimeBill licensing)
 import SubscriptionPage from '../pages/subscription/SubscriptionPage'
 import TenantSubscriptionPage from '../pages/subscription/TenantSubscriptionPage'
@@ -176,6 +184,14 @@ export default function AppRoutes() {
         <Route path="/work-orders" element={<WorkOrdersPage />} />
                 <Route path="/work-orders/technicians" element={<TechniciansPage />} />
         <Route path="/work-orders/:id" element={<WorkOrderDetail />} />
+
+        {/* Automation (Release 5) */}
+        <Route path="/automation" element={<AutomationIndex />} />
+        <Route path="/automation/events" element={<AutomationEvents />} />
+        <Route path="/automation/jobs" element={<AutomationJobs />} />
+        <Route path="/automation/failures" element={<AutomationFailures />} />
+        <Route path="/automation/rules" element={<AutomationRules />} />
+        <Route path="/automation/history" element={<AutomationHistory />} />
 
         {/* Subscription (PrimeBill licensing) */}
         <Route path="/subscription/plans" element={<SubscriptionPage />} />

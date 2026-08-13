@@ -8,7 +8,7 @@ import {
   TrendingUp, Gift, ScrollText, UserCog,
   ChevronDown, ChevronRight, X, Radio, Wrench, Activity, Cable, MapPin, Database,
      Network, AlertTriangle, Receipt, ShieldCheck, Banknote, Key,
-     ArrowRightLeft,
+     ArrowRightLeft, Bot, Workflow, PlayCircle,
 } from 'lucide-react'
 
 const NAV = [
@@ -61,6 +61,17 @@ group: 'Network',
     items: [
       { to: '/work-orders', icon: Wrench, label: 'Work Orders' },
       { to: '/work-orders/technicians', icon: Users, label: 'Technicians' },
+    ],
+  },
+  {
+    group: 'Automation',
+    items: [
+      { to: '/automation', icon: Bot, label: 'Overview' },
+      { to: '/automation/events', icon: Activity, label: 'Events' },
+      { to: '/automation/jobs', icon: PlayCircle, label: 'Jobs' },
+      { to: '/automation/failures', icon: AlertTriangle, label: 'Failures' },
+      { to: '/automation/rules', icon: Workflow, label: 'Rules & Workflows' },
+      { to: '/automation/history', icon: ScrollText, label: 'Execution History' },
     ],
   },
   {

@@ -19,3 +19,4 @@ export const acknowledgeIncident = (id) => api.post(`/incidents/${id}/acknowledg
 export const resolveIncident = (id, data) => api.post(`/incidents/${id}/resolve`, data)
 export const closeIncident = (id) => api.post(`/incidents/${id}/close`)
 export const updateIncidentStatus = (id, status) => api.post(`/incidents/${id}/status`, { status })
+export const escalateIncident = (id, data) => api.post(`/incidents/${id}/escalate`, data)
