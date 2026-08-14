@@ -1,168 +1,703 @@
 # PrimeBill Frontend
 
-> The admin dashboard, client portal, and public captive-portal for PrimeBill — a multi-tenant ISP billing and network management platform.
+> **PrimeBill Frontend** is the React-based web application for the PrimeBill multi-tenant ISP OSS/BSS platform. It provides tenant administration, client self-service, public captive portal functionality, network/NOC operations, billing, support, CRM, inventory, reporting, security, and PrimeBill platform administration.
 
-![React](https://img.shields.io/badge/React-18.x-blue) ![Vite](https://img.shields.io/badge/Vite-8.x-purple) ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.x-cyan) ![License](https://img.shields.io/badge/License-Proprietary-red)
-
----
-
-## Overview
-
-PrimeBill Frontend is a React SPA that provides:
-- **Tenant Admin Dashboard** — subscriber management, billing, network operations, NOC, fiber/OLT, field operations, CRM, and platform subscription management
-- **Client Portal** — self-service account view, invoices, M-Pesa payments, and tickets
-- **Public Captive Portal** — hotspot plan browsing, payment, and voucher redemption without login
-
-The app talks to the [PrimeBill Laravel API](https://github.com/Onesmuschege/primebill-api) via a token-authenticated Axios client.
+![React](https://img.shields.io/badge/React-18.x-blue)
+![Vite](https://img.shields.io/badge/Vite-8.x-purple)
+![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.x-cyan)
+![TanStack Query](https://img.shields.io/badge/TanStack_Query-5.x-red)
+![License](https://img.shields.io/badge/License-Proprietary-red)
 
 ---
 
-## Features
+# 1. Product Overview
 
-### Admin Dashboard
-- **Real-time Statistics** — Income today/monthly, active users, ticket counts, traffic and top-downloader widgets
-- **Client Management** — Full CRUD, account suspension/activation, notes, tags, custom fields, account/invoice/payment/ticket history per client
-- **Plans & Services** — PPPoE, Hotspot, and Static IP plan cards with FUP, burst, and upload/download speed fields
-- **Vouchers** — Stats cards, status filter, per-row copy/delete, CSV export, and a generate modal (plan/quantity/expiry)
-- **FUP Management** — Throttle event stats, per-account FUP status table, and manual reset action
-- **Invoicing** — Filter by status, record payment inline, bulk-generate, PDF export
-- **Payments** — M-Pesa STK Push, cash, and bank transfer recording with daily summaries and receipts
-- **Ticketing System** — Open/Pending/Solved workflow, threaded replies, assignment, escalate and close actions
-- **SMS Notifications** — Single and bulk SMS composer via Africa's Talking or Hostpinnacle
-- **Router Management** — MikroTik RouterOS API integration with connection test and live session monitoring
-- **RADIUS** — Session/status view wired to the backend RADIUS controller; advanced RADIUS profiles
-- **Loyalty Points** — Client balance display, point history, manual adjust modal, and leaderboard
-- **Analytics** — Monthly revenue bar chart, client growth trend, payment-method breakdown, plan distribution, and finance overview (Recharts)
-- **Admin Users & Roles** — User management and a permission-toggle UI backed by Spatie roles
-- **Network Traffic** — Daily/weekly Tx/Rx graphs per router
-- **Inventory** — Equipment tracking, assignment to clients, low-stock alerts, purchase orders
-- **Finance & Expenditure** — Income vs expenditure summaries, sales commissions
-- **Reports** — Income, clients, invoices, SMS, network, and inventory reports with CSV export
-- **System Logs** — Full audit trail of admin actions with export
-- **Settings** — Company info, M-Pesa credentials, SMS, Email, RADIUS, and system tabs with sensitive-field reveal toggles
-- **Catalog** — Generic REST browser for service catalog, equipment, router config, RADIUS advanced, fiber extensions, inventory extensions, support catalog, communications, customer experience, security, field ops, and reporting resources
+PrimeBill Frontend is the presentation and interaction layer for the PrimeBill backend.
 
-### Client Portal
-- Account status and expiry countdown, balance view
-- Invoice history
-- M-Pesa STK Push self-payment
-- Ticket submission and reply
-- Profile and password management
+It provides three primary experiences:
 
-### Public Captive Portal
-- `/captive/:tenantSlug` route for hotspot users to view plans, check status, pay via M-Pesa, and redeem vouchers — no login required, matching the backend's public `portal/captive/*` endpoints
+1. **Tenant Admin Dashboard**
+2. **Client Portal**
+3. **Public Captive Portal**
 
-### NOC & Fiber
-- **NOC Dashboard** — Overview, devices with metrics, alert management (acknowledge/resolve), and topology links
-- **Fiber / OLT** — OLT list and detail views, fiber route map with splitters, cabinets, and distribution points
-- **Incidents** — Outage and incident management with status tracking
+It also provides a separate **Platform Administration Console** for cross-tenant PrimeBill operations.
 
-### Field Operations
-- **Work Orders** — Stats, list view, technician assignment, and status tracking
+---
+
+# 2. Platform Scope
+
+| Phase | Domain | Frontend Coverage |
+|---|---|---|
+| 01 | Platform | Admin, roles, permissions, tenants, SaaS plans, subscriptions, settings |
+| 02 | Network Foundation | Routers, RADIUS, NOC, OLT, Fiber, ONT, IPAM interfaces |
+| 03 | Customer Foundation | ISP plans, clients, accounts, wallets, enrichment |
+| 04 | Billing | Taxes, discounts, invoices, payments, allocations, ledger, usage, refunds, notes, dunning |
+| 05 | Inventory | Warehouses, suppliers, stock, purchase orders, assignments |
+| 06 | Support | Departments, queues, categories, SLA, KB, tickets, maintenance, work orders |
+| 07 | CRM / Communication | Leads, campaigns, CX, templates, communications, notifications, announcements, webhooks |
+| 08 | Operations | RADIUS sessions, traffic, ONT history/events, SMS logs |
+| 09 | Reporting | Dashboards, saved reports, report schedules |
+| 10 | Security | Security events, devices, login history, MFA recovery |
+
+---
+
+# 3. Frontend Architecture
+
+```mermaid
+flowchart TB
+    USER["Browser User"]
+
+    subgraph APP["PrimeBill React SPA"]
+        ROUTER["React Router"]
+        GUARD["Protected Routes"]
+        LAYOUT["Application Layouts"]
+        PAGES["Feature Pages"]
+        COMPONENTS["Reusable Components"]
+        STATE["Zustand State"]
+        QUERY["TanStack Query"]
+        API["Axios API Client"]
+    end
+
+    subgraph BACKEND["PrimeBill Laravel API"]
+        AUTH["Authentication"]
+        DOMAIN["Domain API"]
+    end
+
+    subgraph SERVICES["External Services"]
+        MPESA["M-Pesa"]
+        SMS["SMS"]
+        NETWORK["Network Infrastructure"]
+    end
+
+    USER --> ROUTER
+    ROUTER --> GUARD
+    GUARD --> LAYOUT
+    LAYOUT --> PAGES
+    PAGES --> COMPONENTS
+    PAGES --> QUERY
+    QUERY --> API
+    STATE --> PAGES
+    API --> AUTH
+    API --> DOMAIN
+    DOMAIN --> MPESA
+    DOMAIN --> SMS
+    DOMAIN --> NETWORK
+```
+
+---
+
+# 4. Application Experiences
+
+```mermaid
+flowchart TB
+    APP["PrimeBill Frontend"]
+
+    ADMIN["Tenant Admin Dashboard"]
+    CLIENT["Client Portal"]
+    CAPTIVE["Public Captive Portal"]
+    PLATFORM["Platform Admin Console"]
+
+    APP --> ADMIN
+    APP --> CLIENT
+    APP --> CAPTIVE
+    APP --> PLATFORM
+
+    ADMIN --> BILLING["Billing"]
+    ADMIN --> NETWORK["Network / NOC"]
+    ADMIN --> CUSTOMER["Customers"]
+    ADMIN --> SUPPORT["Support"]
+    ADMIN --> INVENTORY["Inventory"]
+    ADMIN --> CRM["CRM"]
+    ADMIN --> REPORTING["Reporting"]
+    ADMIN --> SECURITY["Security"]
+
+    CLIENT --> SELF["Self-Service"]
+    CAPTIVE --> HOTSPOT["Hotspot Access"]
+    PLATFORM --> TENANTS["Cross-Tenant Administration"]
+```
+
+---
+
+# 5. Phase 01 — Platform UI
+
+```mermaid
+flowchart TB
+    ADMIN["Platform Admin"]
+    DASH["Platform Dashboard"]
+    TENANTS["Tenants"]
+    SUBS["Subscriptions"]
+    ANALYTICS["Subscription Analytics"]
+    AUDIT["Platform Audit Log"]
+    CONFIG["Tenant Configuration"]
+
+    ADMIN --> DASH
+    ADMIN --> TENANTS
+    ADMIN --> SUBS
+    ADMIN --> ANALYTICS
+    ADMIN --> AUDIT
+    TENANTS --> CONFIG
+```
+
+Relevant routes include:
+
+| Route | Purpose |
+|---|---|
+| `/platform` | Platform dashboard |
+| `/platform/tenants` | Tenant administration |
+| `/platform/tenants/:id` | Tenant details/configuration |
+| `/platform/subscriptions` | SaaS subscriptions |
+| `/platform/analytics` | Subscription analytics |
+| `/platform/audit-log` | Platform audit log |
+
+---
+
+# 6. Phase 02 — Network Foundation UI
+
+```mermaid
+flowchart TB
+    NETWORK["Network Foundation"]
+
+    ROUTERS["Routers"]
+    RADIUS["RADIUS"]
+    IPAM["IPAM"]
+    NOC["NOC"]
+    OLT["OLT"]
+    FIBER["Fiber"]
+    ONT["ONT"]
+
+    NETWORK --> ROUTERS
+    NETWORK --> RADIUS
+    NETWORK --> IPAM
+    NETWORK --> NOC
+    NETWORK --> OLT
+    NETWORK --> FIBER
+    NETWORK --> ONT
+
+    NOC --> ALERTS["Alerts"]
+    NOC --> DEVICES["Devices"]
+    NOC --> LINKS["Topology Links"]
+    OLT --> PON["PON / ONTs"]
+```
+
+---
+
+# 7. Phase 03 — Customer Foundation UI
+
+```mermaid
+flowchart TB
+    CUSTOMER["Customer Foundation"]
+    PLANS["ISP Plans"]
+    CLIENTS["Clients"]
+    ACCOUNTS["Client Accounts"]
+    WALLET["Wallet"]
+    ENRICH["Client Enrichment"]
+
+    CUSTOMER --> PLANS
+    CUSTOMER --> CLIENTS
+    CLIENTS --> ACCOUNTS
+    CLIENTS --> WALLET
+    CLIENTS --> ENRICH
+    PLANS --> ACCOUNTS
+```
+
+---
+
+# 8. Phase 04 — Billing UI
+
+```mermaid
+flowchart LR
+    BILLING["Billing"]
+    TAX["Taxes"]
+    DISCOUNT["Discounts"]
+    INVOICE["Invoices"]
+    PAYMENT["Payments"]
+    ALLOCATION["Allocations"]
+    LEDGER["Ledger"]
+    USAGE["Usage"]
+    REFUND["Refunds"]
+    NOTES["Credit / Debit Notes"]
+    DUNNING["Dunning"]
+
+    BILLING --> TAX
+    BILLING --> DISCOUNT
+    BILLING --> INVOICE
+    INVOICE --> PAYMENT
+    PAYMENT --> ALLOCATION
+    ALLOCATION --> LEDGER
+    BILLING --> USAGE
+    BILLING --> REFUND
+    BILLING --> NOTES
+    INVOICE --> DUNNING
+```
+
+---
+
+# 9. Phase 05 — Inventory UI
+
+```mermaid
+flowchart TB
+    INVENTORY["Inventory"]
+    WAREHOUSE["Warehouses"]
+    SUPPLIER["Suppliers"]
+    ITEMS["Inventory Items"]
+    MOVEMENTS["Stock Movements"]
+    PO["Purchase Orders"]
+    ASSIGN["Assignments"]
+
+    INVENTORY --> WAREHOUSE
+    INVENTORY --> SUPPLIER
+    INVENTORY --> ITEMS
+    ITEMS --> MOVEMENTS
+    INVENTORY --> PO
+    ITEMS --> ASSIGN
+```
+
+---
+
+# 10. Phase 06 — Support UI
+
+```mermaid
+flowchart TB
+    SUPPORT["Support"]
+    DEPT["Departments"]
+    QUEUE["Queues"]
+    CATEGORY["Categories"]
+    SLA["SLA Policies"]
+    KB["Knowledge Base"]
+    TICKETS["Tickets"]
+    MAINT["Maintenance"]
+    WO["Work Orders"]
+    PARTS["Work Order Parts"]
+
+    SUPPORT --> DEPT
+    SUPPORT --> QUEUE
+    SUPPORT --> CATEGORY
+    SUPPORT --> SLA
+    SUPPORT --> KB
+    SUPPORT --> TICKETS
+    SUPPORT --> MAINT
+    SUPPORT --> WO
+    WO --> PARTS
+```
+
+---
+
+# 11. Phase 07 — CRM / Communication UI
+
+```mermaid
+flowchart TB
+    CRM["CRM / Communication"]
+    LEADS["Leads"]
+    CAMPAIGNS["Campaigns"]
+    CX["Customer Experience"]
+    TEMPLATES["Templates"]
+    LOGS["Communication Logs"]
+    NOTIFICATIONS["Notifications"]
+    ANNOUNCEMENTS["Announcements"]
+    WEBHOOKS["Webhooks"]
+
+    CRM --> LEADS
+    CRM --> CAMPAIGNS
+    CRM --> CX
+    CRM --> TEMPLATES
+    CRM --> LOGS
+    CRM --> NOTIFICATIONS
+    CRM --> ANNOUNCEMENTS
+    CRM --> WEBHOOKS
+```
+
+---
+
+# 12. Phase 08 — Operations UI
+
+```mermaid
+flowchart TB
+    OPERATIONS["Operations"]
+    SESSIONS["RADIUS Sessions"]
+    TRAFFIC["Network Traffic"]
+    SIGNAL["ONT Signal History"]
+    EVENTS["ONT Events"]
+    SMS["SMS Logs"]
+
+    OPERATIONS --> SESSIONS
+    OPERATIONS --> TRAFFIC
+    OPERATIONS --> SIGNAL
+    OPERATIONS --> EVENTS
+    OPERATIONS --> SMS
+```
+
+---
+
+# 13. Phase 09 — Reporting UI
+
+```mermaid
+flowchart TB
+    DATA["Platform Data"]
+
+    DASH["Dashboards"]
+    SAVED["Saved Reports"]
+    SCHEDULED["Report Schedules"]
+
+    DATA --> DASH
+    DATA --> SAVED
+    SAVED --> SCHEDULED
+```
+
+---
+
+# 14. Phase 10 — Security UI
+
+```mermaid
+flowchart TB
+    SECURITY["Security"]
+    EVENTS["Security Events"]
+    DEVICES["User Devices"]
+    LOGINS["Login History"]
+    MFA["MFA"]
+    RECOVERY["Recovery Codes"]
+
+    SECURITY --> EVENTS
+    SECURITY --> DEVICES
+    SECURITY --> LOGINS
+    SECURITY --> MFA
+    MFA --> RECOVERY
+```
+
+---
+
+# 15. Admin Navigation Map
+
+```mermaid
+flowchart LR
+    DASH["Dashboard"]
+    CUSTOMERS["Customers"]
+    BILLING["Billing"]
+    NETWORK["Network"]
+    SUPPORT["Support"]
+    INVENTORY["Inventory"]
+    CRM["CRM"]
+    REPORTS["Reports"]
+    SETTINGS["Settings"]
+
+    DASH --> CUSTOMERS
+    DASH --> BILLING
+    DASH --> NETWORK
+    DASH --> SUPPORT
+    DASH --> INVENTORY
+    DASH --> CRM
+    DASH --> REPORTS
+    DASH --> SETTINGS
+```
+
+---
+
+# 16. Key Admin Features
+
+### Dashboard
+
+- Income today/month
+- Active clients
+- Ticket statistics
+- Network traffic
+- Top downloaders
+- Revenue and growth charts
+
+### Client Management
+
+- Client CRUD
+- Client details
+- Service accounts
+- Account status
+- Notes
+- Tags
+- Custom fields
+- Invoice/payment/ticket history
+
+### Plans & Services
+
+- PPPoE
+- Hotspot
+- Static IP
+- Upload/download speeds
+- FUP
+- Burst profiles
+
+### Vouchers
+
+- Generate batches
+- Plan assignment
+- Expiry
+- Status filtering
+- Copy/delete
+- CSV export
+
+### Billing
+
+- Invoice management
+- Payment recording
+- M-Pesa
+- Cash
+- Bank transfer
+- Bulk invoice generation
+- PDF export
+
+### Network
+
+- Router management
+- MikroTik connection testing
+- RADIUS sessions
+- Network traffic
+- NOC
+- OLTs
+- Fiber
+- ONTs
+
+### Support
+
+- Tickets
+- Replies
+- Assignment
+- Escalation
+- SLA
+- Work orders
+- Technicians
+
+### Inventory
+
+- Stock
+- Low-stock alerts
+- Purchase orders
+- Assignments
+- Returns
 
 ### CRM
-- **Leads** — Lead list and detail, stats, convert to prospect, mark as lost
-- **Prospects** — Sales pipeline with stage advancement, mark won/lost, convert to client
 
-### Platform Subscription (PrimeBill Licensing)
-- **Plans & Pricing** — View available PrimeBill subscription plans
-- **My Subscription** — Current plan, usage, trial/convert/cancel, invoices
-
-### Platform Admin (cross-tenant)
-- **Dashboard** — Cross-tenant stats
-- **Tenants** — Tenant CRUD, configuration (company, branding, localization), lifecycle, quotas, feature flags
-- **Subscriptions** — Platform-level subscription management
-- **Analytics** — Subscription analytics
-- **Audit Log** — Platform-wide audit trail
+- Leads
+- Prospects
+- Pipeline
+- Conversion
+- Campaigns
+- Customer experience
 
 ---
 
-## Tech Stack
+# 17. Client Portal
 
-| Technology | Version | Purpose |
-|---|---|---|
-| **React** | 18 | UI framework |
-| **Vite** | 8 | Build tool & dev server |
-| **TailwindCSS** | 4 | Utility-first styling (`@custom-variant dark` strategy) |
-| **React Router DOM** | 7 | Client-side routing |
-| **TanStack Query** | 5 | Server state management & caching |
-| **Axios** | 1.x | HTTP client with auth interceptors |
-| **Recharts** | 3 | Dashboard charts & graphs |
-| **Zustand** | 5 | Lightweight global state (auth) |
-| **Lucide React** | 1.x | Icon library |
-| **React Hot Toast** | 2.x | Toast notifications |
-| **Lucide React** | 1.x | Icon library |
-| **React Hot Toast** | 2.x | Toast notifications |
+```mermaid
+flowchart TB
+    CLIENT["Client"]
+    LOGIN["Login"]
+    DASH["Client Dashboard"]
+    INVOICES["Invoices"]
+    PAYMENTS["Payments"]
+    TICKETS["Tickets"]
+    PROFILE["Profile"]
 
-Dev tooling includes ESLint 9, Vitest, `@vitest/ui`, Testing Library, and MSW.
-
----
-
-## Project Structure
-
+    CLIENT --> LOGIN
+    LOGIN --> DASH
+    DASH --> INVOICES
+    DASH --> PAYMENTS
+    DASH --> TICKETS
+    DASH --> PROFILE
 ```
+
+Client portal capabilities include:
+
+- Account status
+- Expiry countdown
+- Balance
+- Invoice history
+- M-Pesa self-payment
+- Ticket submission
+- Ticket replies
+- Profile management
+- Password management
+
+---
+
+# 18. Public Captive Portal
+
+Route:
+
+```text
+/captive/:tenantSlug
+```
+
+```mermaid
+sequenceDiagram
+    participant C as Hotspot Client
+    participant UI as Captive Portal
+    participant API as PrimeBill API
+    participant MP as M-Pesa
+    participant R as Network
+
+    C->>UI: Open tenant captive portal
+    UI->>API: Load public plans
+    API-->>UI: Plans / theme / status
+    C->>UI: Select plan
+    UI->>API: Initiate payment
+    API->>MP: STK Push
+    MP-->>C: Payment prompt
+    MP->>API: Callback
+    API->>R: Provision / authorize access
+    API-->>UI: Updated status
+```
+
+Capabilities:
+
+- Public plan browsing
+- Tenant branding
+- Status checking
+- M-Pesa payment
+- Voucher redemption
+- No authenticated admin session required
+
+---
+
+# 19. Authentication Architecture
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant UI as React App
+    participant API as Laravel API
+    participant AUTH as Auth Layer
+
+    U->>UI: Submit credentials
+    UI->>API: Login request
+    API->>AUTH: Authenticate
+    AUTH-->>API: Token / session
+    API-->>UI: Authentication response
+    UI->>UI: Store auth state
+    UI->>API: Authenticated request
+    API-->>UI: Protected response
+```
+
+The Axios client handles:
+
+- Base API URL
+- Bearer token attachment
+- Authentication headers
+- 401 handling
+- Session expiry redirect
+
+---
+
+# 20. API Data Flow
+
+```mermaid
+flowchart LR
+    PAGE["Page"]
+    COMPONENT["Component"]
+    QUERY["TanStack Query"]
+    AXIOS["Axios"]
+    API["Laravel API"]
+    DB["Database"]
+
+    PAGE --> COMPONENT
+    COMPONENT --> QUERY
+    QUERY --> AXIOS
+    AXIOS --> API
+    API --> DB
+    DB --> API
+    API --> AXIOS
+    AXIOS --> QUERY
+    QUERY --> COMPONENT
+```
+
+---
+
+# 21. State Management
+
+```mermaid
+flowchart TB
+    UI["React UI"]
+    AUTH["Zustand Auth State"]
+    SERVER["TanStack Query Server State"]
+    API["Axios API Client"]
+    BACKEND["Laravel API"]
+
+    UI --> AUTH
+    UI --> SERVER
+    SERVER --> API
+    API --> BACKEND
+    BACKEND --> API
+    API --> SERVER
+```
+
+Use:
+
+- **Zustand** for lightweight client/global state.
+- **TanStack Query** for server state, caching and request lifecycle.
+- **Axios** for HTTP communication.
+- React local state for component-specific UI state.
+
+---
+
+# 22. Project Structure
+
+```text
 primebill-frontend/
 ├── src/
-│   ├── api/                     # Axios instance + domain API modules
-│   │   ├── axiosInstance.js     # Base client, auth interceptor, 401 handler
-│   │   ├── catalog.api.js       # Generic REST for catalog domains
+│   ├── api/
+│   │   ├── axiosInstance.js
+│   │   ├── catalog.api.js
 │   │   ├── clients.api.js
 │   │   ├── invoices.api.js
-│   │   ├── platform.api.js      # Cross-tenant platform-admin endpoints
+│   │   ├── platform.api.js
 │   │   ├── subscription.api.js
 │   │   ├── work-orders.api.js
 │   │   └── ...
 │   ├── components/
-│   │   ├── layout/              # AdminLayout, PlatformLayout, Sidebar
-│   │   ├── common/              # Spinner, etc.
-│   │   ├── work-orders/         # WorkOrderList, etc.
-│   │   └── field-operations/    # WorkOrders component
+│   │   ├── layout/
+│   │   ├── common/
+│   │   ├── work-orders/
+│   │   └── field-operations/
 │   ├── contexts/
-│   │   └── AuthContext.jsx      # Auth state, login, logout, permissions
+│   │   └── AuthContext.jsx
 │   ├── layouts/
-│   │   ├── PlatformLayout.jsx   # Platform admin shell
+│   │   ├── PlatformLayout.jsx
 │   │   └── ...
-│   ├── pages/                   # One folder per feature
-│   │   ├── auth/                # Login, TenantSignup, ForgotPassword, ResetPassword, Unauthorized
-│   │   ├── dashboard/           # Dashboard
-│   │   ├── clients/             # ClientList, ClientDetail
-│   │   ├── plans/               # PlanList
-│   │   ├── fup/                 # FupManagement
-│   │   ├── invoices/            # InvoiceList
-│   │   ├── payments/            # PaymentList
-│   │   ├── tickets/             # TicketList, TicketDetail
-│   │   ├── sms/                 # SmsDashboard
-│   │   ├── routers/             # RouterList
-│   │   ├── inventory/           # InventoryList
-│   │   ├── radius/              # RadiusPage
-│   │   ├── noc/                 # NocDashboard, NocDevices, NocAlerts, NocLinks
-│   │   ├── fiber/               # OltList, OltDetail, FiberMap
-│   │   ├── work-orders/         # WorkOrdersPage
-│   │   ├── subscription/        # SubscriptionPage, TenantSubscriptionPage
-│   │   ├── finance/             # FinanceOverview
-│   │   ├── reports/             # Reports
-│   │   ├── analytics/           # Analytics
-│   │   ├── loyalty/             # LoyaltyPoints
-│   │   ├── vouchers/            # VoucherList
-│   │   ├── leads/               # LeadList, LeadDetail
-│   │   ├── prospects/           # ProspectList, ProspectDetail
-│   │   ├── admin/               # AdminUsers, AdminRoles
-│   │   ├── logs/                # SystemLogs
-│   │   ├── settings/            # Settings, RadiusTab
-│   │   ├── catalog/             # CatalogPage
-│   │   ├── portal/              # CaptivePortal (public)
-│   │   └── platform/            # PlatformDashboard, PlatformTenants, PlatformTenantDetail, PlatformSubscriptions, PlatformSubscriptionAnalytics, PlatformAuditLog
+│   ├── pages/
+│   │   ├── auth/
+│   │   ├── dashboard/
+│   │   ├── clients/
+│   │   ├── plans/
+│   │   ├── fup/
+│   │   ├── invoices/
+│   │   ├── payments/
+│   │   ├── tickets/
+│   │   ├── sms/
+│   │   ├── routers/
+│   │   ├── inventory/
+│   │   ├── radius/
+│   │   ├── noc/
+│   │   ├── fiber/
+│   │   ├── work-orders/
+│   │   ├── subscription/
+│   │   ├── finance/
+│   │   ├── reports/
+│   │   ├── analytics/
+│   │   ├── loyalty/
+│   │   ├── vouchers/
+│   │   ├── leads/
+│   │   ├── prospects/
+│   │   ├── admin/
+│   │   ├── logs/
+│   │   ├── settings/
+│   │   ├── catalog/
+│   │   ├── portal/
+│   │   └── platform/
 │   ├── routes/
-│   │   ├── AppRoutes.jsx        # All route definitions
-│   │   └── ProtectedRoute.jsx   # Auth guard + role guard
+│   │   ├── AppRoutes.jsx
+│   │   └── ProtectedRoute.jsx
 │   ├── utils/
-│   │   ├── formatCurrency.js    # KES formatting
-│   │   ├── formatDate.js        # Date & time helpers
-│   │   └── statusColors.js      # Badge color mapping
+│   │   ├── formatCurrency.js
+│   │   ├── formatDate.js
+│   │   └── statusColors.js
 │   ├── App.jsx
-│   ├── index.css                # Tailwind + custom component classes
-│   └── main.jsx                 # App entry point
-│
+│   ├── index.css
+│   └── main.jsx
 ├── index.html
 ├── package.json
 ├── postcss.config.js
@@ -172,205 +707,285 @@ primebill-frontend/
 
 ---
 
-## Prerequisites
+# 23. Technology Stack
 
-- **Node.js** v20.x or higher
-- **npm** v10.x or higher
-- **PrimeBill API** (Laravel backend) running on `http://127.0.0.1:8000`
+| Technology | Version | Purpose |
+|---|---|---|
+| React | 18 | UI framework |
+| Vite | 8 | Build tool |
+| TailwindCSS | 4 | Styling |
+| React Router DOM | 7 | Routing |
+| TanStack Query | 5 | Server state |
+| Axios | 1.x | HTTP client |
+| Recharts | 3 | Charts |
+| Zustand | 5 | Global state |
+| Lucide React | 1.x | Icons |
+| React Hot Toast | 2.x | Notifications |
+| Vitest | Current project version | Testing |
+| Testing Library | Current project version | Component testing |
+| MSW | Current project version | API mocking |
 
 ---
 
-## Getting Started
+# 24. Routes
 
-### 1. Clone the repository
+| Route | Purpose |
+|---|---|
+| `/login` | Login |
+| `/signup` | Tenant signup |
+| `/forgot-password` | Password reset request |
+| `/reset-password` | Password reset |
+| `/unauthorized` | Unauthorized |
+| `/dashboard` | Tenant dashboard |
+| `/clients` | Client list |
+| `/clients/:id` | Client detail |
+| `/plans` | ISP plans |
+| `/vouchers` | Vouchers |
+| `/fup` | FUP management |
+| `/invoices` | Invoices |
+| `/payments` | Payments |
+| `/tickets` | Tickets |
+| `/tickets/:id` | Ticket detail |
+| `/sms` | SMS |
+| `/routers` | Routers |
+| `/radius` | RADIUS |
+| `/inventory` | Inventory |
+| `/noc` | NOC dashboard |
+| `/noc/devices` | NOC devices |
+| `/noc/alerts` | NOC alerts |
+| `/noc/links` | NOC topology |
+| `/fiber/olts` | OLT list |
+| `/fiber/olts/:id` | OLT detail |
+| `/fiber/map` | Fiber map |
+| `/work-orders` | Work orders |
+| `/subscription/plans` | SaaS plans |
+| `/subscription/my` | Current subscription |
+| `/finance` | Finance |
+| `/reports` | Reports |
+| `/analytics` | Analytics |
+| `/loyalty` | Loyalty |
+| `/leads` | Leads |
+| `/leads/:id` | Lead detail |
+| `/prospects` | Prospects |
+| `/prospects/:id` | Prospect detail |
+| `/admin/users` | Admin users |
+| `/admin/roles` | Roles |
+| `/logs` | System logs |
+| `/settings` | Settings |
+| `/catalog` | Catalog |
+| `/captive/:tenantSlug` | Captive portal |
+| `/platform` | Platform dashboard |
+| `/platform/tenants` | Tenants |
+| `/platform/tenants/:id` | Tenant detail |
+| `/platform/subscriptions` | Platform subscriptions |
+| `/platform/analytics` | Platform analytics |
+| `/platform/audit-log` | Platform audit log |
+
+---
+
+# 25. Getting Started
+
+## Requirements
+
+- Node.js 20+
+- npm 10+
+- PrimeBill Laravel API
+
+## Clone
 
 ```bash
 git clone https://github.com/Onesmuschege/primebill-frontend.git
 cd primebill-frontend
 ```
 
-### 2. Install dependencies
+## Install
 
 ```bash
 npm install
 ```
 
-### 3. Configure environment
+## Environment
 
-Create a `.env` file in the project root:
+Create `.env`:
 
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
 ```
 
-`src/api/axiosInstance.js` reads `import.meta.env.VITE_API_BASE_URL`, falling back to `http://127.0.0.1:8000/api` if the variable is unset.
-
-### 4. Start the development server
+## Development
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-### 5. Run tests
-
-```bash
-npm test
-# or
-npm run test:watch
-```
-
-### 6. Default login credentials
-
-After running `php artisan migrate --seed` on the backend, each demo tenant gets 5 staff accounts:
+Default development URL:
 
 ```text
-Tenant: PrimeNet ISP (primenet-isp)
-  Email:    primenet-isp.admin@primebill.test
-  Email:    primenet-isp.staff@primebill.test
-  Email:    primenet-isp.support@primebill.test
-  Email:    primenet-isp.technician@primebill.test
-  Email:    primenet-isp.finance@primebill.test
-  Password: Demo@1234  (set via SEED_DEMO_PASSWORD in backend .env)
-
-Tenant: SwiftLink Communications (swiftlink-communications)
-  Email:    swiftlink-communications.admin@primebill.test
-  Email:    swiftlink-communications.staff@primebill.test
-  Email:    swiftlink-communications.support@primebill.test
-  Email:    swiftlink-communications.technician@primebill.test
-  Email:    swiftlink-communications.finance@primebill.test
-  Password: Demo@1234
-
-Tenant: MetroWave Internet (metrowave-internet)
-  Email:    metrowave-internet.admin@primebill.test
-  Email:    metrowave-internet.staff@primebill.test
-  Email:    metrowave-internet.support@primebill.test
-  Email:    metrowave-internet.technician@primebill.test
-  Email:    metrowave-internet.finance@primebill.test
-  Password: Demo@1234
+http://localhost:5173
 ```
-
-The **Platform Admin** (`is_platform_admin = true`) is NOT seeded automatically. Create it manually after seeding with:
-
-```bash
-php artisan platform:make-admin platform@primebill.co.ke
-```
-
-Change all demo passwords after first login.
 
 ---
 
-## Available Scripts
+# 26. Available Scripts
 
 | Command | Description |
 |---|---|
 | `npm run dev` | Start development server |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build locally |
+| `npm run build` | Production build |
+| `npm run preview` | Preview production build |
 | `npm run lint` | Run ESLint |
-| `npm test` | Run Vitest test suite |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run test:ui` | Open Vitest UI |
-| `npm run coverage` | Generate coverage report |
+| `npm test` | Run tests |
+| `npm run test:watch` | Watch tests |
+| `npm run test:ui` | Vitest UI |
+| `npm run coverage` | Coverage |
 
 ---
 
-## Backend API
+# 27. Demo Authentication
 
-This frontend connects to the **PrimeBill Laravel API**. Make sure the backend is running before starting the frontend.
+After backend seeding:
 
-Backend repository: [github.com/Onesmuschege/primebill-api](https://github.com/Onesmuschege/primebill-api)
+```text
+PrimeNet ISP
+primenet-isp.admin@primebill.test
+primenet-isp.staff@primebill.test
+primenet-isp.support@primebill.test
+primenet-isp.technician@primebill.test
+primenet-isp.finance@primebill.test
 
-The Axios instance is pre-configured with:
-- **Base URL** — `VITE_API_BASE_URL`, defaulting to `http://127.0.0.1:8000/api`
-- **Auth interceptor** — Automatically attaches Bearer token from `localStorage`
-- **401 handler** — Clears token and redirects to login on session expiry
+SwiftLink Communications
+swiftlink-communications.admin@primebill.test
+swiftlink-communications.staff@primebill.test
+swiftlink-communications.support@primebill.test
+swiftlink-communications.technician@primebill.test
+swiftlink-communications.finance@primebill.test
 
----
+MetroWave Internet
+metrowave-internet.admin@primebill.test
+metrowave-internet.staff@primebill.test
+metrowave-internet.support@primebill.test
+metrowave-internet.technician@primebill.test
+metrowave-internet.finance@primebill.test
+```
 
-## Authentication
+Password:
 
-Authentication is handled via **Laravel Sanctum** token-based auth. On login, the token is stored in `localStorage` and automatically attached to all subsequent API requests via the Axios interceptor.
+```text
+Demo@1234
+```
 
-Roles supported (matching the backend's Spatie roles):
-- `super_admin` — Full access to all modules
-- `admin` — Most modules except system settings
-- `staff` — Client management, billing, tickets
-- `client` — Self-service portal only
-
-Platform admins use a separate `is_platform_admin` flag and are routed to the `/platform/*` console.
-
----
-
-## Key Pages
-
-| Route | Page | Description |
-|---|---|---|
-| `/login` | Login | Email + password authentication |
-| `/signup` | Tenant Signup | New tenant registration |
-| `/forgot-password` | Forgot Password | Password reset request |
-| `/reset-password` | Reset Password | Password reset form |
-| `/unauthorized` | Unauthorized | Access denied page |
-| `/dashboard` | Dashboard | Live stats, traffic graphs, top downloaders |
-| `/clients` | Client List | Search, filter, suspend, activate clients |
-| `/clients/:id` | Client Detail | Accounts, invoices, payments, tickets, notes, tags, custom fields |
-| `/plans` | Plans | PPPoE/Hotspot plan cards with pricing |
-| `/vouchers` | Vouchers | Batch generation, stats, redemption, CSV export |
-| `/fup` | FUP Management | Throttle stats, per-account status, manual reset |
-| `/invoices` | Invoices | Filter by status, record payment inline |
-| `/payments` | Payments | Daily summary, M-Pesa/cash breakdown |
-| `/tickets` | Tickets | Priority-coded list with stats |
-| `/tickets/:id` | Ticket Detail | Threaded replies, close/escalate |
-| `/sms` | SMS | Single and bulk SMS composer |
-| `/routers` | Routers | MikroTik connection status & test |
-| `/radius` | RADIUS | Session/status view |
-| `/inventory` | Inventory | Stock management with low-stock alerts, purchase orders |
-| `/noc` | NOC Dashboard | Overview, devices, alerts, topology |
-| `/noc/devices` | NOC Devices | Device list with metrics |
-| `/noc/alerts` | NOC Alerts | Alert list with acknowledge/resolve |
-| `/noc/links` | NOC Links | Topology link management |
-| `/fiber/olts` | OLT List | OLT management |
-| `/fiber/olts/:id` | OLT Detail | OLT detail with PON ports and ONTs |
-| `/fiber/map` | Fiber Map | Fiber infrastructure map |
-| `/work-orders` | Work Orders | Work order stats and list |
-| `/subscription/plans` | Subscription Plans | PrimeBill licensing plans |
-| `/subscription/my` | My Subscription | Current plan, usage, invoices |
-| `/finance` | Finance | Income vs expenditure, net revenue |
-| `/reports` | Reports | Report types with date range filter |
-| `/analytics` | Analytics | Revenue/growth/payment-method/plan-distribution charts |
-| `/loyalty` | Loyalty Points | Client balances, history, leaderboard |
-| `/leads` | Leads | Lead list, stats, convert |
-| `/leads/:id` | Lead Detail | Lead detail with conversion to prospect |
-| `/prospects` | Prospects | Sales pipeline |
-| `/prospects/:id` | Prospect Detail | Prospect detail with stage advancement |
-| `/admin/users` | Admin Users | User management |
-| `/admin/roles` | Admin Roles | Role & permission management |
-| `/logs` | System Logs | Full audit trail with export |
-| `/settings` | Settings | Company, Billing, M-Pesa, SMS, Email, RADIUS, System |
-| `/catalog` | Catalog | Generic REST browser for catalog domains |
-| `/captive/:tenantSlug` | Captive Portal | Public hotspot plan browsing, payment, and voucher redemption |
-| `/platform` | Platform Dashboard | Cross-tenant stats |
-| `/platform/tenants` | Platform Tenants | Tenant management |
-| `/platform/tenants/:id` | Platform Tenant Detail | Tenant config and lifecycle |
-| `/platform/subscriptions` | Platform Subscriptions | Subscription management |
-| `/platform/analytics` | Platform Analytics | Subscription analytics |
-| `/platform/audit-log` | Platform Audit Log | Cross-tenant audit trail |
+Change demo passwords after first login.
 
 ---
 
-## Production Build
+# 28. Frontend ↔ Backend Contract
+
+```mermaid
+flowchart LR
+    UI["React UI"]
+    API_MODULE["Domain API Module"]
+    AXIOS["Axios"]
+    ROUTES["Laravel API Routes"]
+    CONTROLLER["Controller"]
+    SERVICE["Domain Service"]
+    MODEL["Eloquent Model"]
+    DB["Database"]
+
+    UI --> API_MODULE
+    API_MODULE --> AXIOS
+    AXIOS --> ROUTES
+    ROUTES --> CONTROLLER
+    CONTROLLER --> SERVICE
+    SERVICE --> MODEL
+    MODEL --> DB
+```
+
+The frontend should not invent backend capabilities.
+
+Where a backend operation is unavailable, the UI should expose a truthful state such as:
+
+- unavailable
+- not configured
+- coming soon
+- integration required
+- permission denied
+- no data
+
+It should not present a fake successful operation.
+
+---
+
+# 29. UI / UX Principles
+
+PrimeBill's frontend should prioritize:
+
+1. Clear information hierarchy.
+2. Consistent navigation.
+3. Responsive layouts.
+4. Accessible controls.
+5. Consistent status indicators.
+6. Fast feedback after actions.
+7. Loading and empty states.
+8. Error states with actionable messages.
+9. Confirmation for destructive actions.
+10. Tenant-aware data presentation.
+11. Permission-aware navigation.
+12. Professional ISP/OSS/BSS visual language.
+
+---
+
+# 30. Analytics & Visualization
+
+Recharts is used for:
+
+- Revenue trends
+- Client growth
+- Payment-method breakdown
+- Plan distribution
+- Traffic trends
+- Network utilization
+- Financial summaries
+
+```mermaid
+flowchart LR
+    BILLING["Billing"]
+    CUSTOMERS["Customers"]
+    NETWORK["Network"]
+    SUPPORT["Support"]
+    INVENTORY["Inventory"]
+
+    BILLING --> ANALYTICS["Analytics"]
+    CUSTOMERS --> ANALYTICS
+    NETWORK --> ANALYTICS
+    SUPPORT --> ANALYTICS
+    INVENTORY --> ANALYTICS
+
+    ANALYTICS --> CHARTS["Charts"]
+    ANALYTICS --> TABLES["Tables"]
+    ANALYTICS --> KPI["KPIs"]
+```
+
+---
+
+# 31. Production Build
 
 ```bash
 npm run build
 ```
 
-The production-ready files will be in the `dist/` folder. Serve them with Nginx:
+Build output:
+
+```text
+dist/
+```
+
+Example Nginx configuration:
 
 ```nginx
 server {
     listen 80;
     server_name app.primebill.com;
+
     root /var/www/primebill-frontend/dist;
     index index.html;
 
@@ -380,11 +995,15 @@ server {
 }
 ```
 
-Deployment target: **Vercel** (with the backend on Railway) — set `VITE_API_BASE_URL` as a Vercel environment variable pointing at the Railway backend URL.
+The frontend can also be deployed to Vercel or another static hosting provider with:
+
+```env
+VITE_API_BASE_URL=https://your-api-domain.example/api
+```
 
 ---
 
-## Environment Variables
+# 32. Environment Variables
 
 | Variable | Default | Description |
 |---|---|---|
@@ -392,39 +1011,86 @@ Deployment target: **Vercel** (with the backend on Railway) — set `VITE_API_BA
 
 ---
 
-## Known Issues
+# 33. Security Considerations
 
-- **No `.env.example`:** the repo has no committed environment template, so a fresh clone needs `VITE_API_BASE_URL` set manually (see [Getting Started](#getting-started)).
-- **Duplicate FUP page:** `src/pages/fup/FupManagement.jsx` is the one actually routed in `AppRoutes.jsx`; `src/pages/plans/FupManagement.jsx` appears to be a leftover from an earlier route layout and isn't referenced anywhere. Safe to remove once confirmed unused.
-- **Frontend catalog pages are minimal:** the generic `CatalogPage` exists and the backend exposes 12+ catalog domains, but most lack dedicated list/detail pages in the frontend. The `CatalogPage` provides a basic browser.
-- **Platform Security & System Health placeholders:** `/platform/security` and `/platform/system` routes render the dashboard placeholder until those modules are built.
+The frontend must:
 
----
-
-## Contributing
-
-This is a proprietary project. For feature requests or bug reports, please contact the development team.
-
----
-
-## Related Repositories
-
-- **Backend API:** [github.com/Onesmuschege/primebill-api](https://github.com/Onesmuschege/primebill-api)
-- **Frontend:** [github.com/Onesmuschege/primebill-frontend](https://github.com/Onesmuschege/primebill-frontend)
+- Never hard-code production secrets.
+- Never expose M-Pesa consumer secrets.
+- Never expose SMS gateway credentials.
+- Never assume client-side permissions are sufficient.
+- Treat backend authorization as authoritative.
+- Handle expired sessions.
+- Avoid displaying sensitive data unnecessarily.
+- Use HTTPS in production.
+- Validate destructive-action confirmations.
+- Avoid storing unnecessary sensitive information in browser storage.
 
 ---
 
-## License
+# 34. Testing Strategy
 
-Proprietary — All rights reserved. Unauthorized copying, distribution, or use of this software is strictly prohibited.
+```mermaid
+flowchart TB
+    UNIT["Component / Unit Tests"]
+    QUERY["Query / API Tests"]
+    ROUTES["Route / Guard Tests"]
+    E2E["End-to-End Validation"]
+    BUILD["Production Build"]
+
+    UNIT --> QUERY
+    QUERY --> ROUTES
+    ROUTES --> E2E
+    E2E --> BUILD
+```
+
+Recommended validation before release:
+
+```bash
+npm run lint
+npm test
+npm run build
+```
 
 ---
 
-## Author
+# 35. Current Implementation Boundaries
 
-**Onesmus Chege**
-Built for Kenyan ISPs
+Some UI areas may depend on backend capability or external infrastructure.
+
+Examples:
+
+- MikroTik operations require reachable routers.
+- FreeRADIUS operations require RADIUS infrastructure.
+- OLT/ONT telemetry requires supported infrastructure.
+- M-Pesa operations require configured backend credentials.
+- SMS requires an active provider.
+- Platform security/system pages may remain placeholders until their backend/API contracts are complete.
+
+The UI should clearly distinguish implemented functionality from unavailable integrations.
 
 ---
 
-*PrimeBill Frontend — DarkOpsHub*
+# 36. Backend Repository
+
+PrimeBill API:
+
+`https://github.com/Onesmuschege/primebill-api`
+
+Frontend repository:
+
+`https://github.com/Onesmuschege/primebill-frontend`
+
+---
+
+# 37. License
+
+Proprietary — All rights reserved.
+
+Unauthorized copying, distribution, modification, or commercial use is prohibited.
+
+---
+
+## PrimeBill Frontend
+
+**A unified web interface for ISP billing, network operations, customer management and PrimeBill SaaS administration.**
