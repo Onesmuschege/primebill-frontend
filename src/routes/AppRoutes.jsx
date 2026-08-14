@@ -25,6 +25,7 @@ import FupManagement from '../pages/fup/FupManagement'
 import InvoiceList from '../pages/invoices/InvoiceList'
 import PaymentList from '../pages/payments/PaymentList'
 import PaymentAllocationsPage from '../pages/payment-allocations/PaymentAllocationsPage'
+import CollectionsPage from '../pages/collections/CollectionsPage'
 
 // Support
 import TicketList from '../pages/tickets/TicketList'
@@ -152,6 +153,14 @@ export default function AppRoutes() {
         <Route path="/invoices" element={<InvoiceList />} />
         <Route path="/payments" element={<PaymentList />} />
         <Route path="/payment-allocations" element={<PaymentAllocationsPage />} />
+        <Route
+          path="/collections"
+          element={
+            <ProtectedRoute permission="view collections">
+              <CollectionsPage />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Support */}
         <Route path="/tickets" element={<TicketList />} />

@@ -34,6 +34,7 @@ const NAV = [
       { to: '/payments', icon: CreditCard, label: 'Payments' },
       { to: '/payment-allocations', icon: ArrowRightLeft, label: 'Allocations' },
       { to: '/expenditures', icon: Receipt, label: 'Expenditures' },
+      { to: '/collections', icon: Banknote, label: 'Collections' },
     ],
   },
   {

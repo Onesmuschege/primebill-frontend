@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { getTickets, getTicketStats, createTicket } from '../../api/tickets.api'
+import { getTickets, getTicketStats, createTicket, escalateTicket } from '../../api/tickets.api'
 import { getClients } from '../../api/clients.api'
 import Table from '../../components/common/Table'
 import Pagination from '../../components/common/Pagination'
 import Modal from '../../components/common/Modal'
 import { ticketPriorityColor, ticketStatusBadge } from '../../utils/statusColors'
 import { formatDateTime } from '../../utils/formatDate'
-import { Eye, Plus } from 'lucide-react'
+import { Eye, Plus, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const emptyTicket = {
@@ -60,6 +60,15 @@ export default function TicketList() {
     createMutation.mutate(form)
   }
 
+    const escalateMutation = useMutation({
+    mutationFn: (id) => escalateTicket(id),
+    onSuccess: () => {
+      toast.success('Ticket escalated')
+      queryClient.invalidateQueries(['tickets'])
+    },
+    onError: () => toast.error('Failed to escalate'),
+  })
+
   const columns = [
     { key: 'id',         label: '#',        render: (r) => `#${r.id}` },
     { key: 'subject',    label: 'Subject',  render: (r) => <span className="font-medium">{r.subject}</span> },
@@ -72,9 +81,21 @@ export default function TicketList() {
     )},
     { key: 'created_at', label: 'Created',  render: (r) => formatDateTime(r.created_at) },
     { key: 'actions',    label: '',         render: (r) => (
-      <button onClick={() => navigate(`/tickets/${r.id}`)} className="p-1 text-blue-600 hover:bg-blue-50 rounded">
-        <Eye size={16} />
-      </button>
+      <div className="flex items-center gap-1">
+        <button onClick={() => navigate(`/tickets/${r.id}`)} className="p-1 text-blue-600 hover:bg-blue-50 rounded" title="View">
+          <Eye size={16} />
+        </button>
+        {r.status !== 'closed' && (
+          <button
+            onClick={() => escalateMutation.mutate(r.id)}
+            className="p-1 text-orange-600 hover:bg-orange-50 rounded"
+            title="Escalate"
+            disabled={escalateMutation.isPending}
+          >
+            <AlertTriangle size={15} />
+          </button>
+        )}
+      </div>
     )},
   ]
 
