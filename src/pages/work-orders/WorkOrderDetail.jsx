@@ -61,17 +61,17 @@ export default function WorkOrderDetail() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{wo?.title || 'Work Order'}</h1>
-          <div className="flex gap-2 items-center mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--pb-text-1)' }}>{wo?.title || 'Work Order'}</h1>
+          <div className="flex gap-2 items-center mt-1 text-sm" style={{ color: 'var(--pb-text-2)' }}>
             <Badge label={wo?.status} variant={sv[wo?.status] || 'inactive'} />
             {wo?.verified_at && <Badge label="verified" variant="active" />}
             <span>WO #{wo?.work_order_number} · {wo?.priority} priority</span>
           </div>
         </div>
-        <nav className="flex bg-gray-100 p-1 rounded-lg">
-          <button onClick={() => setTab('materials')} className={`px-3 py-1 text-sm rounded ${tab === 'materials' ? 'bg-white shadow' : ''}`}>Materials</button>
-          <button onClick={() => setTab('evidence')} className={`px-3 py-1 text-sm rounded ${tab === 'evidence' ? 'bg-white shadow' : ''}`}>Evidence</button>
-          <button onClick={() => setTab('timeline')} className={`px-3 py-1 text-sm rounded ${tab === 'timeline' ? 'bg-white shadow' : ''}`}>Timeline</button>
+        <nav className="flex p-1 rounded-lg" style={{ backgroundColor: 'var(--pb-raised)' }}>
+          <button onClick={() => setTab('materials')} className={`px-3 py-1 text-sm rounded ${tab === 'materials' ? 'shadow' : ''}`} style={tab === 'materials' ? { backgroundColor: 'var(--pb-surface)', color: 'var(--pb-text-1)' } : { color: 'var(--pb-text-2)' }}>Materials</button>
+          <button onClick={() => setTab('evidence')} className={`px-3 py-1 text-sm rounded ${tab === 'evidence' ? 'shadow' : ''}`} style={tab === 'evidence' ? { backgroundColor: 'var(--pb-surface)', color: 'var(--pb-text-1)' } : { color: 'var(--pb-text-2)' }}>Evidence</button>
+          <button onClick={() => setTab('timeline')} className={`px-3 py-1 text-sm rounded ${tab === 'timeline' ? 'shadow' : ''}`} style={tab === 'timeline' ? { backgroundColor: 'var(--pb-surface)', color: 'var(--pb-text-1)' } : { color: 'var(--pb-text-2)' }}>Timeline</button>
         </nav>
 <div className="flex items-center gap-2">
           {wo?.status === 'completed' && !wo?.verified_at && !verifying && (
@@ -86,7 +86,7 @@ export default function WorkOrderDetail() {
                 className="px-3 py-1.5 text-sm font-medium text-white rounded bg-green-600 hover:bg-green-700 disabled:opacity-50">
                 {verify.isPending ? 'Verifying…' : 'Confirm'}
               </button>
-              <button onClick={() => setVerifying(false)} className="px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700">Cancel</button>
+              <button onClick={() => setVerifying(false)} className="px-2 py-1.5 text-sm" style={{ color: 'var(--pb-text-3)' }} onPointerEnter={(e) => e.currentTarget.style.color = 'var(--pb-text-1)'} onPointerLeave={(e) => e.currentTarget.style.color = 'var(--pb-text-3)'}>Cancel</button>
             </div>
           )}
         </div>
@@ -94,8 +94,8 @@ export default function WorkOrderDetail() {
 
       {tab === 'materials' && (
         <div className="grid lg:grid-cols-2 gap-4">
-          <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
-            <h2 className="font-medium">Add material</h2>
+          <div className="rounded-lg border p-4 space-y-3" style={{ backgroundColor: 'var(--pb-surface)', borderColor: 'var(--pb-border)' }}>
+            <h2 className="font-medium" style={{ color: 'var(--pb-text-1)' }}>Add material</h2>
             <div className="grid grid-cols-2 gap-3">
               <input className="input text-sm" placeholder="Part name *" required value={pf.part_name}
                 onChange={(e) => setPf({ ...pf, part_name: e.target.value })} />
@@ -114,16 +114,16 @@ export default function WorkOrderDetail() {
             </button>
           </div>
           <div className="space-y-2">
-            <h2 className="font-medium">Materials ({parts.length})</h2>
+            <h2 className="font-medium" style={{ color: 'var(--pb-text-1)' }}>Materials ({parts.length})</h2>
             {parts.length === 0 ? (
-              <p className="text-sm text-gray-400">No parts recorded yet.</p>
+              <p className="text-sm" style={{ color: 'var(--pb-text-3)' }}>No parts recorded yet.</p>
             ) : parts.map((p) => (
-              <div key={p.id} className="flex justify-between items-center bg-gray-50 rounded p-2 text-sm">
+              <div key={p.id} className="flex justify-between items-center rounded p-2 text-sm" style={{ backgroundColor: 'var(--pb-raised)' }}>
                 <div>
-                  <div className="font-medium">{p.part_name}</div>
-                  <div className="text-xs text-gray-500">{p.part_number} · qty {p.quantity} · {p.status}</div>
+                  <div className="font-medium" style={{ color: 'var(--pb-text-1)' }}>{p.part_name}</div>
+                  <div className="text-xs" style={{ color: 'var(--pb-text-3)' }}>{p.part_number} · qty {p.quantity} · {p.status}</div>
                 </div>
-                {p.unit_cost && <span className="text-xs text-gray-600">${Number(p.unit_cost).toFixed(2)}/ea</span>}
+                {p.unit_cost && <span className="text-xs" style={{ color: 'var(--pb-text-2)' }}>${Number(p.unit_cost).toFixed(2)}/ea</span>}
               </div>
             ))}
           </div>
@@ -132,8 +132,8 @@ export default function WorkOrderDetail() {
 
       {tab === 'evidence' && (
         <div className="grid lg:grid-cols-2 gap-4">
-          <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
-            <h2 className="font-medium">Attach evidence</h2>
+          <div className="rounded-lg border p-4 space-y-3" style={{ backgroundColor: 'var(--pb-surface)', borderColor: 'var(--pb-border)' }}>
+            <h2 className="font-medium" style={{ color: 'var(--pb-text-1)' }}>Attach evidence</h2>
             <div className="grid grid-cols-2 gap-3">
               <input className="input text-sm" placeholder="File name *" required value={af.file_name}
                 onChange={(e) => setAf({ ...af, file_name: e.target.value })} />
@@ -153,15 +153,15 @@ export default function WorkOrderDetail() {
             </button>
           </div>
           <div className="space-y-2">
-            <h2 className="font-medium">Evidence ({atts.length})</h2>
+            <h2 className="font-medium" style={{ color: 'var(--pb-text-1)' }}>Evidence ({atts.length})</h2>
             {atts.length === 0 ? (
-              <p className="text-sm text-gray-400">No evidence attached.</p>
+              <p className="text-sm" style={{ color: 'var(--pb-text-3)' }}>No evidence attached.</p>
             ) : atts.map((a) => (
-              <div key={a.id} className="flex items-center gap-2 bg-gray-50 rounded p-2 text-sm">
-                <span className="text-xs font-medium text-gray-500">{a.category}</span>
+              <div key={a.id} className="flex items-center gap-2 rounded p-2 text-sm" style={{ backgroundColor: 'var(--pb-raised)' }}>
+                <span className="text-xs font-medium" style={{ color: 'var(--pb-text-2)' }}>{a.category}</span>
                 <div className="flex-1">
-                  <div className="font-medium">{a.file_name}</div>
-                  <div className="text-xs text-gray-500">{a.description}</div>
+                  <div className="font-medium" style={{ color: 'var(--pb-text-1)' }}>{a.file_name}</div>
+                  <div className="text-xs" style={{ color: 'var(--pb-text-3)' }}>{a.description}</div>
                 </div>
                 <Badge label={a.category} variant="info" />
               </div>
@@ -171,27 +171,27 @@ export default function WorkOrderDetail() {
       )}
 {tab === 'timeline' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <h2 className="font-medium mb-2">Lifecycle</h2>
-            <p className="text-sm text-gray-600">
+          <div className="rounded-lg border p-4" style={{ backgroundColor: 'var(--pb-surface)', borderColor: 'var(--pb-border)' }}>
+            <h2 className="font-medium mb-2" style={{ color: 'var(--pb-text-1)' }}>Lifecycle</h2>
+            <p className="text-sm" style={{ color: 'var(--pb-text-2)' }}>
               {wo?.status === 'completed' && wo?.verified_at
                 ? `✅ Verified ${new Date(wo.verified_at).toLocaleString()}${wo?.verified_by?.name ? ` by ${wo.verified_by.name}` : ''} — ${wo?.verification_notes || 'no notes'}`
                 : 'This work order is ' + (wo?.status || 'unknown') + (wo?.status === 'completed' ? ' and awaiting verification.' : '.')}
             </p>
           </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <h2 className="font-medium mb-4">Status history ({history.length})</h2>
+          <div className="rounded-lg border p-4" style={{ backgroundColor: 'var(--pb-surface)', borderColor: 'var(--pb-border)' }}>
+            <h2 className="font-medium mb-4" style={{ color: 'var(--pb-text-1)' }}>Status history ({history.length})</h2>
             {history.length === 0 ? (
-              <p className="text-sm text-gray-400">No transitions recorded yet.</p>
+              <p className="text-sm" style={{ color: 'var(--pb-text-3)' }}>No transitions recorded yet.</p>
             ) : (
-              <ol className="relative border-l border-gray-200 ml-2 space-y-5">
+              <ol className="relative border-l ml-2 space-y-5" style={{ borderColor: 'var(--pb-border)' }}>
                 {history.map((h) => (
                   <li key={h.id} className="ml-5">
-                    <span className={`absolute -left-[9px] mt-1 h-4 w-4 rounded-full border-2 border-white ${h.to_status === 'completed' ? 'bg-green-500' : 'bg-blue-500'}`} />
-                    <div className="text-sm font-medium text-gray-800">
+                    <span className={`absolute -left-[9px] mt-1 h-4 w-4 rounded-full border-2 ${h.to_status === 'completed' ? 'bg-green-500' : 'bg-blue-500'}`} style={{ borderColor: 'var(--pb-surface)' }} />
+                    <div className="text-sm font-medium" style={{ color: 'var(--pb-text-1)' }}>
                       {h.from_status || '—'} → {h.to_status}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs" style={{ color: 'var(--pb-text-3)' }}>
                       {h.reason && <span>{h.reason} · </span>}
                       {h.changed_by?.name ? `${h.changed_by.name} · ` : ''}
                       {h.created_at ? new Date(h.created_at).toLocaleString() : ''}

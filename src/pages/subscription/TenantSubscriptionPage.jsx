@@ -1,26 +1,53 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { subscriptionApi } from '../../api/subscription.api';
-import { 
-  CreditCard, 
-  X, 
+import { unwrapList } from '../../api/axiosInstance';
+import {
+  CreditCard,
+  X,
   Loader2,
   ExternalLink
 } from 'lucide-react';
+
+const STATUS_COLORS = {
+  trial:     { fg: '#60a5fa', bg: 'rgba(37,99,235,0.12)' },
+  active:    { fg: '#34d399', bg: 'rgba(16,185,129,0.12)' },
+  past_due:  { fg: '#fbbf24', bg: 'rgba(245,158,11,0.12)' },
+  suspended: { fg: '#f87171', bg: 'rgba(239,68,68,0.12)' },
+  cancelled: { fg: '#94a3b8', bg: 'rgba(148,163,184,0.12)' },
+};
+
+function statusBadge(status) {
+  const s = STATUS_COLORS[status] || STATUS_COLORS.cancelled;
+  return (
+    <span
+      className="inline-block px-3 py-1 rounded-full text-sm font-medium capitalize"
+      style={{ color: s.fg, backgroundColor: s.bg }}
+    >
+      {status?.replace('_', ' ')}
+    </span>
+  );
+}
 
 export default function TenantSubscriptionPage() {
   const queryClient = useQueryClient();
 
   // Fetch current subscription
+  // NOTE: unwrap res.data.data — the Laravel ApiResponse trait wraps every
+  // payload as { success, message, data, errors }, so the real body lives one
+  // level deeper than axios's own response.data (see the same fix applied to
+  // SubscriptionPage.jsx, and the convention used app-wide, e.g. AdminRoles.jsx).
   const { data: currentSub, isLoading } = useQuery({
     queryKey: ['subscription-current'],
-    queryFn: subscriptionApi.getCurrent,
+    queryFn: () => subscriptionApi.getCurrent().then((res) => res.data.data),
   });
 
-  // Fetch invoices
+  // Fetch invoices — this endpoint returns a Laravel paginator inside `data`,
+  // so it needs the shared unwrapList helper (same as every other paginated
+  // list in the app) rather than a plain `.data` read.
   const { data: invoicesData } = useQuery({
     queryKey: ['subscription-invoices'],
-    queryFn: subscriptionApi.getInvoices,
+    queryFn: () => subscriptionApi.getInvoices().then(unwrapList),
   });
 
   // Cancel subscription mutation
@@ -35,8 +62,8 @@ export default function TenantSubscriptionPage() {
     },
   });
 
-  const subscription = currentSub?.data?.subscription;
-  const plan = currentSub?.data?.plan;
+  const subscription = currentSub?.subscription;
+  const plan = currentSub?.plan;
   const invoices = invoicesData?.data || [];
 
   const handleCancel = () => {
@@ -45,21 +72,10 @@ export default function TenantSubscriptionPage() {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'trial': return 'bg-blue-100 text-blue-800';
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'past_due': return 'bg-yellow-100 text-yellow-800';
-      case 'suspended': return 'bg-red-100 text-red-800';
-      case 'cancelled': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-primary-500" />
       </div>
     );
   }
@@ -67,126 +83,152 @@ export default function TenantSubscriptionPage() {
   // No subscription - show plans page link
   if (!subscription) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-4xl mx-auto px-4">
-          <div className="bg-white rounded-lg shadow p-8 text-center">
-            <CreditCard className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">No Active Subscription</h1>
-            <p className="text-gray-600 mb-6">You don't have an active subscription yet.</p>
-            <a
-              href="/subscription/plans"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              View Plans
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          </div>
+      <div className="max-w-4xl mx-auto">
+        <div className="card text-center p-8">
+          <CreditCard className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--pb-text-3)' }} />
+          <h1 className="text-2xl font-bold mb-2" style={{ color: 'var(--pb-text-1)' }}>
+            No Active Subscription
+          </h1>
+          <p className="mb-6" style={{ color: 'var(--pb-text-2)' }}>
+            You don't have an active subscription yet.
+          </p>
+          <a href="/subscription/plans" className="btn-primary inline-flex">
+            View Plans
+            <ExternalLink className="w-4 h-4" />
+          </a>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-4">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Subscription</h1>
-          <p className="text-gray-600">Manage your subscription and billing</p>
+    <div className="max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--pb-text-1)' }}>
+          My Subscription
+        </h1>
+        <p style={{ color: 'var(--pb-text-2)' }}>Manage your subscription and billing</p>
+      </div>
+
+      {/* Subscription Status Card */}
+      <div className="card">
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-semibold mb-1" style={{ color: 'var(--pb-text-1)' }}>
+              {plan?.name}
+            </h2>
+            {statusBadge(subscription.status)}
+          </div>
+          <div className="text-right">
+            <p className="text-3xl font-bold" style={{ color: 'var(--pb-text-1)' }}>
+              ${parseFloat(subscription.price).toFixed(2)}
+            </p>
+            <p style={{ color: 'var(--pb-text-2)' }}>
+              /{subscription.billing_cycle === 'annual' ? 'year' : 'month'}
+            </p>
+          </div>
         </div>
 
-        {/* Subscription Status Card */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-1">{plan?.name}</h2>
-              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(subscription.status)}`}>
-                {subscription.status.replace('_', ' ').toUpperCase()}
-              </span>
-            </div>
-            <div className="text-right">
-              <p className="text-3xl font-bold text-gray-900">${parseFloat(subscription.price).toFixed(2)}</p>
-              <p className="text-gray-600">/{subscription.billing_cycle === 'annual' ? 'year' : 'month'}</p>
-            </div>
+        {/* Subscription Details */}
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div>
+            <p className="text-sm" style={{ color: 'var(--pb-text-2)' }}>Started</p>
+            <p className="font-medium" style={{ color: 'var(--pb-text-1)' }}>
+              {subscription.starts_at ? new Date(subscription.starts_at).toLocaleDateString() : 'N/A'}
+            </p>
           </div>
-
-          {/* Subscription Details */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <p className="text-sm text-gray-600">Started</p>
-              <p className="font-medium">{subscription.starts_at ? new Date(subscription.starts_at).toLocaleDateString() : 'N/A'}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Renews On</p>
-              <p className="font-medium">{subscription.ends_at ? new Date(subscription.ends_at).toLocaleDateString() : 'N/A'}</p>
-            </div>
-            {subscription.trial_ends_at && (
-              <div>
-                <p className="text-sm text-gray-600">Trial Ends</p>
-                <p className="font-medium">{new Date(subscription.trial_ends_at).toLocaleDateString()}</p>
-              </div>
-            )}
-            <div>
-              <p className="text-sm text-gray-600">Billing Cycle</p>
-              <p className="font-medium capitalize">{subscription.billing_cycle}</p>
-            </div>
+          <div>
+            <p className="text-sm" style={{ color: 'var(--pb-text-2)' }}>Renews On</p>
+            <p className="font-medium" style={{ color: 'var(--pb-text-1)' }}>
+              {subscription.ends_at ? new Date(subscription.ends_at).toLocaleDateString() : 'N/A'}
+            </p>
           </div>
-
-          {/* Actions */}
-          {subscription.status === 'trial' && (
-            <div className="border-t border-gray-200 pt-4">
-              <a
-                href="/subscription/plans"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                <CreditCard className="w-4 h-4" />
-                Upgrade to Paid
-              </a>
+          {subscription.trial_ends_at && (
+            <div>
+              <p className="text-sm" style={{ color: 'var(--pb-text-2)' }}>Trial Ends</p>
+              <p className="font-medium" style={{ color: 'var(--pb-text-1)' }}>
+                {new Date(subscription.trial_ends_at).toLocaleDateString()}
+              </p>
             </div>
           )}
-
-          {subscription.status === 'active' && (
-            <div className="border-t border-gray-200 pt-4">
-              <button
-                onClick={handleCancel}
-                disabled={cancelMutation.isPending}
-                className="inline-flex items-center gap-2 px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 disabled:opacity-50"
-              >
-                <X className="w-4 h-4" />
-                Cancel Subscription
-              </button>
-            </div>
-          )}
+          <div>
+            <p className="text-sm" style={{ color: 'var(--pb-text-2)' }}>Billing Cycle</p>
+            <p className="font-medium capitalize" style={{ color: 'var(--pb-text-1)' }}>
+              {subscription.billing_cycle}
+            </p>
+          </div>
         </div>
 
-        {/* Recent Invoices */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Invoices</h3>
-          {invoices.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No invoices yet</p>
-          ) : (
-            <div className="space-y-3">
-              {invoices.slice(0, 5).map((invoice) => (
-                <div key={invoice.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                  <div>
-                    <p className="font-medium text-gray-900">{invoice.invoice_number}</p>
-                    <p className="text-sm text-gray-600">
-                      {new Date(invoice.issue_date).toLocaleDateString()} - Due: {new Date(invoice.due_date).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">${parseFloat(invoice.total).toFixed(2)}</p>
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                      invoice.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {invoice.status.toUpperCase()}
-                    </span>
-                  </div>
+        {/* Actions */}
+        {subscription.status === 'trial' && (
+          <div className="pt-4" style={{ borderTop: '1px solid var(--pb-border)' }}>
+            <a href="/subscription/plans" className="btn-primary inline-flex">
+              <CreditCard className="w-4 h-4" />
+              Upgrade to Paid
+            </a>
+          </div>
+        )}
+
+        {subscription.status === 'active' && (
+          <div className="pt-4" style={{ borderTop: '1px solid var(--pb-border)' }}>
+            <button
+              onClick={handleCancel}
+              disabled={cancelMutation.isPending}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
+              style={{ border: '1px solid rgba(239,68,68,0.4)', color: '#f87171' }}
+            >
+              <X className="w-4 h-4" />
+              Cancel Subscription
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Recent Invoices */}
+      <div className="card">
+        <h3 className="text-lg font-semibold mb-4" style={{ color: 'var(--pb-text-1)' }}>
+          Recent Invoices
+        </h3>
+        {invoices.length === 0 ? (
+          <p className="text-center py-8" style={{ color: 'var(--pb-text-3)' }}>
+            No invoices yet
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {invoices.slice(0, 5).map((invoice) => (
+              <div
+                key={invoice.id}
+                className="flex items-center justify-between p-4 rounded-lg"
+                style={{ border: '1px solid var(--pb-border)' }}
+              >
+                <div>
+                  <p className="font-medium" style={{ color: 'var(--pb-text-1)' }}>
+                    {invoice.invoice_number}
+                  </p>
+                  <p className="text-sm" style={{ color: 'var(--pb-text-2)' }}>
+                    {new Date(invoice.issue_date).toLocaleDateString()} - Due: {new Date(invoice.due_date).toLocaleDateString()}
+                  </p>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <div className="text-right">
+                  <p className="font-semibold" style={{ color: 'var(--pb-text-1)' }}>
+                    ${parseFloat(invoice.total).toFixed(2)}
+                  </p>
+                  <span
+                    className="inline-block px-2 py-1 rounded text-xs font-medium"
+                    style={
+                      invoice.status === 'paid'
+                        ? { color: '#34d399', backgroundColor: 'rgba(16,185,129,0.12)' }
+                        : { color: '#fbbf24', backgroundColor: 'rgba(245,158,11,0.12)' }
+                    }
+                  >
+                    {invoice.status.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

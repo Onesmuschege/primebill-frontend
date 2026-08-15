@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { getWorkOrders, getWorkOrderStats } from '../../api/work-orders.api';
 
 export default function WorkOrders({ clientId }) {
   const [workOrders, setWorkOrders] = useState([]);
@@ -12,9 +13,10 @@ export default function WorkOrders({ clientId }) {
 
   const loadData = async () => {
     try {
+      const params = clientId ? { client_id: clientId } : {};
       const [ordersResponse, statsResponse] = await Promise.all([
-        fetch(`/api/work-orders${clientId ? `?client_id=${clientId}` : ''}`).then(r => r.json()),
-        fetch('/api/work-orders/stats').then(r => r.json()),
+        getWorkOrders(params),
+        getWorkOrderStats(),
       ]);
       setWorkOrders(ordersResponse.data || []);
       setStats(statsResponse.data || null);
@@ -47,27 +49,27 @@ export default function WorkOrders({ clientId }) {
   };
 
   if (loading) {
-    return <div className="flex justify-center py-4">Loading work orders...</div>;
+    return <div className="flex justify-center py-4" style={{ color: 'var(--pb-text-3)' }}>Loading work orders...</div>;
   }
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Work Orders</h3>
+        <h3 className="text-lg font-semibold" style={{ color: 'var(--pb-text-1)' }}>Work Orders</h3>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="btn-secondary"
         >
           Create Work Order
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-600">Work order form would go here</p>
+        <div className="card">
+          <p className="text-sm" style={{ color: 'var(--pb-text-2)' }}>Work order form would go here</p>
           <button
             onClick={() => setShowForm(false)}
-            className="mt-2 px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+            className="btn-secondary mt-2"
           >
             Cancel
           </button>
@@ -76,35 +78,35 @@ export default function WorkOrders({ clientId }) {
 
       {stats && (
         <div className="grid grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-lg border">
-            <div className="text-2xl font-bold">{stats.total || 0}</div>
-            <div className="text-sm text-gray-600">Total</div>
+          <div className="card">
+            <div className="text-2xl font-bold" style={{ color: 'var(--pb-text-1)' }}>{stats.total || 0}</div>
+            <div className="text-sm" style={{ color: 'var(--pb-text-2)' }}>Total</div>
           </div>
-          <div className="bg-white p-4 rounded-lg border">
-            <div className="text-2xl font-bold">{stats.scheduled || 0}</div>
-            <div className="text-sm text-gray-600">Scheduled</div>
+          <div className="card">
+            <div className="text-2xl font-bold" style={{ color: 'var(--pb-text-1)' }}>{stats.scheduled || 0}</div>
+            <div className="text-sm" style={{ color: 'var(--pb-text-2)' }}>Scheduled</div>
           </div>
-          <div className="bg-white p-4 rounded-lg border">
-            <div className="text-2xl font-bold">{stats.in_progress || 0}</div>
-            <div className="text-sm text-gray-600">In Progress</div>
+          <div className="card">
+            <div className="text-2xl font-bold" style={{ color: 'var(--pb-text-1)' }}>{stats.in_progress || 0}</div>
+            <div className="text-sm" style={{ color: 'var(--pb-text-2)' }}>In Progress</div>
           </div>
-          <div className="bg-white p-4 rounded-lg border">
-            <div className="text-2xl font-bold">{stats.completed_today || 0}</div>
-            <div className="text-sm text-gray-600">Completed Today</div>
+          <div className="card">
+            <div className="text-2xl font-bold" style={{ color: 'var(--pb-text-1)' }}>{stats.completed_today || 0}</div>
+            <div className="text-sm" style={{ color: 'var(--pb-text-2)' }}>Completed Today</div>
           </div>
         </div>
       )}
 
       <div className="space-y-2">
         {workOrders.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">No work orders found</p>
+          <p className="text-center py-4" style={{ color: 'var(--pb-text-2)' }}>No work orders found</p>
         ) : (
           workOrders.map((order) => (
-            <div key={order.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div key={order.id} className="card card-hover">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="font-mono text-sm text-gray-600">{order.work_order_number}</span>
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <span className="font-mono text-sm" style={{ color: 'var(--pb-text-2)' }}>{order.work_order_number}</span>
                     <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(order.status)}`}>
                       {order.status.replace('_', ' ')}
                     </span>
@@ -112,8 +114,8 @@ export default function WorkOrders({ clientId }) {
                       {order.priority}
                     </span>
                   </div>
-                  <p className="text-gray-800 font-medium">{order.description}</p>
-                  <div className="mt-2 text-sm text-gray-500">
+                  <p className="font-medium" style={{ color: 'var(--pb-text-1)' }}>{order.description}</p>
+                  <div className="mt-2 text-sm" style={{ color: 'var(--pb-text-3)' }}>
                     <span className="capitalize">{order.type}</span>
                     {order.scheduled_at && (
                       <span> • Scheduled: {new Date(order.scheduled_at).toLocaleDateString()}</span>

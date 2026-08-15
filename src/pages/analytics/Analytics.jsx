@@ -66,6 +66,7 @@ export default function Analytics() {
               tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
             <Tooltip
               formatter={v => KES(v)}
+              cursor={{ fill: 'rgba(37,99,235,0.08)' }}
               contentStyle={{
                 background: 'var(--pb-surface)',
                 border: '1px solid var(--pb-border)',
@@ -134,7 +135,7 @@ export default function Analytics() {
             <XAxis type="number" tick={{ fontSize: 11, fill: 'currentColor' }}
               tickFormatter={v => `${(v/1000).toFixed(0)}k`} />
             <YAxis type="category" dataKey="method" tick={{ fontSize: 11, fill: 'currentColor' }} />
-            <Tooltip formatter={v => KES(v)} contentStyle={{
+            <Tooltip formatter={v => KES(v)} cursor={{ fill: 'rgba(37,99,235,0.08)' }} contentStyle={{
               background: 'var(--pb-surface)',
               border: '1px solid var(--pb-border)',
               borderRadius: '8px',

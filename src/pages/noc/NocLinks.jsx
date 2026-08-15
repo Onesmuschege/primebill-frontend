@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getNocLinks, createNocLink, deleteNocLink, getNocDevices } from '../../api/noc.api'
+import { unwrapList } from '../../api/axiosInstance'
 import Modal from '../../components/common/Modal'
 import Spinner from '../../components/common/Spinner'
 import toast from 'react-hot-toast'
@@ -28,12 +29,12 @@ export default function NocLinks() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['noc-links'],
-    queryFn: () => getNocLinks({ per_page: 25 }).then(r => r.data),
+    queryFn: () => getNocLinks({ per_page: 25 }).then(unwrapList),
   })
 
   const { data: devices } = useQuery({
     queryKey: ['noc-devices-all'],
-    queryFn: () => getNocDevices({ per_page: 100 }).then(r => r.data.data),
+    queryFn: () => getNocDevices({ per_page: 100 }).then(unwrapList).then(r => r.data),
   })
 
   const createMutation = useMutation({

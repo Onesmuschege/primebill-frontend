@@ -9,11 +9,11 @@ const variant = { new: 'inactive', open: 'info', in_progress: 'pending', waiting
 
 function Card({ ticket, onChange }) {
   return (
-    <div className="bg-white rounded border border-gray-200 p-2 text-sm">
+    <div className="rounded border p-2 text-sm" style={{ backgroundColor: 'var(--pb-surface)', borderColor: 'var(--pb-border)' }}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="font-medium">#{ticket.id} {ticket.subject}</div>
-          <div className="text-xs text-gray-500">{ticket.assigned_to?.name || 'Unassigned'}</div>
+          <div className="font-medium" style={{ color: 'var(--pb-text-1)' }}>#{ticket.id} {ticket.subject}</div>
+          <div className="text-xs" style={{ color: 'var(--pb-text-3)' }}>{ticket.assigned_to?.name || 'Unassigned'}</div>
         </div>
         <Badge label={ticket.status} variant={variant[ticket.status] || 'inactive'} />
       </div>
@@ -45,14 +45,14 @@ export default function TicketBoard() {
     <div className="space-y-4 overflow-x-auto">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tickets Board</h1>
-          <p className="text-sm text-gray-500">Kanban view of support tickets by status.</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--pb-text-1)' }}>Tickets Board</h1>
+          <p className="text-sm" style={{ color: 'var(--pb-text-2)' }}>Kanban view of support tickets by status.</p>
         </div>
         <Badge label={`${items.length} tickets`} variant="info" />
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {COLUMNS.map((st) => (
-          <div key={st} className="bg-gray-50 rounded-lg border border-gray-200 p-2">
+          <div key={st} className="rounded-lg border p-2" style={{ backgroundColor: 'var(--pb-raised)', borderColor: 'var(--pb-border)' }}>
             <div className="px-2 py-1 font-semibold text-xs uppercase" style={{ color: 'var(--pb-text-3)' }}>{st.replace('_', ' ')}</div>
             <div className="space-y-2 min-h-[60px]">
               {items.filter((t) => t.status === st).map((t) => (

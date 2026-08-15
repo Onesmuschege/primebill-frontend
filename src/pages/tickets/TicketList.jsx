@@ -36,9 +36,12 @@ export default function TicketList() {
     queryFn: () => getTicketStats().then(r => r.data.data),
   })
 
+  // NOTE: getClients() already calls unwrapList() internally and resolves to
+  // { data: [], meta: {} } — NOT a raw axios response — so only one .data
+  // unwrap is needed here (see the same fix in InvoiceList.jsx).
   const { data: clientsData } = useQuery({
     queryKey: ['clients-all'],
-    queryFn: () => getClients({ per_page: 200 }).then(r => r.data.data),
+    queryFn: () => getClients({ per_page: 200 }).then(r => r.data),
     enabled: showCreate,
   })
 

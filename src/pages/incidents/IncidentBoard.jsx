@@ -36,15 +36,15 @@ export default function IncidentBoard() {
     <div className="space-y-4 overflow-x-auto">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Incidents Board</h1>
-          <p className="text-sm text-gray-500">NOC outage triage Kanban — detect, acknowledge, mitigate, resolve.</p>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--pb-text-1)' }}>Incidents Board</h1>
+          <p className="text-sm" style={{ color: 'var(--pb-text-2)' }}>NOC outage triage Kanban — detect, acknowledge, mitigate, resolve.</p>
         </div>
         <Badge label={`${items.length} incidents`} variant="info" />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {COLUMNS.map((st) => (
-          <div key={st} className="bg-gray-50 rounded-lg border border-gray-200 p-2">
+          <div key={st} className="rounded-lg border p-2" style={{ backgroundColor: 'var(--pb-raised)', borderColor: 'var(--pb-border)' }}>
             <div className="px-2 py-1 font-semibold text-xs uppercase" style={{ color: 'var(--pb-text-3)' }}>{st}</div>
             <div className="space-y-2 min-h-[60px]">
               {group(st).map((i) => (
@@ -60,12 +60,12 @@ export default function IncidentBoard() {
 
 function Card({ item, onChange }) {
   return (
-    <div className="bg-white rounded border border-gray-200 p-2 text-sm">
+    <div className="rounded border p-2 text-sm" style={{ backgroundColor: 'var(--pb-surface)', borderColor: 'var(--pb-border)' }}>
       <div className="flex items-start justify-between gap-2">
-        <div className="font-medium">#{item.id} {item.title}</div>
+        <div className="font-medium" style={{ color: 'var(--pb-text-1)' }}>#{item.id} {item.title}</div>
         <Badge label={item.severity} variant={variant[item.severity] || 'inactive'} />
       </div>
-      <p className="text-xs text-gray-500 mt-1 line-clamp-2">{item.description}</p>
+      <p className="text-xs mt-1 line-clamp-2" style={{ color: 'var(--pb-text-3)' }}>{item.description}</p>
       <div className="flex gap-1 mt-1">
         {item.status !== 'acknowledged' && <button onClick={() => onChange({ ack: true })} className="px-1.5 py-0.5 text-[10px] rounded text-white bg-blue-600">Ack</button>}
         {item.status !== 'closed' && <button onClick={() => onChange({ close: true })} className="px-1.5 py-0.5 text-[10px] rounded text-white bg-red-600">Close</button>}
