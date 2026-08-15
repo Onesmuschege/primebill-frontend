@@ -49,9 +49,9 @@ export default function ClientNotes({ clientId }) {
 
   const getPriorityColor = (priority) => {
     const colors = {
-      low: 'bg-gray-100 text-gray-800',
-      normal: 'bg-blue-100 text-blue-800',
-      high: 'bg-orange-100 text-orange-800',
+      low: 'dark:bg-slate-800/40 dark:text-slate-300',
+      normal: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
+      high: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
     };
     return colors[priority] || colors.normal;
   };
@@ -67,29 +67,29 @@ export default function ClientNotes({ clientId }) {
   };
 
   if (loading) {
-    return <div className="flex justify-center py-4">Loading notes...</div>;
+    return <div className="flex justify-center py-4" style={{ color: 'var(--pb-text-3)' }}>Loading notes...</div>;
   }
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Client Notes</h3>
+        <h3 className="text-lg font-semibold" style={{ color: 'var(--pb-text-1)' }}>Client Notes</h3>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="btn-secondary"
         >
           Add Note
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded-lg space-y-3">
+        <form onSubmit={handleSubmit} className="rounded-lg space-y-3" style={{ backgroundColor: 'var(--pb-raised)' }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Note</label>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--pb-text-2)' }}>Note</label>
             <textarea
               value={formData.note}
               onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="input"
               rows="3"
               required
             />
@@ -97,11 +97,11 @@ export default function ClientNotes({ clientId }) {
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--pb-text-2)' }}>Type</label>
               <select
                 value={formData.type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input"
               >
                 <option value="general">General</option>
                 <option value="call">Call</option>
@@ -111,11 +111,11 @@ export default function ClientNotes({ clientId }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--pb-text-2)' }}>Priority</label>
               <select
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="input"
               >
                 <option value="low">Low</option>
                 <option value="normal">Normal</option>
@@ -127,14 +127,14 @@ export default function ClientNotes({ clientId }) {
           <div className="flex gap-2">
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              className="btn-primary"
             >
               Save Note
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+              className="btn-secondary"
             >
               Cancel
             </button>
@@ -144,20 +144,21 @@ export default function ClientNotes({ clientId }) {
 
       <div className="space-y-2">
         {notes.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">No notes yet</p>
+          <p className="text-center py-4" style={{ color: 'var(--pb-text-3)' }}>No notes yet</p>
         ) : (
           notes.map((note) => (
             <div
               key={note.id}
               className={`border rounded-lg p-4 ${
-                note.is_pinned ? 'border-yellow-400 bg-yellow-50' : 'border-gray-200 bg-white'
+                note.is_pinned ? 'border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20' : ''
               }`}
+              style={note.is_pinned ? {} : { backgroundColor: 'var(--pb-surface)', borderColor: 'var(--pb-border)' }}
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-xl">{getTypeIcon(note.type)}</span>
-                    <span className="text-sm font-medium text-gray-600 capitalize">{note.type}</span>
+                    <span className="text-sm font-medium capitalize" style={{ color: 'var(--pb-text-2)' }}>{note.type}</span>
                     <span className={`px-2 py-1 text-xs rounded-full ${getPriorityColor(note.priority)}`}>
                       {note.priority}
                     </span>
@@ -165,14 +166,15 @@ export default function ClientNotes({ clientId }) {
                       <span className="text-yellow-600 text-sm">📌 Pinned</span>
                     )}
                   </div>
-                  <p className="text-gray-800 whitespace-pre-wrap">{note.note}</p>
-                  <div className="mt-2 text-sm text-gray-500">
+                  <p className="whitespace-pre-wrap" style={{ color: 'var(--pb-text-1)' }}>{note.note}</p>
+                  <div className="mt-2 text-sm" style={{ color: 'var(--pb-text-3)' }}>
                     By {note.creator?.name || 'Unknown'} on {new Date(note.created_at).toLocaleDateString()}
                   </div>
                 </div>
                 <button
                   onClick={() => handleTogglePin(note.id)}
-                  className="ml-4 text-gray-400 hover:text-yellow-600"
+                  className="ml-4"
+                  style={{ color: 'var(--pb-text-3)' }}
                   title={note.is_pinned ? 'Unpin' : 'Pin'}
                 >
                   {note.is_pinned ? '📌' : '📌'}
