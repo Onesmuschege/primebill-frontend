@@ -17,7 +17,7 @@ import axiosInstance from './axiosInstance';
 const logsApi = {
   /**
    * Fetch a paginated list of system logs.
-   * @param {Object} params - { page, per_page, search, action, date_from, date_to }
+   * @param {Object} params - { page, per_page, user_id, action, model, from, to }
    */
   getLogs: (params = {}) => axiosInstance.get('/logs', { params }),
 
