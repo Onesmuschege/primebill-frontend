@@ -80,6 +80,7 @@ export default function AgingDashboard({ aging, isLoading }) {
                   <YAxis hide />
                   <Tooltip
                     formatter={(value) => formatKES(value)}
+                    cursor={{ fill: 'rgba(37,99,235,0.08)' }}
                     contentStyle={{ backgroundColor: 'var(--pb-surface)', border: '1px solid var(--pb-border)' }}
                     labelStyle={{ color: 'var(--pb-text-1)' }}
                   />
