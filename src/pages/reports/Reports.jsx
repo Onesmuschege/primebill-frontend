@@ -20,6 +20,39 @@ const REPORT_TYPES = [
   { key: 'inventory',   label: 'Inventory',   icon: Package },
 ]
 
+// ── Shared style helpers (mirrors the --pb-* tokens used across the app) ────
+const thBg = { backgroundColor: 'var(--pb-raised)', color: 'var(--pb-text-3)' }
+const tdStyle = { color: 'var(--pb-text-2)', borderBottom: '1px solid var(--pb-border)' }
+const mutedText = { color: 'var(--pb-text-3)' }
+const chartCursor = { fill: 'rgba(37,99,235,0.08)' }
+
+function StatCard({ label, value, color }) {
+  return (
+    <div className="card text-center">
+      <p className="text-2xl font-bold" style={{ color }}>{value}</p>
+      <p className="text-sm mt-1" style={mutedText}>{label}</p>
+    </div>
+  )
+}
+
+function ReportTable({ headers, rows, renderRow, emptyMessage = 'No records found.' }) {
+  return (
+    <div className="card p-0 overflow-hidden">
+      <table className="table w-full text-sm">
+        <thead><tr>
+          {headers.map(h => <th key={h} style={thBg}>{h}</th>)}
+        </tr></thead>
+        <tbody>
+          {!rows?.length && (
+            <tr><td colSpan={headers.length} className="px-4 py-10 text-center" style={mutedText}>{emptyMessage}</td></tr>
+          )}
+          {rows?.map((row, i) => renderRow(row, i))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 // ── Sub-renderers per report type ────────────────────────────────────────────
 
 function IncomeReport({ data }) {
@@ -27,60 +60,46 @@ function IncomeReport({ data }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-4">
-        {[
-          { label: 'Total Income',  value: formatKES(data?.total),        color: 'text-primary-600' },
-          { label: 'M-Pesa',        value: formatKES(data?.by_method?.mpesa), color: 'text-green-600' },
-          { label: 'Cash',          value: formatKES(data?.by_method?.cash),  color: 'text-blue-600' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="card text-center">
-            <p className={`text-2xl font-bold ${color}`}>{value}</p>
-            <p className="text-sm text-gray-500 mt-1">{label}</p>
-          </div>
-        ))}
+        <StatCard label="Total Income" value={formatKES(data?.total)} color="#60a5fa" />
+        <StatCard label="M-Pesa"       value={formatKES(data?.by_method?.mpesa)} color="#34d399" />
+        <StatCard label="Cash"         value={formatKES(data?.by_method?.cash)}  color="#60a5fa" />
       </div>
       {daily.length > 0 && (
         <div className="card">
-          <h3 className="font-semibold mb-4">Daily Income</h3>
+          <h3 className="font-semibold mb-4" style={{ color: 'var(--pb-text-1)' }}>Daily Income</h3>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={daily}>
               <defs>
                 <linearGradient id="incomeGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#16a34a" stopOpacity={0.15} />
-                  <stop offset="95%" stopColor="#16a34a" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#34d399" stopOpacity={0.2} />
+                  <stop offset="95%" stopColor="#34d399" stopOpacity={0} />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
-              <Tooltip formatter={(v) => formatKES(v)} />
-              <Area type="monotone" dataKey="total" stroke="#16a34a" fill="url(#incomeGrad)" strokeWidth={2} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--pb-border)" />
+              <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--pb-text-3)' }} />
+              <YAxis tick={{ fontSize: 11, fill: 'var(--pb-text-3)' }} tickFormatter={(v) => `${(v/1000).toFixed(0)}k`} />
+              <Tooltip formatter={(v) => formatKES(v)} cursor={chartCursor}
+                contentStyle={{ backgroundColor: 'var(--pb-surface)', border: '1px solid var(--pb-border)', borderRadius: 8 }}
+                labelStyle={{ color: 'var(--pb-text-2)' }} />
+              <Area type="monotone" dataKey="total" stroke="#34d399" fill="url(#incomeGrad)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       )}
       {data?.payments?.length > 0 && (
-        <div className="card p-0 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
-              <tr>
-                {['Client', 'Amount', 'Method', 'Reference', 'Date'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {data.payments.map((p, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">{p.client_name || '—'}</td>
-                  <td className="px-4 py-3 font-medium text-primary-600">{formatKES(p.amount)}</td>
-                  <td className="px-4 py-3 uppercase text-xs">{p.method}</td>
-                  <td className="px-4 py-3 text-gray-500">{p.reference || '—'}</td>
-                  <td className="px-4 py-3 text-gray-500">{formatDate(p.created_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ReportTable
+          headers={['Client', 'Amount', 'Method', 'Reference', 'Date']}
+          rows={data.payments}
+          renderRow={(p, i) => (
+            <tr key={i}>
+              <td className="px-4 py-3" style={tdStyle}>{p.client_name || '—'}</td>
+              <td className="px-4 py-3 font-medium" style={{ ...tdStyle, color: '#60a5fa' }}>{formatKES(p.amount)}</td>
+              <td className="px-4 py-3 uppercase text-xs" style={tdStyle}>{p.method}</td>
+              <td className="px-4 py-3" style={{ ...tdStyle, color: 'var(--pb-text-3)' }}>{p.reference || '—'}</td>
+              <td className="px-4 py-3" style={{ ...tdStyle, color: 'var(--pb-text-3)' }}>{formatDate(p.created_at)}</td>
+            </tr>
+          )}
+        />
       )}
     </div>
   )
@@ -91,28 +110,23 @@ function ClientsReport({ data }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-4 gap-4">
-        {[
-          { label: 'Total',     value: data?.total,     color: 'text-gray-800' },
-          { label: 'Active',    value: data?.active,    color: 'text-green-600' },
-          { label: 'Suspended', value: data?.suspended, color: 'text-orange-600' },
-          { label: 'New',       value: data?.new,       color: 'text-blue-600' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="card text-center">
-            <p className={`text-2xl font-bold ${color}`}>{value || 0}</p>
-            <p className="text-sm text-gray-500 mt-1">{label}</p>
-          </div>
-        ))}
+        <StatCard label="Total"     value={data?.total || 0}     color="var(--pb-text-1)" />
+        <StatCard label="Active"    value={data?.active || 0}    color="#34d399" />
+        <StatCard label="Suspended" value={data?.suspended || 0} color="#fbbf24" />
+        <StatCard label="New"       value={data?.new || 0}       color="#60a5fa" />
       </div>
       {monthly.length > 0 && (
         <div className="card">
-          <h3 className="font-semibold mb-4">New Clients per Month</h3>
+          <h3 className="font-semibold mb-4" style={{ color: 'var(--pb-text-1)' }}>New Clients per Month</h3>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={monthly}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Bar dataKey="count" fill="#16a34a" radius={[4, 4, 0, 0]} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--pb-border)" />
+              <XAxis dataKey="month" tick={{ fontSize: 11, fill: 'var(--pb-text-3)' }} />
+              <YAxis tick={{ fontSize: 11, fill: 'var(--pb-text-3)' }} />
+              <Tooltip cursor={chartCursor}
+                contentStyle={{ backgroundColor: 'var(--pb-surface)', border: '1px solid var(--pb-border)', borderRadius: 8 }}
+                labelStyle={{ color: 'var(--pb-text-2)' }} />
+              <Bar dataKey="count" fill="#34d399" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -125,26 +139,19 @@ function InvoicesReport({ data }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-4 gap-4">
-        {[
-          { label: 'Total',     value: data?.total,     color: 'text-gray-800' },
-          { label: 'Paid',      value: data?.paid,      color: 'text-green-600' },
-          { label: 'Unpaid',    value: data?.unpaid,    color: 'text-yellow-600' },
-          { label: 'Overdue',   value: data?.overdue,   color: 'text-red-600' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="card text-center">
-            <p className={`text-2xl font-bold ${color}`}>{value || 0}</p>
-            <p className="text-sm text-gray-500 mt-1">{label}</p>
-          </div>
-        ))}
+        <StatCard label="Total"   value={data?.total || 0}   color="var(--pb-text-1)" />
+        <StatCard label="Paid"    value={data?.paid || 0}    color="#34d399" />
+        <StatCard label="Unpaid"  value={data?.unpaid || 0}  color="#fbbf24" />
+        <StatCard label="Overdue" value={data?.overdue || 0} color="#f87171" />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="card">
-          <p className="text-sm text-gray-500">Total Invoiced</p>
-          <p className="text-2xl font-bold text-primary-600">{formatKES(data?.total_amount)}</p>
+          <p className="text-sm" style={mutedText}>Total Invoiced</p>
+          <p className="text-2xl font-bold" style={{ color: '#60a5fa' }}>{formatKES(data?.total_amount)}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-gray-500">Total Collected</p>
-          <p className="text-2xl font-bold text-green-600">{formatKES(data?.paid_amount)}</p>
+          <p className="text-sm" style={mutedText}>Total Collected</p>
+          <p className="text-2xl font-bold" style={{ color: '#34d399' }}>{formatKES(data?.paid_amount)}</p>
         </div>
       </div>
     </div>
@@ -155,43 +162,25 @@ function SmsReport({ data }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-4">
-        {[
-          { label: 'Total Sent',  value: data?.total,   color: 'text-gray-800' },
-          { label: 'Delivered',   value: data?.delivered, color: 'text-green-600' },
-          { label: 'Failed',      value: data?.failed,  color: 'text-red-600' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="card text-center">
-            <p className={`text-2xl font-bold ${color}`}>{value || 0}</p>
-            <p className="text-sm text-gray-500 mt-1">{label}</p>
-          </div>
-        ))}
+        <StatCard label="Total Sent" value={data?.total || 0}     color="var(--pb-text-1)" />
+        <StatCard label="Delivered"  value={data?.delivered || 0} color="#34d399" />
+        <StatCard label="Failed"     value={data?.failed || 0}    color="#f87171" />
       </div>
       {data?.logs?.length > 0 && (
-        <div className="card p-0 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
-              <tr>
-                {['Recipient', 'Message', 'Status', 'Date'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {data.logs.map((s, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs">{s.phone}</td>
-                  <td className="px-4 py-3 max-w-xs truncate">{s.message}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      s.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>{s.status}</span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">{formatDate(s.created_at)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ReportTable
+          headers={['Recipient', 'Message', 'Status', 'Date']}
+          rows={data.logs}
+          renderRow={(s, i) => (
+            <tr key={i}>
+              <td className="px-4 py-3 font-mono text-xs" style={tdStyle}>{s.phone}</td>
+              <td className="px-4 py-3 max-w-xs truncate" style={tdStyle}>{s.message}</td>
+              <td className="px-4 py-3" style={tdStyle}>
+                <span className={s.status === 'delivered' ? 'badge badge-active' : 'badge badge-suspended'}>{s.status}</span>
+              </td>
+              <td className="px-4 py-3" style={{ ...tdStyle, color: 'var(--pb-text-3)' }}>{formatDate(s.created_at)}</td>
+            </tr>
+          )}
+        />
       )}
     </div>
   )
@@ -202,36 +191,27 @@ function ExpenditureReport({ data }) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <div className="card">
-          <p className="text-sm text-gray-500">Total Expenditure</p>
-          <p className="text-2xl font-bold text-red-600">{formatKES(data?.total)}</p>
+          <p className="text-sm" style={mutedText}>Total Expenditure</p>
+          <p className="text-2xl font-bold" style={{ color: '#f87171' }}>{formatKES(data?.total)}</p>
         </div>
         <div className="card">
-          <p className="text-sm text-gray-500">Transactions</p>
-          <p className="text-2xl font-bold text-gray-800">{data?.count || 0}</p>
+          <p className="text-sm" style={mutedText}>Transactions</p>
+          <p className="text-2xl font-bold" style={{ color: 'var(--pb-text-1)' }}>{data?.count || 0}</p>
         </div>
       </div>
       {data?.items?.length > 0 && (
-        <div className="card p-0 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
-              <tr>
-                {['Description', 'Category', 'Amount', 'Date'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {data.items.map((e, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{e.description}</td>
-                  <td className="px-4 py-3 text-gray-500">{e.category || '—'}</td>
-                  <td className="px-4 py-3 text-red-600 font-medium">{formatKES(e.amount)}</td>
-                  <td className="px-4 py-3 text-gray-500">{formatDate(e.date)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ReportTable
+          headers={['Description', 'Category', 'Amount', 'Date']}
+          rows={data.items}
+          renderRow={(e, i) => (
+            <tr key={i}>
+              <td className="px-4 py-3 font-medium" style={tdStyle}>{e.description}</td>
+              <td className="px-4 py-3" style={{ ...tdStyle, color: 'var(--pb-text-3)' }}>{e.category || '—'}</td>
+              <td className="px-4 py-3 font-medium" style={{ ...tdStyle, color: '#f87171' }}>{formatKES(e.amount)}</td>
+              <td className="px-4 py-3" style={{ ...tdStyle, color: 'var(--pb-text-3)' }}>{formatDate(e.date)}</td>
+            </tr>
+          )}
+        />
       )}
     </div>
   )
@@ -241,46 +221,28 @@ function InventoryReport({ data }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-4">
-        {[
-          { label: 'Total Items',  value: data?.total,      color: 'text-gray-800' },
-          { label: 'Low Stock',    value: data?.low_stock,  color: 'text-red-600' },
-          { label: 'Assigned',     value: data?.assigned,   color: 'text-blue-600' },
-        ].map(({ label, value, color }) => (
-          <div key={label} className="card text-center">
-            <p className={`text-2xl font-bold ${color}`}>{value || 0}</p>
-            <p className="text-sm text-gray-500 mt-1">{label}</p>
-          </div>
-        ))}
+        <StatCard label="Total Items" value={data?.total || 0}     color="var(--pb-text-1)" />
+        <StatCard label="Low Stock"   value={data?.low_stock || 0} color="#f87171" />
+        <StatCard label="Assigned"    value={data?.assigned || 0}  color="#60a5fa" />
       </div>
       {data?.items?.length > 0 && (
-        <div className="card p-0 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase">
-              <tr>
-                {['Item', 'Category', 'Qty', 'Unit Cost', 'Status'].map(h => (
-                  <th key={h} className="px-4 py-3 text-left">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {data.items.map((item, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium">{item.name}</td>
-                  <td className="px-4 py-3 text-gray-500">{item.category}</td>
-                  <td className={`px-4 py-3 font-medium ${item.quantity <= item.low_stock_alert ? 'text-red-600' : ''}`}>
-                    {item.quantity}
-                  </td>
-                  <td className="px-4 py-3">{formatKES(item.unit_cost)}</td>
-                  <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${
-                      item.status === 'available' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                    }`}>{item.status}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ReportTable
+          headers={['Item', 'Category', 'Qty', 'Unit Cost', 'Status']}
+          rows={data.items}
+          renderRow={(item, i) => (
+            <tr key={i}>
+              <td className="px-4 py-3 font-medium" style={tdStyle}>{item.name}</td>
+              <td className="px-4 py-3" style={{ ...tdStyle, color: 'var(--pb-text-3)' }}>{item.category}</td>
+              <td className="px-4 py-3 font-medium" style={{ ...tdStyle, color: item.quantity <= item.low_stock_alert ? '#f87171' : 'var(--pb-text-2)' }}>
+                {item.quantity}
+              </td>
+              <td className="px-4 py-3" style={tdStyle}>{formatKES(item.unit_cost)}</td>
+              <td className="px-4 py-3" style={tdStyle}>
+                <span className={item.status === 'available' ? 'badge badge-active' : 'badge badge-info'}>{item.status}</span>
+              </td>
+            </tr>
+          )}
+        />
       )}
     </div>
   )
@@ -336,11 +298,10 @@ export default function Reports() {
             <button
               key={key}
               onClick={() => setType(key)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                type === key
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors"
+              style={type === key
+                ? { backgroundColor: '#2563eb', color: '#fff' }
+                : { backgroundColor: 'var(--pb-raised)', color: 'var(--pb-text-2)' }}
             >
               <Icon size={14} />
               {label}
@@ -354,7 +315,7 @@ export default function Reports() {
             onChange={(e) => setFrom(e.target.value)}
             className="input text-sm py-1.5 w-36"
           />
-          <span className="text-gray-400">to</span>
+          <span style={mutedText}>to</span>
           <input
             type="date"
             value={to}
@@ -376,7 +337,7 @@ export default function Reports() {
       ) : data ? (
         <ReportRenderer data={data} />
       ) : (
-        <div className="card text-center text-gray-400 py-16">
+        <div className="card text-center py-16" style={mutedText}>
           No data found for the selected date range.
         </div>
       )}
