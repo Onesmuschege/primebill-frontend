@@ -13,11 +13,13 @@ import Spinner from '../common/Spinner'
  * with `manage dunning`, and the backend re-checks that permission on the
  * POST/PUT routes.
  *
- * `action` mirrors the enum in 2026_08_08_000007_create_collections_tables.php.
+ * `action` mirrors the enum in 2026_08_08_000007_create_collections_tables.php
+ * (as widened by 2026_08_30_000004_add_whatsapp_to_dunning_step_action_enum.php).
  */
 const ACTIONS = [
   { value: 'email',    label: 'Email reminder' },
   { value: 'sms',      label: 'SMS reminder' },
+  { value: 'whatsapp', label: 'WhatsApp reminder' },
   { value: 'call',     label: 'Manual call' },
   { value: 'suspend',  label: 'Suspend services' },
   { value: 'escalate', label: 'Escalate (legal / collections)' },
