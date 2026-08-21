@@ -11,16 +11,18 @@ import Modal from '../../components/common/Modal'
 import { clientStatusBadge, invoiceStatusBadge, ticketPriorityColor } from '../../utils/statusColors'
 import { formatDate, formatDateTime } from '../../utils/formatDate'
 import { formatKES } from '../../utils/formatCurrency'
-import { ArrowLeft, UserX, UserCheck, Edit2, Plus, Wifi, FileText, CreditCard, Ticket } from 'lucide-react'
+import { ArrowLeft, UserX, UserCheck, Edit2, Plus, Wifi, FileText, CreditCard, Ticket, Repeat } from 'lucide-react'
 import ServiceNetworkActions from '../../components/clients/ServiceNetworkActions'
+import ClientSubscriptions from './ClientSubscriptions'
 import toast from 'react-hot-toast'
 import Spinner from '../../components/common/Spinner'
 
 const TABS = [
-  { key: 'accounts', label: 'Internet Accounts', icon: Wifi },
-  { key: 'invoices', label: 'Invoices',           icon: FileText },
-  { key: 'payments', label: 'Payments',           icon: CreditCard },
-  { key: 'tickets',  label: 'Tickets',            icon: Ticket },
+  { key: 'accounts',      label: 'Internet Accounts', icon: Wifi },
+  { key: 'subscriptions', label: 'Subscriptions',      icon: Repeat },
+  { key: 'invoices',      label: 'Invoices',           icon: FileText },
+  { key: 'payments',      label: 'Payments',           icon: CreditCard },
+  { key: 'tickets',       label: 'Tickets',            icon: Ticket },
 ]
 
 export default function ClientDetail() {
@@ -181,6 +183,11 @@ export default function ClientDetail() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* ── Subscriptions Tab ── */}
+      {activeTab === 'subscriptions' && (
+        <ClientSubscriptions clientId={id} />
       )}
 
       {/* ── Invoices Tab ── */}
