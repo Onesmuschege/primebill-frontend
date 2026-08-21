@@ -6,6 +6,7 @@ import Spinner from '../common/Spinner'
 const ACTION_LABEL = {
   email: 'Email reminder',
   sms: 'SMS reminder',
+  whatsapp: 'WhatsApp reminder',
   call: 'Manual call',
   suspend: 'Suspend services',
   escalate: 'Escalate',
@@ -14,6 +15,7 @@ const ACTION_LABEL = {
 const ACTION_BADGE = {
   email: 'badge-info',
   sms: 'badge-info',
+  whatsapp: 'badge-info',
   call: 'badge-unpaid',
   suspend: 'badge-suspended',
   escalate: 'badge-overdue',
