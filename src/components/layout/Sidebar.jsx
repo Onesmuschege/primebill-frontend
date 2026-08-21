@@ -8,14 +8,37 @@ import {
   TrendingUp, Gift, ScrollText, UserCog,
   ChevronDown, ChevronRight, X, Radio, Wrench, Activity, Cable, MapPin, Database,
      Network, AlertTriangle, Receipt, ShieldCheck, Banknote, Key,
-     ArrowRightLeft, Bot, Workflow, PlayCircle,
+     ArrowRightLeft, Bot, Workflow, PlayCircle, UserPlus, Target,
+     LayoutList, KanbanSquare, RotateCcw, ArrowUpCircle,
 } from 'lucide-react'
 
+// ---------------------------------------------------------------------------
+// Groups reorganised (Aug 2026) to fix three problems found once the sidebar
+// grew past ~10 groups:
+//   1. Money was split across "Billing" and "Analytics" (Finance/Commissions)
+//      — now unified under one Billing & Finance group.
+//   2. Inventory/Stock-PO/RMA were buried as 3-of-11 items inside Network
+//      — now a standalone Inventory & Procurement group with room to grow.
+//   3. "Plans" (ISP data plans) and "Plans & Pricing" (PrimeBill's own SaaS
+//      tier) were near-duplicate labels in different groups — the PrimeBill
+//      one is renamed "Upgrade Plan" under "My PrimeBill Account" so the two
+//      are unambiguous at a glance.
+// Automation and System default to collapsed (see `collapsed` initial state
+// below) since they're config/power-user territory visited far less often
+// than Dashboard/Clients/Billing.
+// ---------------------------------------------------------------------------
 const NAV = [
   {
     group: 'Overview',
     items: [
       { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    ],
+  },
+  {
+    group: 'CRM',
+    items: [
+      { to: '/leads',     icon: UserPlus, label: 'Leads' },
+      { to: '/prospects', icon: Target,   label: 'Prospects' },
     ],
   },
   {
@@ -28,20 +51,23 @@ const NAV = [
     ],
   },
   {
-    group: 'Billing',
+    group: 'Billing & Finance',
     items: [
       { to: '/invoices', icon: FileText,   label: 'Invoices' },
       { to: '/payments', icon: CreditCard, label: 'Payments' },
       { to: '/payment-allocations', icon: ArrowRightLeft, label: 'Allocations' },
-      { to: '/expenditures', icon: Receipt, label: 'Expenditures' },
       { to: '/collections', icon: Banknote, label: 'Collections' },
+      { to: '/expenditures', icon: Receipt, label: 'Expenditures' },
+      { to: '/finance',   icon: DollarSign, label: 'Finance' },
+      { to: '/commissions', icon: Banknote, label: 'Commissions' },
     ],
   },
   {
     group: 'Support',
     items: [
-      { to: '/tickets', icon: Ticket,        label: 'Tickets' },
-      { to: '/sms',     icon: MessageSquare, label: 'SMS' },
+      { to: '/tickets',       icon: Ticket,        label: 'Tickets' },
+      { to: '/tickets/board', icon: KanbanSquare,  label: 'Ticket Board' },
+      { to: '/sms',           icon: MessageSquare, label: 'SMS' },
     ],
   },
   {
@@ -51,10 +77,18 @@ group: 'Network',
       { to: '/radius',    icon: Radio,    label: 'RADIUS' },
       { to: '/ipam',      icon: Network,  label: 'IPAM' },
       { to: '/incidents', icon: AlertTriangle, label: 'Incidents' },
-      { to: '/inventory', icon: Package,  label: 'Inventory' },
+      { to: '/incidents/board', icon: KanbanSquare, label: 'Incident Board' },
       { to: '/noc',       icon: Activity, label: 'NOC' },
       { to: '/fiber/olts',icon: Cable,    label: 'Fiber / OLT' },
       { to: '/fiber/map', icon: MapPin,   label: 'Fiber Map' },
+    ],
+  },
+  {
+    group: 'Inventory & Procurement',
+    items: [
+      { to: '/inventory',            icon: Package,    label: 'Inventory' },
+      { to: '/inventory/operations', icon: LayoutList, label: 'Stock & Purchase Orders' },
+      { to: '/inventory/rma',        icon: RotateCcw,  label: 'RMA' },
     ],
   },
   {
@@ -62,6 +96,27 @@ group: 'Network',
     items: [
       { to: '/work-orders', icon: Wrench, label: 'Work Orders' },
       { to: '/work-orders/technicians', icon: Users, label: 'Technicians' },
+    ],
+  },
+  {
+    group: 'Reports & Analytics',
+    items: [
+      { to: '/reports',   icon: BarChart2,  label: 'Reports' },
+      { to: '/analytics', icon: TrendingUp, label: 'Analytics' },
+    ],
+  },
+  {
+    group: 'Growth',
+    items: [
+      { to: '/loyalty', icon: Gift, label: 'Loyalty Points' },
+      { to: '/referrals', icon: Gift, label: 'Referrals' },
+    ],
+  },
+  {
+    group: 'My PrimeBill Account',
+    items: [
+      { to: '/subscription/my',    icon: CreditCard,    label: 'My Subscription' },
+      { to: '/subscription/plans', icon: ArrowUpCircle, label: 'Upgrade Plan' },
     ],
   },
   {
@@ -73,29 +128,6 @@ group: 'Network',
       { to: '/automation/failures', icon: AlertTriangle, label: 'Failures' },
       { to: '/automation/rules', icon: Workflow, label: 'Rules & Workflows' },
       { to: '/automation/history', icon: ScrollText, label: 'Execution History' },
-    ],
-  },
-  {
-    group: 'Platform Subscription',
-    items: [
-      { to: '/subscription/my',    icon: CreditCard, label: 'My Subscription' },
-      { to: '/subscription/plans', icon: Zap,        label: 'Plans & Pricing' },
-    ],
-  },
-  {
-    group: 'Analytics',
-    items: [
-      { to: '/finance',   icon: DollarSign, label: 'Finance' },
-      { to: '/commissions', icon: Banknote, label: 'Commissions' },
-      { to: '/reports',   icon: BarChart2,  label: 'Reports' },
-      { to: '/analytics', icon: TrendingUp, label: 'Analytics' },
-    ],
-  },
-  {
-    group: 'Engagement',
-    items: [
-      { to: '/loyalty', icon: Gift, label: 'Loyalty Points' },
-      { to: '/referrals', icon: Gift, label: 'Referrals' },
     ],
   },
   {
@@ -112,10 +144,18 @@ group: 'Network',
   },
 ]
 
+// Groups collapsed by default on first load — config/power-user territory,
+// one click away, but shouldn't compete with Dashboard/Clients/Billing for
+// the first screenful of the sidebar.
+const DEFAULT_COLLAPSED = {
+  Automation: true,
+  System: true,
+}
+
 export default function Sidebar({ open, onClose }) {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [collapsed, setCollapsed] = useState({})
+  const [collapsed, setCollapsed] = useState(DEFAULT_COLLAPSED)
 
   const nav = NAV
 
