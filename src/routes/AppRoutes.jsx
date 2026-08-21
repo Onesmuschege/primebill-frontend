@@ -36,6 +36,7 @@ import SmsDashboard from '../pages/sms/SmsDashboard'
 // Network
 import RouterList from '../pages/routers/RouterList'
 import InventoryList from '../pages/inventory/InventoryList'
+import InventoryOperations from '../pages/inventory/InventoryOperations'
 import RmaBoard from '../pages/inventory/RmaBoard'
 import RadiusPage from '../pages/radius/RadiusPage'
 
@@ -171,6 +172,7 @@ export default function AppRoutes() {
 {/* Network */}
         <Route path="/routers" element={<RouterList />} />
         <Route path="/inventory" element={<InventoryList />} />
+        <Route path="/inventory/operations" element={<InventoryOperations />} />
         <Route path="/inventory/rma" element={<RmaBoard />} />
         <Route path="/radius" element={<RadiusPage />} />
         <Route path="/ipam" element={<IpamPage />} />
