@@ -32,6 +32,7 @@ const pageTitles = {
   '/logs':        'System Logs',
   '/security':    'Security Center',
   '/settings':    'Settings',
+  '/catalog':     'Catalog',
 }
 
 export default function AdminLayout() {

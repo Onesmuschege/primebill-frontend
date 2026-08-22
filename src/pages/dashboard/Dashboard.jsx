@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { getDashboardStats, getTopDownloaders, getTrafficData } from '../../api/dashboard.api'
 import StatCard from '../../components/dashboard/StatCard'
+import DashboardListSection from '../../components/dashboard/DashboardListSection'
+import { DASHBOARD_LIMITS } from '../../utils/dashboardLimits'
 import { formatKES } from '../../utils/formatCurrency'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Users, DollarSign, Wifi, Ticket, Activity } from 'lucide-react'
@@ -34,9 +36,13 @@ export default function Dashboard() {
     refetchInterval: 60000,
   })
 
-  const { data: downloaders } = useQuery({
-    queryKey: ['top-downloaders'],
-    queryFn: () => getTopDownloaders().then(r => r.data.data),
+  // Server-side limit: the widget only ever receives its render budget from
+  // the API (validated 1–50 on the backend). This is a leaderboard of LIVE
+  // radius sessions — there is no meaningful grand total, so the widget shows
+  // a top-N ranking with a "View all" link to the RADIUS page instead.
+  const { data: downloaders, isLoading: downloadersLoading } = useQuery({
+    queryKey: ['top-downloaders', DASHBOARD_LIMITS.topDownloaders],
+    queryFn: () => getTopDownloaders(DASHBOARD_LIMITS.topDownloaders).then(r => r.data.data),
   })
 
   if (statsLoading) return <div className="py-20"><Spinner size="lg" /></div>
@@ -185,34 +191,27 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Top Downloaders */}
-      <div className="card p-0 overflow-hidden">
-        <h3 className="font-semibold px-5 pt-5 pb-1" style={{ color: 'var(--pb-text-1)' }}>Top Downloaders</h3>
-        {downloaders && downloaders.length > 0 ? (
-          <table className="table w-full text-sm mt-3">
-            <thead>
-              <tr>
-                {['#', 'Username', 'Client', 'Downloaded', 'Uploaded'].map(h => (
-                  <th key={h} style={{ backgroundColor: 'var(--pb-raised)', color: 'var(--pb-text-3)' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {downloaders.map((d, i) => (
-                <tr key={i}>
-                  <td style={{ color: 'var(--pb-text-3)', borderBottom: '1px solid var(--pb-border)' }} className="px-4 py-2">{i + 1}</td>
-                  <td style={{ color: 'var(--pb-text-1)', borderBottom: '1px solid var(--pb-border)' }} className="px-4 py-2 font-medium">{d.username}</td>
-                  <td style={{ color: 'var(--pb-text-2)', borderBottom: '1px solid var(--pb-border)' }} className="px-4 py-2">{d.client}</td>
-                  <td style={{ color: '#60a5fa', borderBottom: '1px solid var(--pb-border)' }} className="px-4 py-2">{d.downloaded}</td>
-                  <td style={{ color: '#34d399', borderBottom: '1px solid var(--pb-border)' }} className="px-4 py-2">{d.uploaded}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="text-center py-8" style={mutedText}>No active sessions</p>
+      {/* Top Downloaders — top-N leaderboard of live sessions (no grand total) */}
+      <DashboardListSection
+        title="Top Downloaders"
+        icon={Activity}
+        items={downloaders}
+        limit={DASHBOARD_LIMITS.topDownloaders}
+        isLoading={downloadersLoading}
+        viewAllTo="/radius"
+        emptyMessage="No active sessions"
+        renderItem={(d, i) => (
+          <div key={i} className="flex items-center gap-3 py-2" style={{ borderBottom: '1px solid var(--pb-border)' }}>
+            <span className="w-5 shrink-0 text-xs font-semibold" style={{ color: 'var(--pb-text-3)' }}>{i + 1}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate" style={{ color: 'var(--pb-text-1)' }}>{d.username}</p>
+              <p className="text-xs truncate" style={{ color: 'var(--pb-text-3)' }}>{d.client}</p>
+            </div>
+            <span className="text-xs shrink-0" style={{ color: '#60a5fa' }}>↓ {d.downloaded}</span>
+            <span className="text-xs shrink-0" style={{ color: '#34d399' }}>↑ {d.uploaded}</span>
+          </div>
         )}
-      </div>
+      />
 
     </div>
   )

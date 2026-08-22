@@ -4,8 +4,8 @@ import { useAuth } from '../context/AuthContext'
 import ImpersonationBanner from '../components/layout/ImpersonationBanner'
 import {
   ChevronDown, ChevronRight, X, LogOut, Globe, LayoutDashboard,
-  Building2, CreditCard, ScrollText, TrendingUp, Menu,
-  ShieldCheck, Bell, Activity, Wrench, Lock,
+  Building2, CreditCard, ScrollText, TrendingUp, BarChart3, Menu,
+  ShieldCheck, Bell, Activity, Wrench, Lock, UserCog, ReceiptText,
 } from 'lucide-react'
 
 // Platform accent — purple is intentionally the PrimeBill Platform Console's
@@ -18,6 +18,7 @@ const NAV = [
     group: 'Platform',
     items: [
       { to: '/platform', icon: LayoutDashboard, label: 'Overview' },
+      { to: '/platform/users', icon: UserCog, label: 'Platform Users' },
     ],
   },
   {
@@ -25,12 +26,14 @@ const NAV = [
     items: [
       { to: '/platform/tenants', icon: Building2, label: 'All Tenants' },
       { to: '/platform/subscriptions', icon: CreditCard, label: 'Subscriptions' },
+      { to: '/platform/billing', icon: ReceiptText, label: 'Billing' },
     ],
   },
   {
     group: 'Operations',
     items: [
       { to: '/platform/analytics', icon: TrendingUp, label: 'Analytics' },
+      { to: '/platform/reports', icon: BarChart3, label: 'Reports' },
       { to: '/platform/audit-log', icon: ScrollText, label: 'Audit Log' },
     ],
   },
@@ -76,9 +79,12 @@ export default function PlatformLayout() {
 
   const pageTitle = (() => {
     if (pathname === '/platform') return 'Platform Overview'
+    if (pathname.startsWith('/platform/users')) return 'Platform Users'
     if (pathname.startsWith('/platform/tenants')) return 'Tenants'
     if (pathname.startsWith('/platform/subscriptions')) return 'Subscriptions'
+    if (pathname.startsWith('/platform/billing')) return 'Platform Billing'
     if (pathname.startsWith('/platform/analytics')) return 'Platform Analytics'
+    if (pathname.startsWith('/platform/reports')) return 'Platform Reports'
     if (pathname.startsWith('/platform/audit-log')) return 'Audit Log'
     if (pathname.startsWith('/platform/security')) return 'Security Center'
     if (pathname.startsWith('/platform/system')) return 'System Health'
@@ -181,8 +187,8 @@ export default function PlatformLayout() {
             <p className="font-semibold mb-1 flex items-center gap-1.5" style={{ color: ACCENT }}>
               <Wrench size={12} /> Platform Capabilities
             </p>
-            Platform Users, Integrations, Reporting, Communications and advanced
-            billing areas are flagged as <strong>new scope</strong> and not yet implemented.
+            Integrations and Communications
+            areas are flagged as <strong>new scope</strong> and not yet implemented.
           </div>
         </nav>
 

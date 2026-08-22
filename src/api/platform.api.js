@@ -10,7 +10,11 @@ export const getPlatformStats = () => api.get('/platform/stats')
 export const getPlatformPlans = () => api.get('/platform/plans')
 
 // ── Tenant CRUD ──────────────────────────────────────────────────────────
-export const getPlatformTenants = () => api.get('/platform/tenants')
+// params: { status, search } for full-page use (legacy: returns the FULL
+// enriched array), or { per_page, page } for dashboard widgets — the backend
+// then returns a compact slice + real total so widgets can render
+// "Showing N of TOTAL" without pulling every tenant's metrics.
+export const getPlatformTenants = (params) => api.get('/platform/tenants', { params })
 export const getPlatformTenant = (id) => api.get(`/platform/tenants/${id}`)
 export const createTenant = (payload) => api.post('/platform/tenants', payload)
 export const updateTenant = (id, payload) => api.put(`/platform/tenants/${id}`, payload)
@@ -50,6 +54,9 @@ export const createTenantAdmin = (id, payload) => api.post(`/platform/tenants/${
 // ── Audit Log ────────────────────────────────────────────────────────────
 export const getPlatformAuditLog = (params) => api.get('/platform/audit-log', { params })
 
+// ── Platform Users (READ-ONLY — is_platform_admin is CLI-only) ────────────
+export const getPlatformUsers = () => api.get('/platform/users')
+
 // ── Subscription Management ──────────────────────────────────────────────
 export const getPlatformSubscriptions = () => api.get('/platform/subscriptions')
 export const getSubscriptionStats = () => api.get('/platform/subscription-stats')
@@ -58,3 +65,22 @@ export const suspendSubscription = (id) => api.post(`/platform/subscriptions/${i
 export const resumeSubscription = (id) => api.post(`/platform/subscriptions/${id}/resume`)
 export const cancelSubscription = (id) => api.post(`/platform/subscriptions/${id}/cancel`)
 export const renewSubscription = (id) => api.post(`/platform/subscriptions/${id}/renew`)
+
+// ── Advanced Billing (PrimeBill invoices to its tenant ISPs) ─────────────
+// Separate from the tenant-side billing this app normally serves: these are
+// PrimeBill's own invoices to the ISPs, scoped to /platform/billing/*.
+export const getPlatformInvoices = (params) => api.get('/platform/billing/invoices', { params })
+export const getPlatformInvoice = (id) => api.get(`/platform/billing/invoices/${id}`)
+export const downloadPlatformInvoicePdf = (id) => api.get(`/platform/billing/invoices/${id}/pdf`, { responseType: 'blob' })
+export const sendPlatformInvoice = (id) => api.post(`/platform/billing/invoices/${id}/send`)
+export const resendPlatformInvoice = (id) => api.post(`/platform/billing/invoices/${id}/resend`)
+export const markPlatformInvoicePaid = (id, payload = {}) => api.post(`/platform/billing/invoices/${id}/mark-paid`, payload)
+export const voidPlatformInvoice = (id, payload = {}) => api.post(`/platform/billing/invoices/${id}/void`, payload)
+export const generatePlatformInvoices = (payload = {}) => api.post('/platform/billing/invoices/generate', payload)
+export const getPlatformBillingStats = () => api.get('/platform/billing/stats')
+
+// ── Platform Reporting ────────────────────────────────────────────────────
+export const getPlatformRevenueReport = (params) => api.get('/platform/reports/revenue', { params })
+export const getPlatformTenantsReport = (params) => api.get('/platform/reports/tenants', { params })
+export const getPlatformUsageReport = () => api.get('/platform/reports/usage')
+export const exportPlatformReport = (type, params) => api.get(`/platform/reports/${type}/export`, { params, responseType: 'blob' })

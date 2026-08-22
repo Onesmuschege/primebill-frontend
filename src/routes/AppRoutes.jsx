@@ -116,6 +116,9 @@ import PlatformSubscriptionAnalytics from '../pages/platform/PlatformSubscriptio
 import PlatformAuditLog from '../pages/platform/PlatformAuditLog'
 import PlatformSecurityCenter from '../pages/platform/PlatformSecurityCenter'
 import PlatformSystemHealth from '../pages/platform/PlatformSystemHealth'
+import PlatformReports from '../pages/platform/PlatformReports'
+import PlatformUsers from '../pages/platform/PlatformUsers'
+import PlatformBilling from '../pages/platform/PlatformBilling'
 
 // Public Portal
 import CaptivePortal from '../pages/portal/CaptivePortal'
@@ -265,6 +268,9 @@ export default function AppRoutes() {
         {/* Reuses PlatformSubscriptionAnalytics for the platform analytics IA. */}
         <Route path="/platform/analytics" element={<PlatformSubscriptionAnalytics />} />
         <Route path="/platform/audit-log" element={<PlatformAuditLog />} />
+        <Route path="/platform/reports" element={<PlatformReports />} />
+        <Route path="/platform/users" element={<PlatformUsers />} />
+        <Route path="/platform/billing" element={<PlatformBilling />} />
 
         <Route path="/platform/security" element={<PlatformSecurityCenter />} />
         <Route path="/platform/system" element={<PlatformSystemHealth />} />

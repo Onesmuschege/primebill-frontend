@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import {
   getPlatformStats,
@@ -11,6 +12,8 @@ import {
 import Table from '../../components/common/Table'
 import Modal from '../../components/common/Modal'
 import StatCard from '../../components/dashboard/StatCard'
+import DashboardListSection from '../../components/dashboard/DashboardListSection'
+import { DASHBOARD_LIMITS } from '../../utils/dashboardLimits'
 import Spinner from '../../components/common/Spinner'
 import { formatKES, formatNumber } from '../../utils/formatCurrency'
 import { formatDate, formatDateTime } from '../../utils/formatDate'
@@ -19,7 +22,7 @@ import {
   Globe, Building2, Users, DollarSign, AlertCircle,
   Search, UserX, UserCheck, ShieldAlert, Activity,
   Server, CreditCard, ShieldCheck, Clock, TrendingUp,
-  Wifi, Eye, ArrowLeft, Mail, Phone, MapPin, Database,
+  Wifi, Eye, ArrowLeft, Mail, Phone, MapPin, Database, ArrowUpRight,
 } from 'lucide-react'
 
 // ── Small helpers ────────────────────────────────────────────────────────
@@ -54,7 +57,8 @@ function ActivityIcon({ action }) {
 
 export default function PlatformDashboard() {
   const queryClient = useQueryClient()
-  const [search, setSearch]         = useState('')
+    const [search, setSearch]         = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [confirmTarget, setConfirmTarget] = useState(null) // { tenant, action }
   const [detailTenant, setDetailTenant] = useState(null)   // tenant object
@@ -67,11 +71,22 @@ export default function PlatformDashboard() {
     refetchInterval: 60000,
   })
 
-  const { data: tenantsData, isLoading: tenantsLoading, isFetching: tenantsFetching } = useQuery({
-    queryKey: ['platform-tenants'],
-    queryFn: () => getPlatformTenants().then(r => r.data.data),
-    refetchInterval: 60000,
+  // Dashboard tenant preview: server-side limit (widget budget) + server-side
+  // search/status filtering. The full-page /platform/tenants view keeps its
+  // own independent fetching; this widget only ever receives its slice plus
+  // the real filtered total for the "Showing N of TOTAL" footer.
+  const { data: tenantsPage, isLoading: tenantsLoading, isFetching: tenantsFetching } = useQuery({
+    queryKey: ['platform-tenants', 'dashboard', DASHBOARD_LIMITS.platformTenants, debouncedSearch, statusFilter],
+    queryFn: () => getPlatformTenants({
+      per_page: DASHBOARD_LIMITS.platformTenants,
+      search: debouncedSearch || undefined,
+      status: statusFilter || undefined,
+    }).then(r => r.data.data),
+    keepPreviousData: true,
   })
+
+  const tenants = tenantsPage?.data || []
+  const tenantsTotal = Number.isFinite(tenantsPage?.total) ? tenantsPage.total : null
 
   const { data: tenantDetail, isLoading: detailLoading } = useQuery({
     queryKey: ['platform-tenant-detail', detailTenant?.id],
@@ -87,8 +102,8 @@ export default function PlatformDashboard() {
 
   const suspendMutation = useMutation({
     mutationFn: suspendTenant,
-    onSuccess: (_, tenantId) => {
-      const tenant = (tenantsData || []).find(t => t.id === tenantId)
+        onSuccess: (_, tenantId) => {
+      const tenant = tenants.find(t => t.id === tenantId)
       toast.success(`${tenant?.name ?? 'Tenant'} suspended`)
       refresh()
       setConfirmTarget(null)
@@ -99,7 +114,7 @@ export default function PlatformDashboard() {
   const activateMutation = useMutation({
     mutationFn: activateTenant,
     onSuccess: (_, tenantId) => {
-      const tenant = (tenantsData || []).find(t => t.id === tenantId)
+      const tenant = tenants.find(t => t.id === tenantId)
       toast.success(`${tenant?.name ?? 'Tenant'} activated`)
       refresh()
       setConfirmTarget(null)
@@ -134,18 +149,15 @@ export default function PlatformDashboard() {
   const monthlyRevenue = Array.isArray(revenue.monthly) ? revenue.monthly : []
   const maxMonthly = Math.max(1, ...monthlyRevenue.map(m => m.total))
 
-  // ── Client-side filtering ──────────────────────────────────────────────
-  const filteredTenants = useMemo(() => {
-    const list = Array.isArray(tenantsData) ? tenantsData : []
-    const term = search.trim().toLowerCase()
-    return list.filter(t => {
-      const matchesSearch = !term
-        || t.name.toLowerCase().includes(term)
-        || t.slug.toLowerCase().includes(term)
-      const matchesStatus = !statusFilter || t.status === statusFilter
-      return matchesSearch && matchesStatus
-    })
-  }, [tenantsData, search, statusFilter])
+  // ── Server-side search/filter for the dashboard tenant preview ──────────
+  // Filtering happens in the API call (getTenants supports search + status),
+  // so the widget stays bounded no matter how many tenants match. The full
+  // /platform/tenants page keeps its own richer client-side filtering.
+  const onTenantSearchChange = (value) => {
+    setSearch(value)
+    clearTimeout(onTenantSearchChange._t)
+    onTenantSearchChange._t = setTimeout(() => setDebouncedSearch(value), 350)
+  }
 
   const handleConfirmAction = () => {
     if (!confirmTarget) return
@@ -589,43 +601,37 @@ export default function PlatformDashboard() {
           </div>
 
           {/* ── Recent activity feed ── */}
-          <div className="card p-5">
-            <h3 className="text-sm font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--pb-text-1)' }}>
-              <ShieldCheck size={16} style={{ color: '#a78bfa' }} />
-              Recent Platform Activity
-            </h3>
-            {activity.length === 0 ? (
-              <p className="text-sm py-6 text-center" style={{ color: 'var(--pb-text-3)' }}>
-                No recent activity logged
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {activity.map((log) => (
-                  <div key={log.id}
-                    className="flex items-center gap-3 p-2.5 rounded-lg"
-                    style={{ borderBottom: '1px solid var(--pb-border)' }}
-                  >
-                    <ActivityIcon action={log.action} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate" style={{ color: 'var(--pb-text-1)' }}>
-                        {log.user}
-                      </p>
-                      <p className="text-xs truncate" style={{ color: 'var(--pb-text-3)' }}>
-                        {log.action} · {log.model ? `${log.model}#${log.model_id}` : ''}
-                      </p>
-                    </div>
-                    <span className="text-xs shrink-0" style={{ color: 'var(--pb-text-3)' }}>
-                      {formatDateTime(log.created_at)}
-                    </span>
-                  </div>
-                ))}
+          <DashboardListSection
+            title="Recent Platform Activity"
+            icon={ShieldCheck}
+            items={activity}
+            limit={DASHBOARD_LIMITS.platformActivity}
+            viewAllTo="/platform/audit-log"
+            emptyMessage="No recent activity logged"
+            renderItem={(log) => (
+              <div key={log.id}
+                className="flex items-center gap-3 p-2.5 rounded-lg"
+                style={{ borderBottom: '1px solid var(--pb-border)' }}
+              >
+                <ActivityIcon action={log.action} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: 'var(--pb-text-1)' }}>
+                    {log.user}
+                  </p>
+                  <p className="text-xs truncate" style={{ color: 'var(--pb-text-3)' }}>
+                    {log.action} · {log.model ? `${log.model}#${log.model_id}` : ''}
+                  </p>
+                </div>
+                <span className="text-xs shrink-0" style={{ color: 'var(--pb-text-3)' }}>
+                  {formatDateTime(log.created_at)}
+                </span>
               </div>
             )}
-          </div>
+          />
         </>
       )}
 
-      {/* ── Tenant table ── */}
+      {/* ── Tenant table (dashboard preview) ── */}
       <div className="card p-0 overflow-hidden">
         <div className="flex items-center justify-between gap-3 flex-wrap p-4"
           style={{ borderBottom: '1px solid var(--pb-border)' }}>
@@ -638,7 +644,7 @@ export default function PlatformDashboard() {
               />
               <input
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => onTenantSearchChange(e.target.value)}
                 placeholder="Search tenants..."
                 className="input pl-9 w-56"
               />
@@ -656,17 +662,36 @@ export default function PlatformDashboard() {
             </select>
           </div>
 
-          <p className="text-xs" style={{ color: 'var(--pb-text-3)', opacity: tenantsFetching ? 1 : 0, transition: 'opacity 0.2s' }}>
-            Refreshing…
-          </p>
+          <div className="flex items-center gap-4">
+            <p className="text-xs" style={{ color: 'var(--pb-text-3)', opacity: tenantsFetching ? 1 : 0, transition: 'opacity 0.2s' }}>
+              Refreshing…
+            </p>
+            <Link to="/platform/tenants" className="text-sm flex items-center gap-1 hover:underline" style={{ color: '#60a5fa' }}>
+              View all <ArrowUpRight size={14} />
+            </Link>
+          </div>
         </div>
 
         <Table
           columns={columns}
-          data={filteredTenants}
+          data={tenants}
           loading={tenantsLoading}
           emptyMessage={search || statusFilter ? 'No tenants match your filters' : 'No tenants yet'}
         />
+
+        {/* Showing N of TOTAL — N is the defensive-capped render count, TOTAL is
+            the real backend count for the active search/status filter. */}
+        <div className="flex items-center justify-between px-4 py-3 text-xs"
+          style={{ borderTop: '1px solid var(--pb-border)' }}>
+          <span style={{ color: 'var(--pb-text-3)' }}>
+            {tenantsLoading
+              ? 'Loading…'
+              : `Showing ${Math.min(tenants.length, DASHBOARD_LIMITS.platformTenants)} of ${tenantsTotal ?? tenants.length}`}
+          </span>
+          <Link to="/platform/tenants" className="flex items-center gap-1 hover:underline" style={{ color: '#60a5fa' }}>
+            View all <ArrowUpRight size={12} />
+          </Link>
+        </div>
       </div>
 
       {/* ── Suspend/activate confirmation ── */}

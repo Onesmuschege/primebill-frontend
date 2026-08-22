@@ -18,6 +18,7 @@ import {
   verifyLedger,
 } from '../../api/finance.api'
 import Table from '../../components/common/Table'
+import { DASHBOARD_LIMITS } from '../../utils/dashboardLimits'
 import Pagination from '../../components/common/Pagination'
 import Modal from '../../components/common/Modal'
 import Spinner from '../../components/common/Spinner'
@@ -34,6 +35,8 @@ const clientName = (r) => {
   return ((f + ' ' + l).trim()) || '—'
 }
 
+const mutedText = { color: 'var(--pb-text-3)' }
+
 const TAB_DEFS = [
   { key: 'overview',  label: 'Overview',          icon: DollarSign },
   { key: 'wallets',   label: 'Wallets',           icon: Wallet },
@@ -43,6 +46,23 @@ const TAB_DEFS = [
   { key: 'plans',     label: 'Payment Plans',     icon: CalendarClock },
   { key: 'statement', label: 'Trial Balance',     icon: Scale },
 ]
+
+// Meaningful accent colors (income = green, expenditure = red, etc.) kept as
+// real hex values matching the palette used everywhere else in the app
+// (#34d399 green, #f87171 red, #60a5fa blue, #fbbf24 orange/amber,
+// #a78bfa purple) instead of Tailwind's gray-50/green-600 pairs, which never
+// responded to dark mode.
+const ACCENT = {
+  green:  { fg: '#34d399', bg: 'rgba(52,211,153,0.12)' },
+  red:    { fg: '#f87171', bg: 'rgba(248,113,113,0.12)' },
+  blue:   { fg: '#60a5fa', bg: 'rgba(96,165,250,0.12)' },
+  orange: { fg: '#fbbf24', bg: 'rgba(251,191,36,0.12)' },
+  purple: { fg: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
+}
+
+function FieldLabel({ children }) {
+  return <span className="text-sm block mb-1" style={mutedText}>{children}</span>
+}
 
 export default function FinanceOverview() {
   const [tab, setTab] = useState('overview')
@@ -71,11 +91,16 @@ export default function FinanceOverview() {
     queryFn: () => getWalletBalance(clientId).then(r => r.data.data),
     enabled: walletOn,
   })
+    // Server-side limit via /finance/wallet/transactions?limit=N — the endpoint
+  // returns a plain array (no total metadata) and there is no dedicated
+  // full-page wallet view, so this widget shows "Showing N" only.
   const { data: transactions } = useQuery({
-    queryKey: ['finance', 'wallet-tx', clientId],
-    queryFn: () => getWalletTransactions(clientId, 20).then(r => r.data.data),
+    queryKey: ['finance', 'wallet-tx', clientId, DASHBOARD_LIMITS.recentTransactions],
+    queryFn: () => getWalletTransactions(clientId, DASHBOARD_LIMITS.recentTransactions).then(r => r.data.data),
     enabled: walletOn,
   })
+  const recentTransactions = (Array.isArray(transactions) ? transactions : [])
+    .slice(0, DASHBOARD_LIMITS.recentTransactions)
 
   // ── Lists ─────────────────────────────────────────────────────────
   const { data: creditData, isLoading: loadingCredit } = useQuery({
@@ -133,9 +158,6 @@ export default function FinanceOverview() {
     fn(Object.fromEntries(fd.entries()))
   }
 
-  const btn = 'px-4 py-2 text-sm font-semibold rounded-lg text-white transition-all'
-  const input = 'w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/40'
-
   return (
     <div className="space-y-5">
       {/* Tab bar */}
@@ -146,10 +168,9 @@ export default function FinanceOverview() {
             <button
               key={tabDef.key}
               onClick={() => setTab(tabDef.key)}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all
-                ${tab === tabDef.key ? 'text-white' : ''}`}
+              className="px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-all"
               style={tab === tabDef.key
-                ? { background: 'linear-gradient(135deg,#2563eb,#06b6d4)', boxShadow: 'var(--shadow-glow-primary)' }
+                ? { background: 'linear-gradient(135deg,#2563eb,#06b6d4)', color: '#fff', boxShadow: 'var(--shadow-glow-primary)' }
                 : { color: 'var(--pb-text-2)', background: 'var(--pb-raised)', border: '1px solid var(--pb-border)' }}
             >
               <Icon size={16} /> {tabDef.label}
@@ -163,18 +184,20 @@ export default function FinanceOverview() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: 'Income',      value: summary?.income,      icon: TrendingUp,  color: 'text-green-600',  bg: 'bg-green-50' },
-              { label: 'Expenditure', value: summary?.expenditure, icon: FileMinus,   color: 'text-red-600',    bg: 'bg-red-50' },
-              { label: 'Net Revenue', value: summary?.net_revenue, icon: DollarSign,  color: 'text-primary-600',bg: 'bg-primary-50' },
-              { label: 'Receivables', value: summary?.receivables, icon: Wallet,      color: 'text-orange-600', bg: 'bg-orange-50' },
+              { label: 'Income',      value: summary?.income,      icon: TrendingUp, accent: ACCENT.green },
+              { label: 'Expenditure', value: summary?.expenditure, icon: FileMinus,  accent: ACCENT.red },
+              { label: 'Net Revenue', value: summary?.net_revenue, icon: DollarSign, accent: ACCENT.blue },
+              { label: 'Receivables', value: summary?.receivables, icon: Wallet,     accent: ACCENT.orange },
             ].map((item) => {
               const Icon = item.icon
               return (
                 <div key={item.label} className="card flex items-center gap-4">
-                  <div className={`p-3 rounded-xl ${item.bg} ${item.color}`}><Icon size={22} /></div>
+                  <div className="p-3 rounded-xl" style={{ backgroundColor: item.accent.bg, color: item.accent.fg }}>
+                    <Icon size={22} />
+                  </div>
                   <div>
-                    <p className="text-sm text-gray-500">{item.label}</p>
-                    <p className={`text-xl font-bold ${item.color}`}>{formatKES(item.value)}</p>
+                    <p className="text-sm" style={mutedText}>{item.label}</p>
+                    <p className="text-xl font-bold" style={{ color: item.accent.fg }}>{formatKES(item.value)}</p>
                   </div>
                 </div>
               )
@@ -182,18 +205,23 @@ export default function FinanceOverview() {
           </div>
 
           <div className="card p-5 flex items-center gap-3">
-            <div className={`p-3 rounded-xl ${ledgerCheck?.balanced ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+            <div
+              className="p-3 rounded-xl"
+              style={ledgerCheck?.balanced
+                ? { backgroundColor: ACCENT.green.bg, color: ACCENT.green.fg }
+                : { backgroundColor: ACCENT.red.bg, color: ACCENT.red.fg }}
+            >
               <Scale size={22} />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Ledger Integrity</p>
-              <p className="font-semibold">
+              <p className="text-sm" style={mutedText}>Ledger Integrity</p>
+              <p className="font-semibold" style={{ color: 'var(--pb-text-1)' }}>
                 {ledgerCheck?.balanced === undefined ? 'Checking…' :
                   ledgerCheck?.balanced ? 'Balanced — debits match credits' : 'IMBALANCE DETECTED'}
               </p>
             </div>
           </div>
-          <p className="text-sm text-gray-400 text-center">Showing data for {summary?.month}</p>
+          <p className="text-sm text-center" style={mutedText}>Showing data for {summary?.month}</p>
         </div>
       )}
 
@@ -202,25 +230,27 @@ export default function FinanceOverview() {
         <div className="space-y-4">
           <div className="card p-5 flex flex-col sm:flex-row sm:items-end gap-4">
             <label className="block flex-1">
-              <span className="text-sm text-gray-500 mb-1 block">Client ID</span>
+              <FieldLabel>Client ID</FieldLabel>
               <input
                 value={clientId}
                 onChange={(e) => setClientId(e.target.value)}
                 placeholder="Enter client ID"
-                className={input}
+                className="input"
               />
             </label>
             <button
               onClick={() => setModal('deposit')}
               disabled={!walletOn}
-              className={`${btn} bg-green-600 hover:bg-green-700 disabled:opacity-40 flex items-center gap-2`}
+              className="btn-primary disabled:opacity-40"
+              style={{ backgroundColor: ACCENT.green.fg, borderColor: ACCENT.green.fg }}
             >
               <Plus size={16} /> Deposit
             </button>
             <button
               onClick={() => setModal('withdraw')}
               disabled={!walletOn}
-              className={`${btn} bg-red-600 hover:bg-red-700 disabled:opacity-40`}
+              className="btn-secondary disabled:opacity-40"
+              style={{ color: ACCENT.red.fg }}
             >
               Withdraw
             </button>
@@ -228,12 +258,22 @@ export default function FinanceOverview() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="card p-5">
-              <p className="text-sm text-gray-500">Current Balance</p>
-              <p className="text-3xl font-bold text-primary-600 mt-1">{walletOn ? formatKES(balance?.balance) : '—'}</p>
+              <p className="text-sm" style={mutedText}>Current Balance</p>
+              <p className="text-3xl font-bold mt-1" style={{ color: '#60a5fa' }}>
+                {walletOn ? formatKES(balance?.balance) : '—'}
+              </p>
             </div>
             <div className="card p-0 overflow-hidden">
-              <div className="px-5 py-3 font-semibold text-sm border-b" style={{ borderColor: 'var(--pb-border)' }}>
-                Recent Transactions
+              <div
+                className="px-5 py-3 font-semibold text-sm flex items-center justify-between"
+                style={{ borderBottom: '1px solid var(--pb-border)', color: 'var(--pb-text-1)' }}
+              >
+                <span>Recent Transactions</span>
+                {walletOn && recentTransactions.length > 0 && (
+                  <span className="text-xs font-normal" style={{ color: 'var(--pb-text-3)' }}>
+                    Showing {recentTransactions.length}
+                  </span>
+                )}
               </div>
               {walletOn ? (
                 <Table
@@ -242,12 +282,12 @@ export default function FinanceOverview() {
                     { key: 'amount', label: 'Amount', render: (r) => <span className="font-semibold">{formatKES(r.amount)}</span> },
                     { key: 'created_at', label: 'Date', render: (r) => formatDateTime(r.created_at) },
                   ]}
-                  data={transactions}
+                  data={recentTransactions}
                   loading={false}
                   emptyMessage="No transactions yet"
                 />
               ) : (
-                <p className="px-5 py-10 text-center text-sm text-gray-400">Enter a client ID to load wallet</p>
+                <p className="px-5 py-10 text-center text-sm" style={mutedText}>Enter a client ID to load wallet</p>
               )}
             </div>
           </div>
@@ -258,7 +298,7 @@ export default function FinanceOverview() {
       {tab === 'credit' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <button onClick={() => setModal('credit')} className={`${btn} bg-blue-600 hover:bg-blue-700 flex items-center gap-2`}>
+            <button onClick={() => setModal('credit')} className="btn-primary">
               <Plus size={16} /> Issue Credit Note
             </button>
           </div>
@@ -283,7 +323,7 @@ export default function FinanceOverview() {
       {tab === 'debit' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <button onClick={() => setModal('debit')} className={`${btn} bg-amber-600 hover:bg-amber-700 flex items-center gap-2`}>
+            <button onClick={() => setModal('debit')} className="btn-primary" style={{ backgroundColor: ACCENT.orange.fg, borderColor: ACCENT.orange.fg }}>
               <Plus size={16} /> Issue Debit Note
             </button>
           </div>
@@ -308,7 +348,7 @@ export default function FinanceOverview() {
       {tab === 'refunds' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <button onClick={() => setModal('refund')} className={`${btn} bg-red-600 hover:bg-red-700 flex items-center gap-2`}>
+            <button onClick={() => setModal('refund')} className="btn-primary" style={{ backgroundColor: ACCENT.red.fg, borderColor: ACCENT.red.fg }}>
               <Plus size={16} /> Issue Refund
             </button>
           </div>
@@ -334,7 +374,7 @@ export default function FinanceOverview() {
       {tab === 'plans' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <button onClick={() => setModal('plan')} className={`${btn} bg-purple-600 hover:bg-purple-700 flex items-center gap-2`}>
+            <button onClick={() => setModal('plan')} className="btn-primary" style={{ backgroundColor: ACCENT.purple.fg, borderColor: ACCENT.purple.fg }}>
               <Plus size={16} /> Create Payment Plan
             </button>
           </div>
@@ -375,11 +415,17 @@ export default function FinanceOverview() {
           </div>
           {trialBalance && (
             <div className="grid grid-cols-3 gap-4">
-              <div className="card p-4 text-center"><p className="text-sm text-gray-500">Total Debits</p><p className="font-bold mt-1">{formatKES(trialBalance.total_debits)}</p></div>
-              <div className="card p-4 text-center"><p className="text-sm text-gray-500">Total Credits</p><p className="font-bold mt-1">{formatKES(trialBalance.total_credits)}</p></div>
               <div className="card p-4 text-center">
-                <p className="text-sm text-gray-500">Status</p>
-                <p className={`font-bold mt-1 ${trialBalance.balanced ? 'text-green-600' : 'text-red-600'}`}>
+                <p className="text-sm" style={mutedText}>Total Debits</p>
+                <p className="font-bold mt-1" style={{ color: 'var(--pb-text-1)' }}>{formatKES(trialBalance.total_debits)}</p>
+              </div>
+              <div className="card p-4 text-center">
+                <p className="text-sm" style={mutedText}>Total Credits</p>
+                <p className="font-bold mt-1" style={{ color: 'var(--pb-text-1)' }}>{formatKES(trialBalance.total_credits)}</p>
+              </div>
+              <div className="card p-4 text-center">
+                <p className="text-sm" style={mutedText}>Status</p>
+                <p className="font-bold mt-1" style={{ color: trialBalance.balanced ? ACCENT.green.fg : ACCENT.red.fg }}>
                   {trialBalance.balanced ? 'Balanced' : 'Imbalanced'}
                 </p>
               </div>
@@ -391,15 +437,15 @@ export default function FinanceOverview() {
       {/* ── Modals ────────────────────────────────────────────────── */}
       <Modal isOpen={modal === 'deposit'} onClose={() => setModal(null)} title="Deposit to Wallet">
         <form onSubmit={(e) => submit(deposit.mutate, e)} className="space-y-3">
-          {errorMsg(deposit) && <p className="text-sm text-red-600">{errorMsg(deposit)}</p>}
+          {errorMsg(deposit) && <p className="text-sm" style={{ color: ACCENT.red.fg }}>{errorMsg(deposit)}</p>}
           <input type="hidden" name="client_id" value={clientId} />
-          <label className="block"><span className="text-sm text-gray-500">Amount</span>
-            <input name="amount" type="number" step="0.01" min="0.01" required className={input} />
+          <label className="block"><FieldLabel>Amount</FieldLabel>
+            <input name="amount" type="number" step="0.01" min="0.01" required className="input" />
           </label>
-          <label className="block"><span className="text-sm text-gray-500">Reference</span>
-            <input name="reference" className={input} />
+          <label className="block"><FieldLabel>Reference</FieldLabel>
+            <input name="reference" className="input" />
           </label>
-          <button type="submit" disabled={deposit.isPending} className={`${btn} bg-green-600 hover:bg-green-700 w-full`}>
+          <button type="submit" disabled={deposit.isPending} className="btn-primary w-full justify-center" style={{ backgroundColor: ACCENT.green.fg, borderColor: ACCENT.green.fg }}>
             {deposit.isPending ? 'Processing…' : 'Deposit'}
           </button>
         </form>
@@ -407,12 +453,12 @@ export default function FinanceOverview() {
 
       <Modal isOpen={modal === 'withdraw'} onClose={() => setModal(null)} title="Withdraw from Wallet">
         <form onSubmit={(e) => submit(withdraw.mutate, e)} className="space-y-3">
-          {errorMsg(withdraw) && <p className="text-sm text-red-600">{errorMsg(withdraw)}</p>}
+          {errorMsg(withdraw) && <p className="text-sm" style={{ color: ACCENT.red.fg }}>{errorMsg(withdraw)}</p>}
           <input type="hidden" name="client_id" value={clientId} />
-          <label className="block"><span className="text-sm text-gray-500">Amount</span>
-            <input name="amount" type="number" step="0.01" min="0.01" required className={input} />
+          <label className="block"><FieldLabel>Amount</FieldLabel>
+            <input name="amount" type="number" step="0.01" min="0.01" required className="input" />
           </label>
-          <button type="submit" disabled={withdraw.isPending} className={`${btn} bg-red-600 hover:bg-red-700 w-full`}>
+          <button type="submit" disabled={withdraw.isPending} className="btn-primary w-full justify-center" style={{ backgroundColor: ACCENT.red.fg, borderColor: ACCENT.red.fg }}>
             {withdraw.isPending ? 'Processing…' : 'Withdraw'}
           </button>
         </form>
@@ -420,20 +466,20 @@ export default function FinanceOverview() {
 
       <Modal isOpen={modal === 'credit'} onClose={() => setModal(null)} title="Issue Credit Note">
         <form onSubmit={(e) => submit(mkCredit.mutate, e)} className="space-y-3">
-          {errorMsg(mkCredit) && <p className="text-sm text-red-600">{errorMsg(mkCredit)}</p>}
-          <label className="block"><span className="text-sm text-gray-500">Client ID</span>
-            <input name="client_id" required className={input} />
+          {errorMsg(mkCredit) && <p className="text-sm" style={{ color: ACCENT.red.fg }}>{errorMsg(mkCredit)}</p>}
+          <label className="block"><FieldLabel>Client ID</FieldLabel>
+            <input name="client_id" required className="input" />
           </label>
-          <label className="block"><span className="text-sm text-gray-500">Invoice ID (optional)</span>
-            <input name="invoice_id" className={input} />
+          <label className="block"><FieldLabel>Invoice ID (optional)</FieldLabel>
+            <input name="invoice_id" className="input" />
           </label>
-          <label className="block"><span className="text-sm text-gray-500">Amount</span>
-            <input name="amount" type="number" step="0.01" min="0.01" required className={input} />
+          <label className="block"><FieldLabel>Amount</FieldLabel>
+            <input name="amount" type="number" step="0.01" min="0.01" required className="input" />
           </label>
-          <label className="block"><span className="text-sm text-gray-500">Reason</span>
-            <input name="reason" className={input} />
+          <label className="block"><FieldLabel>Reason</FieldLabel>
+            <input name="reason" className="input" />
           </label>
-          <button type="submit" disabled={mkCredit.isPending} className={`${btn} bg-blue-600 hover:bg-blue-700 w-full`}>
+          <button type="submit" disabled={mkCredit.isPending} className="btn-primary w-full justify-center">
             {mkCredit.isPending ? 'Processing…' : 'Issue'}
           </button>
         </form>
@@ -441,20 +487,20 @@ export default function FinanceOverview() {
 
       <Modal isOpen={modal === 'debit'} onClose={() => setModal(null)} title="Issue Debit Note">
         <form onSubmit={(e) => submit(mkDebit.mutate, e)} className="space-y-3">
-          {errorMsg(mkDebit) && <p className="text-sm text-red-600">{errorMsg(mkDebit)}</p>}
-          <label className="block"><span className="text-sm text-gray-500">Client ID</span>
-            <input name="client_id" required className={input} />
+          {errorMsg(mkDebit) && <p className="text-sm" style={{ color: ACCENT.red.fg }}>{errorMsg(mkDebit)}</p>}
+          <label className="block"><FieldLabel>Client ID</FieldLabel>
+            <input name="client_id" required className="input" />
           </label>
-          <label className="block"><span className="text-sm text-gray-500">Invoice ID (optional)</span>
-            <input name="invoice_id" className={input} />
+          <label className="block"><FieldLabel>Invoice ID (optional)</FieldLabel>
+            <input name="invoice_id" className="input" />
           </label>
-          <label className="block"><span className="text-sm text-gray-500">Amount</span>
-            <input name="amount" type="number" step="0.01" min="0.01" required className={input} />
+          <label className="block"><FieldLabel>Amount</FieldLabel>
+            <input name="amount" type="number" step="0.01" min="0.01" required className="input" />
           </label>
-          <label className="block"><span className="text-sm text-gray-500">Reason</span>
-            <input name="reason" className={input} />
+          <label className="block"><FieldLabel>Reason</FieldLabel>
+            <input name="reason" className="input" />
           </label>
-          <button type="submit" disabled={mkDebit.isPending} className={`${btn} bg-amber-600 hover:bg-amber-700 w-full`}>
+          <button type="submit" disabled={mkDebit.isPending} className="btn-primary w-full justify-center" style={{ backgroundColor: ACCENT.orange.fg, borderColor: ACCENT.orange.fg }}>
             {mkDebit.isPending ? 'Processing…' : 'Issue'}
           </button>
         </form>
@@ -462,20 +508,20 @@ export default function FinanceOverview() {
 
       <Modal isOpen={modal === 'refund'} onClose={() => setModal(null)} title="Issue Refund">
         <form onSubmit={(e) => submit(refund.mutate, e)} className="space-y-3">
-          {errorMsg(refund) && <p className="text-sm text-red-600">{errorMsg(refund)}</p>}
-          <label className="block"><span className="text-sm text-gray-500">Client ID</span>
-            <input name="client_id" required className={input} />
+          {errorMsg(refund) && <p className="text-sm" style={{ color: ACCENT.red.fg }}>{errorMsg(refund)}</p>}
+          <label className="block"><FieldLabel>Client ID</FieldLabel>
+            <input name="client_id" required className="input" />
           </label>
-          <label className="block"><span className="text-sm text-gray-500">Payment ID</span>
-            <input name="payment_id" required className={input} />
+          <label className="block"><FieldLabel>Payment ID</FieldLabel>
+            <input name="payment_id" required className="input" />
           </label>
-          <label className="block"><span className="text-sm text-gray-500">Amount</span>
-            <input name="amount" type="number" step="0.01" min="0.01" required className={input} />
+          <label className="block"><FieldLabel>Amount</FieldLabel>
+            <input name="amount" type="number" step="0.01" min="0.01" required className="input" />
           </label>
-          <label className="block"><span className="text-sm text-gray-500">Reason</span>
-            <input name="reason" className={input} />
+          <label className="block"><FieldLabel>Reason</FieldLabel>
+            <input name="reason" className="input" />
           </label>
-          <button type="submit" disabled={refund.isPending} className={`${btn} bg-red-600 hover:bg-red-700 w-full`}>
+          <button type="submit" disabled={refund.isPending} className="btn-primary w-full justify-center" style={{ backgroundColor: ACCENT.red.fg, borderColor: ACCENT.red.fg }}>
             {refund.isPending ? 'Processing…' : 'Issue'}
           </button>
         </form>
@@ -483,31 +529,31 @@ export default function FinanceOverview() {
 
       <Modal isOpen={modal === 'plan'} onClose={() => setModal(null)} title="Create Payment Plan" size="lg">
         <form onSubmit={(e) => submit(plan.mutate, e)} className="space-y-3">
-          {errorMsg(plan) && <p className="text-sm text-red-600">{errorMsg(plan)}</p>}
+          {errorMsg(plan) && <p className="text-sm" style={{ color: ACCENT.red.fg }}>{errorMsg(plan)}</p>}
           <div className="grid grid-cols-2 gap-3">
-            <label className="block"><span className="text-sm text-gray-500">Client ID</span>
-              <input name="client_id" required className={input} />
+            <label className="block"><FieldLabel>Client ID</FieldLabel>
+              <input name="client_id" required className="input" />
             </label>
-            <label className="block"><span className="text-sm text-gray-500">Invoice ID (optional)</span>
-              <input name="invoice_id" className={input} />
+            <label className="block"><FieldLabel>Invoice ID (optional)</FieldLabel>
+              <input name="invoice_id" className="input" />
             </label>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <label className="block"><span className="text-sm text-gray-500">Total Amount</span>
-              <input name="total_amount" type="number" step="0.01" className={input} />
+            <label className="block"><FieldLabel>Total Amount</FieldLabel>
+              <input name="total_amount" type="number" step="0.01" className="input" />
             </label>
-            <label className="block"><span className="text-sm text-gray-500">Installment Count</span>
-              <input name="installment_count" type="number" min="1" required className={input} />
+            <label className="block"><FieldLabel>Installment Count</FieldLabel>
+              <input name="installment_count" type="number" min="1" required className="input" />
             </label>
           </div>
-          <label className="block"><span className="text-sm text-gray-500">Frequency</span>
-            <select name="frequency" className={input}>
+          <label className="block"><FieldLabel>Frequency</FieldLabel>
+            <select name="frequency" className="input">
               <option value="monthly">Monthly</option>
               <option value="weekly">Weekly</option>
               <option value="quarterly">Quarterly</option>
             </select>
           </label>
-          <button type="submit" disabled={plan.isPending} className={`${btn} bg-purple-600 hover:bg-purple-700 w-full`}>
+          <button type="submit" disabled={plan.isPending} className="btn-primary w-full justify-center" style={{ backgroundColor: ACCENT.purple.fg, borderColor: ACCENT.purple.fg }}>
             {plan.isPending ? 'Processing…' : 'Create Plan'}
           </button>
         </form>
@@ -515,4 +561,3 @@ export default function FinanceOverview() {
     </div>
   )
 }
-
