@@ -3,6 +3,7 @@ import { useSearchParams, useParams } from 'react-router-dom'
 import { Wifi, CheckCircle2, Loader2, Phone, ArrowRight, Clock, Zap, Shield } from 'lucide-react'
 import axios from 'axios'
 import toast, { Toaster } from 'react-hot-toast'
+import BRAND from '../../config/brand'
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api'
 
@@ -246,7 +247,7 @@ export default function CaptivePortal() {
   // ── Main plan-picker screen ─────────────────────────────────────────────────
   const primary   = theme?.primary_color   || '#2563eb'
   const secondary = theme?.secondary_color || '#06b6d4'
-  const businessName = theme?.business_name || 'PrimeBill ISP'
+  const businessName = theme?.business_name || BRAND.company
 
   return (
     <Screen>

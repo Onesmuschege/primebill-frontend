@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { forgotPassword } from '../../api/auth.api'
 import { Wifi, ArrowLeft, CheckCircle, Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
+import BRAND from '../../config/brand'
 
 export default function ForgotPassword() {
   const [email, setEmail]         = useState('')
@@ -47,7 +48,7 @@ export default function ForgotPassword() {
           style={{ background: 'linear-gradient(135deg, #2563eb, #06b6d4)', boxShadow: '0 0 12px rgba(37,99,235,0.4)' }}>
           <Wifi size={15} className="text-white" />
         </div>
-        <span className="text-white font-bold text-base tracking-tight" style={{ fontFamily: "'DM Mono', monospace" }}>PrimeBill</span>
+        <span className="text-white font-bold text-base tracking-tight" style={{ fontFamily: "'DM Mono', monospace" }}>{BRAND.brand}</span>
       </div>
 
       {/* Card */}

@@ -1,6 +1,7 @@
 ﻿import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import BRAND from '../../config/brand'
 import {
   LayoutDashboard, Users, Wifi, FileText, CreditCard,
   Ticket, MessageSquare, Router, Package, DollarSign,
@@ -113,7 +114,7 @@ group: 'Network',
     ],
   },
   {
-    group: 'My PrimeBill Account',
+    group: `My ${BRAND.brand} Account`,
     items: [
       { to: '/subscription/my',    icon: CreditCard,    label: 'My Subscription' },
       { to: '/subscription/plans', icon: ArrowUpCircle, label: 'Upgrade Plan' },
@@ -201,10 +202,10 @@ export default function Sidebar({ open, onClose }) {
               className="font-bold text-base leading-none tracking-tight"
               style={{ color: 'var(--pb-text-1)' }}
             >
-              PrimeBill
+              {BRAND.brand}
             </h1>
             <p className="text-xs mt-0.5" style={{ color: 'var(--pb-sidebar-txt)' }}>
-              ISP Management
+              ISP Platform
             </p>
           </div>
         </div>

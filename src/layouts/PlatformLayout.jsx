@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import ImpersonationBanner from '../components/layout/ImpersonationBanner'
+import BRAND from '../config/brand'
 import {
   ChevronDown, ChevronRight, X, LogOut, Globe, LayoutDashboard,
   Building2, CreditCard, ScrollText, TrendingUp, BarChart3, Menu,
@@ -91,6 +92,11 @@ export default function PlatformLayout() {
     return 'Platform Console'
   })()
 
+  // Keep the browser/page title consistent with the brand while navigating.
+  useEffect(() => {
+    document.title = pageTitle ? `${pageTitle} · ${BRAND.display}` : BRAND.display
+  }, [pageTitle])
+
   return (
     <div
       className="flex h-screen overflow-hidden theme-transition"
@@ -119,7 +125,7 @@ export default function PlatformLayout() {
             </div>
             <div>
               <h1 className="font-bold text-base leading-none tracking-tight" style={{ color: 'var(--pb-text-1)' }}>
-                PrimeBill
+                {BRAND.brand}
               </h1>
               <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: ACCENT }}>
                 <ShieldCheck size={11} /> Platform Console

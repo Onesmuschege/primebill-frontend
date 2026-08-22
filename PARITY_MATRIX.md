@@ -1,4 +1,4 @@
-# PrimeBill — Frontend/Backend Parity Matrix
+# PrimeBill ISP Platform — Frontend/Backend Parity Matrix
 
 Produced from direct source inspection (not the README): backend has 62 `app/Http/Controllers/Api/*` (plus `Portal/*`) and ~390 unique API URIs (via `artisan route:list`), 168 models, ~150 migrations. Frontend has 27 `src/api/*` modules, 24 page directories, 12 generic `{resource}` catalog groups.
 

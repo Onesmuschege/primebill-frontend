@@ -249,7 +249,7 @@ export default function PlatformTenants() {
             All Tenants
           </h2>
           <p className="text-sm mt-0.5" style={{ color: 'var(--pb-text-2)' }}>
-            Every ISP running on PrimeBill — status, plan, quota usage and lifecycle.
+            Every ISP running on the PrimeBill ISP Platform — status, plan, quota usage and lifecycle.
           </p>
         </div>
         <button onClick={() => setCreateOpen(true)} className="btn-primary">

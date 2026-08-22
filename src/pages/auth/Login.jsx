@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { Eye, EyeOff, ArrowRight, Wifi, Zap, Globe, Server, Shield, CheckCircle2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import BRAND from '../../config/brand'
 
 const STATS = [
   { icon: Globe,  label: 'Uptime',    value: '99.9%' },
@@ -255,7 +256,7 @@ export default function Login() {
               </div>
               <div>
                 <span className="text-white font-bold text-lg leading-none tracking-tight block"
-                  style={{ fontFamily: "'DM Mono', monospace" }}>PRIMEBILL ISP PLATFORM</span>
+                  style={{ fontFamily: "'DM Mono', monospace" }}>{BRAND.display}</span>
                 <span className="text-xs" style={{ color: '#75a7f1' }}>by DarkOpsHub</span>
               </div>
             </div>
@@ -319,7 +320,7 @@ export default function Login() {
             </div>
 
             <p className="shrink-0 text-xs" style={{ color: '#7a96b8'}}>
-              © 2026 DarkOpsHub · PrimeBill ISP Platform
+              © 2026 DarkOpsHub · {BRAND.display}
             </p>
           </div>
         </div>
@@ -340,7 +341,7 @@ export default function Login() {
               <Wifi size={15} className="text-white" />
             </div>
             <span className="text-white font-bold text-base" style={{ fontFamily: "'DM Mono', monospace" }}>
-              PrimeBill
+              {BRAND.brand}
             </span>
           </div>
 

@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import { checkTenantSlug } from '../../api/auth.api'
 import { Eye, EyeOff, ArrowRight, Wifi, CheckCircle2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import BRAND from '../../config/brand'
 
 export default function TenantSignup() {
   const navigate = useNavigate()
@@ -51,7 +52,7 @@ export default function TenantSignup() {
 
     const result = await registerTenant(form)
     if (result.success) {
-      toast.success(`Welcome to PrimeBill, ${result.tenant.name}!`)
+      toast.success(`Welcome to ${BRAND.product}, ${result.tenant.name}!`)
       navigate('/dashboard')
     } else {
       toast.error(result.message)
@@ -69,7 +70,7 @@ export default function TenantSignup() {
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight">Create your ISP workspace</h1>
           <p className="text-sm mt-1" style={{ color: '#94a3b8' }}>
-            Get your own PrimeBill instance in under a minute
+            Get your own {BRAND.product} instance in under a minute
           </p>
         </div>
 

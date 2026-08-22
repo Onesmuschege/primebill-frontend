@@ -252,7 +252,7 @@ export default function PlatformReports() {
           Platform Reports
         </h2>
         <p className="text-sm mt-0.5" style={{ color: 'var(--pb-text-2)' }}>
-          Cross-tenant aggregates across every ISP on PrimeBill — real stored data, nothing fabricated.
+          Cross-tenant aggregates across every ISP on the PrimeBill ISP Platform — real stored data, nothing fabricated.
         </p>
       </div>
 

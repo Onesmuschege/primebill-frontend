@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import TopNav from './TopNav'
 import ImpersonationBanner from './ImpersonationBanner'
+import BRAND from '../../config/brand'
 
 const pageTitles = {
   '/dashboard':   'Dashboard',
@@ -41,7 +42,12 @@ export default function AdminLayout() {
 
   const title = pageTitles[pathname]
     ?? pageTitles[Object.keys(pageTitles).find(k => pathname.startsWith(k + '/')) ?? '']
-    ?? 'PrimeBill'
+    ?? BRAND.product
+
+  // Keep the browser/page title consistent with the brand while navigating.
+  useEffect(() => {
+    document.title = title ? `${title} · ${BRAND.display}` : BRAND.display
+  }, [title])
 
   return (
     // overflow-hidden on the root is intentional — it prevents the page body

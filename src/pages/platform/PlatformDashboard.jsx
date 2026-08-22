@@ -289,7 +289,7 @@ export default function PlatformDashboard() {
             Platform Admin
           </h2>
           <p className="text-sm mt-0.5" style={{ color: 'var(--pb-text-2)' }}>
-            Cross-tenant command center — every ISP running on PrimeBill, not just your own workspace.
+            Cross-tenant command center — every ISP running on the PrimeBill ISP Platform, not just your own workspace.
           </p>
         </div>
         <div

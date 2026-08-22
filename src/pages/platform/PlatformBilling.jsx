@@ -270,7 +270,7 @@ export default function PlatformBilling() {
             Platform Billing
           </h2>
           <p className="text-sm mt-0.5" style={{ color: 'var(--pb-text-2)' }}>
-            PrimeBill's own invoices to its tenant ISPs — separate from tenant-side billing.
+            The PrimeBill ISP Platform's own invoices for its tenant ISPs — separate from tenant-side billing.
           </p>
         </div>
         <div className="flex items-center gap-2">

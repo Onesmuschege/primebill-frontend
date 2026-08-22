@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { resetPassword } from '../../api/auth.api'
 import { Wifi, KeyRound, Eye, EyeOff, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
+import BRAND from '../../config/brand'
 
 export default function ResetPassword() {
   const [searchParams]          = useSearchParams()
@@ -62,7 +63,7 @@ export default function ResetPassword() {
           style={{ background: 'linear-gradient(135deg, #2563eb, #06b6d4)', boxShadow: '0 0 12px rgba(37,99,235,0.5)' }}>
           <Wifi size={16} className="text-white" />
         </div>
-        <span className="text-white font-bold text-base tracking-tight">PrimeBill</span>
+        <span className="text-white font-bold text-base tracking-tight">{BRAND.brand}</span>
       </div>
 
       <div className="relative z-10 w-full max-w-[420px]">

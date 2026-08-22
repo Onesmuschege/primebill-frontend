@@ -1,6 +1,8 @@
-# PrimeBill Frontend
+# PrimeBill ISP Platform — Frontend
 
-> **PrimeBill Frontend** is the React-based web application for the PrimeBill multi-tenant ISP OSS/BSS platform. It provides tenant administration, client self-service, public captive portal functionality, network/NOC operations, billing, support, CRM, inventory, reporting, security, and PrimeBill platform administration.
+> **PrimeBill ISP Platform** (short brand: **PrimeBill**) is the React-based web application for the PRIMEBILL ISP PLATFORM multi-tenant ISP OSS/BSS platform. It provides tenant administration, client self-service, public captive portal functionality, network/NOC operations, billing, support, CRM, inventory, reporting, security, and PrimeBill ISP Platform administration.
+
+[Branding & nomenclature → BRANDING.md](BRANDING.md)
 
 ![React](https://img.shields.io/badge/React-18.x-blue)
 ![Vite](https://img.shields.io/badge/Vite-8.x-purple)
@@ -12,7 +14,7 @@
 
 # 1. Product Overview
 
-PrimeBill Frontend is the presentation and interaction layer for the PrimeBill backend.
+PrimeBill ISP Platform (the frontend) is the presentation and interaction layer for the PrimeBill ISP Platform backend.
 
 It provides three primary experiences:
 
