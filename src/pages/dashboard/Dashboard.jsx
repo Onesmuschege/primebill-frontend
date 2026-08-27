@@ -121,10 +121,10 @@ export default function Dashboard() {
             Account Status
           </h3>
           <div className="space-y-3">
+            {/* Online + Offline are a network-layer partition of total_clients */}
             {[
               { label: 'Online',  value: stats?.account_status?.online,  color: '#34d399' },
               { label: 'Offline', value: stats?.account_status?.offline, color: 'var(--pb-text-3)' },
-              { label: 'Overdue', value: stats?.account_status?.overdue, color: '#f87171' },
             ].map(({ label, value, color }) => (
               <div key={label} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -134,6 +134,22 @@ export default function Dashboard() {
                 <span className="font-semibold" style={{ color: 'var(--pb-text-1)' }}>{value || 0}</span>
               </div>
             ))}
+          </div>
+          {/* Overdue is a billing-status count, not part of the online/offline
+              split above — it can overlap with either, so it's shown as a
+              separate figure rather than a third slice of the same total. */}
+          <div
+            className="mt-3 pt-3 flex items-center justify-between"
+            style={{ borderTop: '1px solid var(--pb-border)' }}
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f87171' }} />
+              <span className="text-sm" style={{ color: 'var(--pb-text-2)' }}>
+                Overdue billing
+                <span className="block text-xs" style={mutedText}>of {stats?.account_status?.total_clients ?? stats?.total_users ?? 0} total clients</span>
+              </span>
+            </div>
+            <span className="font-semibold" style={{ color: '#f87171' }}>{stats?.account_status?.overdue || 0}</span>
           </div>
         </div>
 
