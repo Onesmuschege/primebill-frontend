@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+﻿import { useState, Fragment } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import BRAND from '../../config/brand'
@@ -10,7 +10,8 @@ import {
   ChevronDown, ChevronRight, X, Radio, Wrench, Activity, Cable, MapPin, Database,
      Network, AlertTriangle, Receipt, ShieldCheck, Banknote, Key,
      ArrowRightLeft, Bot, Workflow, PlayCircle, UserPlus, Target,
-     LayoutList, KanbanSquare, RotateCcw, ArrowUpCircle,
+     LayoutList, RotateCcw, ArrowUpCircle,
+     Server, Bell, GitBranch, Gauge,
 } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
@@ -36,19 +37,17 @@ const NAV = [
     ],
   },
   {
-    group: 'CRM',
+    group: 'Sales & CRM',
     items: [
       { to: '/leads',     icon: UserPlus, label: 'Leads' },
       { to: '/prospects', icon: Target,   label: 'Prospects' },
     ],
   },
   {
-    group: 'Subscribers',
+    group: 'Subscribers & Accounts',
     items: [
       { to: '/clients',  icon: Users, label: 'Clients' },
-      { to: '/plans',    icon: Wifi,  label: 'Plans' },
-      { to: '/vouchers', icon: Tag,   label: 'Vouchers' },
-      { to: '/fup',      icon: Zap,   label: 'FUP' },
+      { to: '/plans',    icon: Wifi,  label: 'Plans & Tariffs' },
     ],
   },
   {
@@ -58,30 +57,62 @@ const NAV = [
       { to: '/payments', icon: CreditCard, label: 'Payments' },
       { to: '/payment-allocations', icon: ArrowRightLeft, label: 'Allocations' },
       { to: '/collections', icon: Banknote, label: 'Collections' },
+      // V5 Batch 3 — Vouchers relocated from Subscribers & Accounts to the
+      // billing cluster of Billing & Finance (route /vouchers unchanged).
+      { to: '/vouchers',    icon: Tag,      label: 'Vouchers' },
       { to: '/expenditures', icon: Receipt, label: 'Expenditures' },
       { to: '/finance',   icon: DollarSign, label: 'Finance' },
-      { to: '/commissions', icon: Banknote, label: 'Commissions' },
+      { to: '/commissions', icon: Banknote, label: 'Commissions & Payouts' },
     ],
   },
   {
-    group: 'Support',
+    group: 'Support & Communication',
     items: [
       { to: '/tickets',       icon: Ticket,        label: 'Tickets' },
-      { to: '/tickets/board', icon: KanbanSquare,  label: 'Ticket Board' },
+      // V5 Batch 5 — /tickets is the canonical ticket workspace. The
+      // /tickets/board route stays valid (see AppRoutes) but is no longer a
+      // sidebar item; it is an internal view within the Tickets workflow.
       { to: '/sms',           icon: MessageSquare, label: 'SMS' },
     ],
   },
   {
-group: 'Network',
+group: 'Network Infrastructure',
     items: [
-      { to: '/routers',   icon: Router,   label: 'Routers' },
-      { to: '/radius',    icon: Radio,    label: 'RADIUS' },
-      { to: '/ipam',      icon: Network,  label: 'IPAM' },
-      { to: '/incidents', icon: AlertTriangle, label: 'Incidents' },
-      { to: '/incidents/board', icon: KanbanSquare, label: 'Incident Board' },
-      { to: '/noc',       icon: Activity, label: 'NOC' },
-      { to: '/fiber/olts',icon: Cable,    label: 'Fiber / OLT' },
-      { to: '/fiber/map', icon: MapPin,   label: 'Fiber Map' },
+      {
+        // Access & AAA — V5 Batch 4 subgroup. Routers / RADIUS / IPAM stay
+        // canonical; "Service Policies" is the Batch 3 label for /fup (kept).
+        label: 'Access & AAA',
+        icon: Network,
+        children: [
+          { to: '/routers',   icon: Router,        label: 'Routers' },
+          { to: '/radius',    icon: Radio,         label: 'RADIUS' },
+          { to: '/ipam',      icon: Network,     label: 'IPAM' },
+          { to: '/fup',       icon: Zap,           label: 'Service Policies' },
+          { to: '/incidents', icon: AlertTriangle, label: 'Incidents' },
+        ],
+      },
+      {
+        // NOC & Monitoring — the Batch 1 NOC subgroup, renamed (Batch 4).
+        // Children and routes are identical to Batch 1.
+        label: 'NOC & Monitoring',
+        icon: Activity,
+        children: [
+          { to: '/noc',         icon: LayoutDashboard, label: 'Dashboard' },
+          { to: '/noc/devices', icon: Server,          label: 'Devices' },
+          { to: '/noc/alerts',  icon: Bell,            label: 'Alerts' },
+          { to: '/noc/links',   icon: GitBranch,       label: 'Topology' },
+        ],
+      },
+      {
+        // Fiber & Access — V5 Batch 4 subgroup.
+        label: 'Fiber & Access',
+        icon: Cable,
+        children: [
+          { to: '/fiber/olts',     icon: Cable,  label: 'OLT / PON' },
+          { to: '/fiber/capacity', icon: Gauge,  label: 'Fiber Capacity' },
+          { to: '/fiber/map',      icon: MapPin, label: 'Fiber Map' },
+        ],
+      },
     ],
   },
   {
@@ -100,24 +131,26 @@ group: 'Network',
     ],
   },
   {
-    group: 'Reports & Analytics',
+    group: 'Reporting & Intelligence',
     items: [
-      { to: '/reports',   icon: BarChart2,  label: 'Reports' },
+      // V5 Batch 5 ownership — Analytics = interactive insights/analysis;
+      // Reports = discrete/exportable reports. Both live under one domain.
       { to: '/analytics', icon: TrendingUp, label: 'Analytics' },
+      { to: '/reports',   icon: BarChart2,  label: 'Reports' },
     ],
   },
   {
-    group: 'Growth',
+    group: 'Growth & Retention',
     items: [
       { to: '/loyalty', icon: Gift, label: 'Loyalty Points' },
       { to: '/referrals', icon: Gift, label: 'Referrals' },
     ],
   },
   {
-    group: `My ${BRAND.brand} Account`,
+    group: 'Licenses & Subscription',
     items: [
       { to: '/subscription/my',    icon: CreditCard,    label: 'My Subscription' },
-      { to: '/subscription/plans', icon: ArrowUpCircle, label: 'Upgrade Plan' },
+      { to: '/subscription/plans', icon: ArrowUpCircle, label: 'Plan & Pricing' },
     ],
   },
   {
@@ -165,6 +198,60 @@ export default function Sidebar({ open, onClose }) {
 
   const handleLogout = () => { logout(); navigate('/login') }
   const handleNavClick = () => { if (onClose) onClose() }
+
+  // Renders a single navigation entry. Plain links ({ to, icon, label }) become
+  // NavLinks; entries that carry a `children` array render as a collapsible
+  // nested subgroup. Subgroups reuse the existing `collapsed`/`toggleGroup`
+  // state so they behave (hover highlight, chevron, open/close) exactly like
+  // top-level groups — the only difference is their keys are namespaced with
+  // a "sg:" prefix so a subgroup and a group can never share a collapse slot.
+  const renderNavItem = (item) => {
+    // Icon is assigned a PascalCase name so the repo's `no-unused-vars`
+    // `varsIgnorePattern: '^[A-Z_]'` treats it as used (a function-parameter
+    // destructure would not be covered, since varsIgnorePattern only applies
+    // to variable declarations). The `react/jsx-uses-vars` plugin rule is not
+    // enabled, so JSX usage alone (<Icon />) is otherwise reported.
+    const { to, label, icon: Icon, children } = item
+    if (children && children.length) {
+      const key = `sg:${label}`
+      return (
+        <div>
+          <button
+            onClick={() => toggleGroup(key)}
+            className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors text-sm font-medium text-left"
+            style={{ color: 'var(--pb-text-2)' }}
+            onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--pb-raised)'}
+            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+          >
+            <Icon size={15} className="shrink-0" />
+            <span className="flex-1">{label}</span>
+            {collapsed[key] ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+          </button>
+          {!collapsed[key] && (
+            <div
+              className="ml-3 pl-2 mt-0.5 space-y-0.5"
+              style={{ borderLeft: '1px solid var(--pb-border)' }}
+            >
+              {children.map((child) => (
+                <div key={child.to || child.label}>{renderNavItem(child)}</div>
+              ))}
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    return (
+      <NavLink
+        to={to}
+        onClick={handleNavClick}
+        className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+      >
+        <Icon size={16} className="shrink-0" />
+        <span className="text-sm">{label}</span>
+      </NavLink>
+    )
+  }
 
   return (
     // Always fixed — AdminLayout compensates with lg:ml-64 on the content div.
@@ -250,16 +337,10 @@ export default function Sidebar({ open, onClose }) {
 
             {!collapsed[group] && (
               <div className="space-y-0.5">
-                {items.map(({ to, icon: Icon, label }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    onClick={handleNavClick}
-                    className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                  >
-                    <Icon size={16} className="shrink-0" />
-                    <span className="text-sm">{label}</span>
-                  </NavLink>
+                {items.map((item) => (
+                  <Fragment key={item.to || `sg:${item.label}`}>
+                    {renderNavItem(item)}
+                  </Fragment>
                 ))}
               </div>
             )}

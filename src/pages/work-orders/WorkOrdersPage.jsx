@@ -1,27 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import WorkOrderList from '../../components/work-orders/WorkOrderList';
 import { getWorkOrderStats } from '../../api/work-orders.api';
 
 export default function WorkOrdersPage() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const loadStats = async () => {
-    try {
-      const response = await getWorkOrderStats();
-      if (response.success) {
-        setStats(response.data);
-      }
-    } catch (error) {
-      console.error('Failed to load work order stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadStats();
-  }, []);
+  const { data: stats, isLoading, isError } = useQuery({
+    queryKey: ['work-order-stats'],
+    queryFn: () => getWorkOrderStats().then((res) => res.data || null),
+  });
 
   return (
     <div className="space-y-6">
@@ -32,7 +17,7 @@ export default function WorkOrdersPage() {
       </div>
 
       {/* Stats Cards */}
-      {loading ? (
+      {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="card animate-pulse">
@@ -40,6 +25,12 @@ export default function WorkOrdersPage() {
               <div className="h-4 rounded w-20" style={{ backgroundColor: 'var(--pb-raised)' }}></div>
             </div>
           ))}
+        </div>
+      ) : isError ? (
+        <div className="card text-center py-8">
+          <p className="text-sm" style={{ color: 'var(--pb-text-3)' }}>
+            Failed to load work order statistics.
+          </p>
         </div>
       ) : stats ? (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -1,44 +1,37 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Users, RefreshCw, CheckCircle2, Clock3, Wifi, Activity,
   Search,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import StatCard from '../../components/dashboard/StatCard';
 import StatusBadge from '../../components/common/StatusBadge';
 import { getInitials } from '../../utils/formatDate';
 import { getTechnicians } from '../../api/technicians.api';
 
+// Stable fallback so the useMemo below doesn't see a fresh array each render
+// while the technicians query is initially undefined.
+const EMPTY_TECHNICIANS = [];
+
 export default function TechniciansPage() {
-  const [technicians, setTechnicians] = useState([]);
-  const [statistics, setStatistics] = useState({
-    total: 0, available: 0, busy: 0, offline: 0, workload: 0,
-  });
-  const [isLoading, setIsLoading] = useState(true);
-    const [search, setSearch] = useState('');
+  const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 15;
 
-  const refresh = async () => {
-    setIsLoading(true);
-    try {
-      const response = await getTechnicians();
-      if (response.success) {
-        setTechnicians(response.data.technicians || []);
-        setStatistics(response.data.statistics || {
-          total: 0, available: 0, busy: 0, offline: 0, workload: 0,
-        });
-      }
-    } catch (error) {
-      console.error('Failed to load technicians:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Server state via the standard TanStack Query pattern. The backend
+  // `listTechnicians` endpoint returns the full technician set + statistics,
+  // and does NOT accept search/status/page params — so filtering and
+  // pagination intentionally stay client-side (we don't invent server filters).
+  const { data, isLoading, isFetching, isError, refetch } = useQuery({
+    queryKey: ['technicians'],
+    queryFn: () => getTechnicians().then((res) => res.data),
+  });
 
-        useEffect(() => {
-    refresh();
-  }, []);
+  const technicians = data?.technicians ?? EMPTY_TECHNICIANS;
+  const statistics = data?.statistics || {
+    total: 0, available: 0, busy: 0, offline: 0, workload: 0,
+  };
 
   const changeSearch = (e) => {
     setSearch(e.target.value);
@@ -87,11 +80,11 @@ export default function TechniciansPage() {
 
         <button
           type="button"
-          onClick={refresh}
-          disabled={isLoading}
+          onClick={() => refetch()}
+          disabled={isFetching}
           className="btn-secondary"
         >
-          <RefreshCw className={isLoading ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+          <RefreshCw className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
           Refresh Data
         </button>
       </div>
@@ -104,6 +97,15 @@ export default function TechniciansPage() {
               <div className="h-8 rounded w-1/2" style={{ backgroundColor: 'var(--pb-raised)' }}></div>
             </div>
           ))}
+        </div>
+      ) : isError ? (
+        <div className="card text-center py-10">
+          <p className="text-sm" style={{ color: 'var(--pb-text-3)' }}>
+            Failed to load technicians.
+          </p>
+          <button type="button" onClick={() => refetch()} className="btn-secondary mt-4">
+            Retry
+          </button>
         </div>
       ) : (
         <>

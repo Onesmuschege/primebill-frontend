@@ -32,6 +32,12 @@ export default function WorkOrderDetail() {
     qc.invalidateQueries(['work-order', id])
 
     qc.invalidateQueries(['wo-atts', id])
+
+    // Field Ops data consistency — any mutation that changes a work order
+    // (e.g. verify → status completed) should refresh the shared Work Orders
+    // list and statistics queries (introduced in the TanStack migration).
+    qc.invalidateQueries(['work-orders'])
+    qc.invalidateQueries(['work-order-stats'])
   }
 
   const addPart = useMutation({

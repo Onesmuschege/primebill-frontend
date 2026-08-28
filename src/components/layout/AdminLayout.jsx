@@ -8,7 +8,7 @@ import BRAND from '../../config/brand'
 const pageTitles = {
   '/dashboard':   'Dashboard',
   '/clients':     'Clients',
-  '/plans':       'Plans & Services',
+  '/plans':       'Plans & Tariffs',
   '/vouchers':    'Vouchers',
   '/fup':         'FUP Management',
   '/invoices':    'Invoices',
@@ -22,7 +22,7 @@ const pageTitles = {
   '/ipam':        'IP Address Management',
   '/incidents':   'Network Incidents',
   '/work-orders': 'Field Operations',
-  '/subscription/plans': 'Plans & Pricing',
+  '/subscription/plans': 'Plan & Pricing',
   '/subscription/my':    'My Subscription',
   '/finance':     'Finance',
   '/reports':     'Reports',

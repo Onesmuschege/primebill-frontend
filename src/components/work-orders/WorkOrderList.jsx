@@ -1,32 +1,22 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getWorkOrders } from '../../api/work-orders.api';
 
 export default function WorkOrderList({ clientId }) {
-  const [workOrders, setWorkOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
 
-  useEffect(() => {
-    loadWorkOrders();
-  }, [clientId, filter]);
+  // Server state via the standard TanStack Query pattern (matching Clients /
+  // Invoices / NOC etc.). The backend `getAllWorkOrders` returns a plain array
+  // (no pagination) but honours `client_id` and `status` filters — so those are
+  // passed to the API, while the key captures them for correct invalidation.
+  const params = {};
+  if (clientId) params.client_id = clientId;
+  if (filter !== 'all') params.status = filter;
 
-  const loadWorkOrders = async () => {
-    try {
-      const params = {};
-      if (clientId) params.client_id = clientId;
-      if (filter !== 'all') params.status = filter;
-
-      const data = await getWorkOrders(params);
-
-      if (data.success) {
-        setWorkOrders(data.data || []);
-      }
-    } catch (error) {
-      console.error('Failed to load work orders:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: workOrders, isLoading, isError, refetch } = useQuery({
+    queryKey: ['work-orders', 'list', { clientId: clientId || 'all', status: filter }],
+    queryFn: () => getWorkOrders(params).then((res) => res.data || []),
+  });
 
   const getStatusBadge = (status) => {
     const styles = {
@@ -49,10 +39,23 @@ export default function WorkOrderList({ clientId }) {
     return styles[priority] || styles.normal;
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div style={{ color: 'var(--pb-text-3)' }}>Loading work orders...</div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="card text-center py-10">
+        <p className="text-sm" style={{ color: 'var(--pb-text-3)' }}>
+          Failed to load work orders.
+        </p>
+        <button onClick={() => refetch()} className="btn-secondary mt-4">
+          Retry
+        </button>
       </div>
     );
   }
