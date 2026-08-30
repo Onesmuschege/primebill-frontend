@@ -12,6 +12,10 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Spinner from '../../components/common/Spinner'
+import Skeleton from '../../components/common/Skeleton'
+import EmptyState from '../../components/common/EmptyState'
+import ErrorState from '../../components/common/ErrorState'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 import StatCard from '../../components/dashboard/StatCard'
 import Table from '../../components/common/Table'
 import Pagination from '../../components/common/Pagination'
@@ -409,9 +413,19 @@ export default function PlanList() {
   const [selectedIds, setSelectedIds] = useState(new Set())
   const [showBulkEdit, setShowBulkEdit] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
-  const queryClient             = useQueryClient()
+    const queryClient = useQueryClient()
 
-  const { data, isLoading } = useQuery({
+  // ── Confirmation surface (replaces ad-hoc window.confirm) ──────────────────
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmMessage, setConfirmMessage] = useState('')
+  const [pendingConfirm, setPendingConfirm] = useState(null)
+  const askConfirm = (message, onConfirm) => {
+    setConfirmMessage(message)
+    setPendingConfirm(() => onConfirm)
+    setConfirmOpen(true)
+  }
+
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['plans'],
     queryFn: () => getPlans(),
   })
@@ -477,10 +491,11 @@ export default function PlanList() {
     },
     onError: () => toast.error('Failed to delete one or more plans'),
   })
-  const handleBulkDelete = () => {
-    if (confirm(`Delete ${selectedIds.size} selected plan${selectedIds.size !== 1 ? 's' : ''}?`)) {
-      bulkDeleteMutation.mutate(Array.from(selectedIds))
-    }
+    const handleBulkDelete = () => {
+    askConfirm(
+      `Delete ${selectedIds.size} selected plan${selectedIds.size !== 1 ? 's' : ''}?`,
+      () => bulkDeleteMutation.mutate(Array.from(selectedIds)),
+    )
   }
 
   // ─── Templates (quick-create) ────────────────────────────────────────────
@@ -617,7 +632,23 @@ export default function PlanList() {
     syncAllMutation.mutate(ids)
   }
 
-  if (isLoading) return <div className="py-20"><Spinner size="lg" /></div>
+    if (isError) {
+    return (
+      <ErrorState
+        message={error?.message ?? 'Failed to load plans'}
+        onRetry={() => queryClient.invalidateQueries(['plans'])}
+      />
+    )
+  }
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-5 w-full" />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -658,12 +689,12 @@ export default function PlanList() {
         </button>
       </div>
 
-      {plans.length === 0 ? (
-        <div className="card text-center py-16" style={{ color: 'var(--pb-text-3)' }}>
-          <Wifi size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium" style={{ color: 'var(--pb-text-2)' }}>No plans yet</p>
-          <p className="text-sm mt-1">Click "Add Plan" to get started</p>
-        </div>
+            {plans.length === 0 ? (
+        <EmptyState
+          icon={Wifi}
+          title={search ? 'No matching plans' : 'No plans yet'}
+          description={search ? 'Try a different search term' : 'Click "Add Plan" to get started'}
+        />
       ) : (
         <div className="card p-0 overflow-hidden" style={{ borderColor: 'var(--pb-border)' }}>
           {/* Toolbar: entries-per-page + search, or bulk-action bar when rows are selected */}
@@ -835,7 +866,7 @@ export default function PlanList() {
                       style={{ color: 'var(--pb-text-3)' }} title="Push to Router">
                       <RefreshCw size={15} />
                     </button>
-                    <button onClick={() => { if (confirm(`Delete "${plan.name}"?`)) deleteMutation.mutate(plan.id) }}
+                                        <button onClick={() => askConfirm(`Delete "${plan.name}"?`, () => deleteMutation.mutate(plan.id))}
                       className="p-2 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                       style={{ color: 'var(--pb-text-3)' }} title="Delete">
                       <Trash2 size={15} />
@@ -873,12 +904,27 @@ export default function PlanList() {
         onSubmit={(payload) => bulkBandwidthMutation.mutate(payload)}
       />
 
-      <TemplatePickerModal
+            <TemplatePickerModal
         isOpen={showTemplates}
         onClose={() => setShowTemplates(false)}
         templates={templates}
         isLoading={templatesLoading}
         onPick={handlePickTemplate}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        message={confirmMessage}
+        confirmLabel="Delete"
+        destructive
+        isPending={bulkDeleteMutation.isPending || deleteMutation.isPending}
+        onConfirm={() => {
+          const fn = pendingConfirm
+          setConfirmOpen(false)
+          setPendingConfirm(null)
+          fn && fn()
+        }}
       />
     </div>
   )

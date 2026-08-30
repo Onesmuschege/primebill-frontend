@@ -155,7 +155,23 @@ export function unwrapList(response) {
     return { data: body.data.data, meta }
   }
 
-  return { data: [], meta: {} }
+    return { data: [], meta: {} }
+}
+
+// ---------------------------------------------------------------------------
+// unwrapOne — normalised single-resource extraction.
+//
+// Backend envelope (MASTER_SPEC §5.3): `{ success, message, data, errors }`.
+// For one-resource responses `data` holds the resource. Return it directly so
+// callers never reach for `r.data` again. Falls through gracefully if the
+// envelope is absent (defensive against non-standard endpoints).
+// ---------------------------------------------------------------------------
+export function unwrapOne(response) {
+  const body = response?.data
+  if (body && typeof body === 'object' && 'data' in body && 'success' in body) {
+    return body.data
+  }
+  return body
 }
 
 export default api
