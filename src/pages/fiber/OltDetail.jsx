@@ -39,17 +39,17 @@ export default function OltDetail() {
 
   const { data: olt, isLoading } = useQuery({
     queryKey: ['olt', id],
-    queryFn: () => getOlt(id).then(r => r.data.data),
+    queryFn: () => getOlt(id),
   })
 
   const { data: ponPorts } = useQuery({
     queryKey: ['pon-ports', id],
-    queryFn: () => getPonPorts(id, { per_page: 50 }).then(r => r.data),
+    queryFn: () => getPonPorts(id, { per_page: 50 }),
   })
 
   const { data: onts } = useQuery({
     queryKey: ['olts-onts', id],
-    queryFn: () => getOltsOnts(id, { per_page: 100 }).then(r => r.data),
+    queryFn: () => getOltsOnts(id, { per_page: 100 }),
   })
 
   const createPonMutation = useMutation({

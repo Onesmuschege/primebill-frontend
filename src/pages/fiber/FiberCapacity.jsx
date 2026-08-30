@@ -26,7 +26,7 @@ function Tbl({ title, head, children }) {
 export default function FiberCapacity() {
   const { data, isError } = useQuery({
     queryKey: ['fiber-capacity'],
-    queryFn: async () => (await getFiberCapacity({ per_page: 200 })).data.data,
+        queryFn: () => getFiberCapacity({ per_page: 200 }),
     staleTime: 60_000,
   })
   if (!data) return <Spinner />

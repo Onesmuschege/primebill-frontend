@@ -39,7 +39,7 @@ export default function OltList() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['olts', page],
-    queryFn: () => getOlts({ page, per_page: 15 }).then(r => r.data),
+        queryFn: () => getOlts({ page, per_page: 15 }),
   })
 
   const createMutation = useMutation({

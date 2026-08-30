@@ -21,16 +21,16 @@ export default function FiberMap() {
   const queryClient = useQueryClient()
 
   const { data: routes } = useQuery({
-    queryKey: ['fiber-routes'], queryFn: () => getFiberRoutes({ per_page: 100 }).then(r => r.data),
+    queryKey: ['fiber-routes'], queryFn: () => getFiberRoutes({ per_page: 100 }),
   })
   const { data: splitters } = useQuery({
-    queryKey: ['fiber-splitters'], queryFn: () => getFiberSplitters({ per_page: 100 }).then(r => r.data),
+    queryKey: ['fiber-splitters'], queryFn: () => getFiberSplitters({ per_page: 100 }),
   })
   const { data: cabinets } = useQuery({
-    queryKey: ['fiber-cabinets'], queryFn: () => getFiberCabinets({ per_page: 100 }).then(r => r.data),
+    queryKey: ['fiber-cabinets'], queryFn: () => getFiberCabinets({ per_page: 100 }),
   })
   const { data: distribution } = useQuery({
-    queryKey: ['fiber-distribution'], queryFn: () => getDistributionPoints({ per_page: 100 }).then(r => r.data),
+    queryKey: ['fiber-distribution'], queryFn: () => getDistributionPoints({ per_page: 100 }),
   })
 
   const createMutation = useMutation({
@@ -225,7 +225,9 @@ export default function FiberMap() {
       </div>
 
       <div className="flex gap-1 rounded-lg border p-1 w-fit">
-        {SECTIONS.map(({ key, label, icon: Icon }) => (
+        {SECTIONS.map(({ key, label,
+          // eslint-disable-next-line no-unused-vars -- used in JSX below
+          icon: Icon }) => (
           <button key={key} onClick={() => setActive(key)}
             className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-md transition-colors ${active === key ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}>
             <Icon size={15} /> {label}
