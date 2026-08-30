@@ -6,6 +6,10 @@ import { getClients } from '../../api/clients.api'
 import Table from '../../components/common/Table'
 import Pagination from '../../components/common/Pagination'
 import Modal from '../../components/common/Modal'
+import Skeleton from '../../components/common/Skeleton'
+import EmptyState from '../../components/common/EmptyState'
+import ErrorState from '../../components/common/ErrorState'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { invoiceStatusBadge } from '../../utils/statusColors'
 import { formatDate } from '../../utils/formatDate'
 import { formatKES } from '../../utils/formatCurrency'
@@ -27,21 +31,28 @@ export default function InvoiceList() {
   const [selected, setSelected]     = useState(null)
   const [invoiceForm, setInvoiceForm] = useState(emptyInvoice)
   const [payForm, setPayForm]       = useState({ method: 'cash', reference: '' })
-  const queryClient                 = useQueryClient()
+    const queryClient = useQueryClient()
 
-  const { data, isLoading } = useQuery({
+  // ── Confirmation surface (replaces ad-hoc window.confirm) ──────────────────
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmMessage, setConfirmMessage] = useState('')
+  const [pendingConfirm, setPendingConfirm] = useState(null)
+  const askConfirm = (message, action) => {
+    setConfirmMessage(message)
+    setPendingConfirm(() => action)
+    setConfirmOpen(true)
+  }
+
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['invoices', page, status],
-    queryFn: () => getInvoices({ page, status, per_page: 15 }).then(r => r.data.data),
+        queryFn: () => getInvoices({ page, status, per_page: 15 }),
   })
 
   // Fetch clients for the dropdown in create form
-  // NOTE: getClients() already calls unwrapList() internally and resolves to
-  // { data: [], meta: {} } — NOT a raw axios response — so only one .data
-  // unwrap is needed here, unlike getInvoices() above which returns the raw
-  // axios response and needs res.data.data.
+  // getClients() already calls unwrapList() internally → returns { data, meta }
   const { data: clientsData } = useQuery({
     queryKey: ['clients-all'],
-    queryFn: () => getClients({ per_page: 200 }).then(r => r.data),
+    queryFn: () => getClients({ per_page: 200 }),
     enabled: showCreate,
   })
 
@@ -56,12 +67,13 @@ export default function InvoiceList() {
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to create invoice'),
   })
 
-  const deleteMutation = useMutation({
+    const deleteMutation = useMutation({
     mutationFn: deleteInvoice,
     onSuccess: () => {
       toast.success('Invoice deleted')
       queryClient.invalidateQueries(['invoices'])
     },
+    onError: (err) => toast.error(err.response?.data?.message || 'Failed to delete invoice'),
   })
 
   const payMutation = useMutation({
@@ -146,7 +158,7 @@ export default function InvoiceList() {
         )}
         {r.status !== 'paid' && (
           <button
-            onClick={() => { if (confirm('Delete this invoice?')) deleteMutation.mutate(r.id) }}
+                        onClick={() => askConfirm('Delete this invoice?', () => deleteMutation.mutate(r.id))}
             className="p-1 text-red-500 hover:bg-red-50 rounded"
           >
             <Trash2 size={15} />
@@ -155,6 +167,15 @@ export default function InvoiceList() {
       </div>
     )},
   ]
+
+    if (isError) {
+    return (
+      <ErrorState
+        message={error?.message ?? 'Failed to load invoices'}
+        onRetry={() => queryClient.invalidateQueries({ queryKey: ['invoices'] })}
+      />
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -319,7 +340,22 @@ export default function InvoiceList() {
             </button>
           </div>
         </div>
-      </Modal>
+            </Modal>
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        message={confirmMessage}
+        confirmLabel="Delete"
+        destructive
+        isPending={deleteMutation.isPending}
+        onConfirm={() => {
+          const fn = pendingConfirm
+          setConfirmOpen(false)
+          setPendingConfirm(null)
+          fn && fn()
+        }}
+      />
     </div>
   )
 }

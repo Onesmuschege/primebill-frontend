@@ -100,10 +100,9 @@ export default function PaymentAllocationsPage() {
   })
   const invoiceOptions = useQuery({
     queryKey: ['invoices-for-allocation', form.client_id],
-    queryFn: async () => {
+        queryFn: async () => {
       const res = await getInvoices({ client_id: form.client_id || undefined, status: 'unpaid', per_page: 100 })
-      const body = res.data?.data ?? []
-      return Array.isArray(body.data) ? body.data : body
+      return Array.isArray(res?.data) ? res.data : []
     },
     enabled: !!modal && !!form.client_id,
   })
