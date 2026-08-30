@@ -33,7 +33,7 @@ export default function PaymentList() {
 
   const { data: summary } = useQuery({
     queryKey: ['payment-summary'],
-    queryFn: () => getPaymentSummary().then(r => r.data.data),
+    queryFn: () => getPaymentSummary(),
   })
 
   // per-page allocation context for the "Allocate" inline flow (mirrors PaymentAllocationsPage)
@@ -46,7 +46,7 @@ export default function PaymentList() {
       allocations: [{ invoice_id: Number(allocForm.invoice_id), amount: Number(allocForm.amount) }],
     }),
     onSuccess: (res) => {
-      toast.success(res?.data?.message || 'Allocation created')
+      toast.success(res?.message || 'Allocation created')
       qc.invalidateQueries({ queryKey: ['payments'] })
       qc.invalidateQueries({ queryKey: ['payment-allocations'] })
       setAllocOpen(null)
@@ -63,7 +63,7 @@ export default function PaymentList() {
       await Promise.all(rows.map(async (r) => {
         try {
           const res = await getPaymentAllocations({ payment_id: r.id, per_page: 50 })
-          const allocations = res?.data?.data || []
+          const allocations = res?.data || []
           const allocated = allocations.filter((a) => a.status === 'allocated').reduce((s, a) => s + Number(a.amount), 0)
           out[r.id] = { allocations, allocated }
         } catch {

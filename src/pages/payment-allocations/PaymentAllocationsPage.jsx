@@ -121,7 +121,7 @@ export default function PaymentAllocationsPage() {
       })
     },
     onSuccess: (res) => {
-      toast.success(res.data?.message || 'Payment allocated successfully')
+      toast.success(res.message || 'Payment allocated successfully')
       setModal(false)
       setForm(EMPTY)
       qc.invalidateQueries(['payment-allocations', 'payments', 'invoices'])
@@ -132,7 +132,7 @@ export default function PaymentAllocationsPage() {
   const reverse = useMutation({
     mutationFn: () => reversePaymentAllocation(reverseOpen.id, { reason: reason || undefined }),
     onSuccess: (res) => {
-      toast.success(res.data?.message || 'Allocation reversed')
+      toast.success(res.message || 'Allocation reversed')
       setReverseOpen(null)
       setReason('')
       qc.invalidateQueries(['payment-allocations'])

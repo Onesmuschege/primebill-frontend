@@ -18,7 +18,14 @@ vi.mock('../axiosInstance', () => {
     }
     return { data: [], meta: {} }
   }
-  return { default: mockApi, unwrapList }
+  const unwrapOne = (response) => {
+    const body = response?.data
+    if (body && typeof body === 'object' && 'data' in body && 'success' in body) {
+      return body.data
+    }
+    return body
+  }
+  return { default: mockApi, unwrapList, unwrapOne }
 })
 
 describe('payment-allocations.api', () => {
