@@ -6,9 +6,13 @@ import { useDebounce } from '../../hooks/useDebounce'
 import Table from '../../components/common/Table'
 import Pagination from '../../components/common/Pagination'
 import Modal from '../../components/common/Modal'
+import Skeleton from '../../components/common/Skeleton'
+import EmptyState from '../../components/common/EmptyState'
+import ErrorState from '../../components/common/ErrorState'
+import ConfirmDialog from '../../components/common/ConfirmDialog'
 import { clientStatusBadge } from '../../utils/statusColors'
 import { formatDate } from '../../utils/formatDate'
-import { Plus, Search, Eye, UserX, UserCheck, Trash2 } from 'lucide-react'
+import { Plus, Search, Eye, UserX, UserCheck, Trash2, Users } from 'lucide-react'
 import toast from 'react-hot-toast'
 import ClientForm from './ClientForm'
 
@@ -22,7 +26,17 @@ export default function ClientList() {
   const [status, setStatus]     = useState('')
   const [showForm, setShowForm] = useState(false)
   const navigate                = useNavigate()
-  const queryClient             = useQueryClient()
+    const queryClient = useQueryClient()
+
+  // ── Confirmation surface (replaces ad-hoc window.confirm) ──────────────────
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmMessage, setConfirmMessage] = useState('')
+  const [pendingConfirm, setPendingConfirm] = useState(null)
+  const askConfirm = (message, onConfirm) => {
+    setConfirmMessage(message)
+    setPendingConfirm(() => onConfirm)
+    setConfirmOpen(true)
+  }
 
   // Debounced search — the input value (`search`) updates on every keystroke
   // so the field stays responsive. The query key uses `debouncedSearch` so
@@ -30,7 +44,7 @@ export default function ClientList() {
   // Without this: typing "Wanyama" fires 7 requests. With it: fires 1.
   const debouncedSearch = useDebounce(search, 400)
 
-  const { data, isLoading, isFetching } = useQuery({
+    const { data, isLoading, isFetching, isError, error } = useQuery({
     // debouncedSearch in the key — not `search`.
     // page resets to 1 when search/status change (handled in the handlers below).
     queryKey: ['clients', page, debouncedSearch, status],
@@ -166,7 +180,7 @@ export default function ClientList() {
           )}
 
           <button
-            onClick={() => { if (confirm('Delete this client?')) deleteMutation.mutate(r.id) }}
+                        onClick={() => askConfirm('Delete this client?', () => deleteMutation.mutate(r.id))}
             disabled={deleteMutation.isPending}
             className="p-1.5 rounded-lg transition-colors disabled:opacity-50"
             title="Delete"
@@ -181,7 +195,16 @@ export default function ClientList() {
     },
   ]
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+    // ── Render ─────────────────────────────────────────────────────────────────
+
+  if (isError) {
+    return (
+      <ErrorState
+        message={error?.message ?? 'Failed to load clients'}
+        onRetry={() => queryClient.invalidateQueries({ queryKey: ['clients'] })}
+      />
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -236,8 +259,24 @@ export default function ClientList() {
         className="section"
         style={{ transition: 'opacity 150ms ease', opacity: isFetching && !isLoading ? 0.6 : 1 }}
       >
-        <Table columns={columns} data={data?.data ?? []} loading={isLoading} />
-        <Pagination meta={data?.meta} onPageChange={setPage} />
+                {isLoading && (data?.data?.length ?? 0) === 0 ? (
+          <div className="p-4 space-y-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-4 w-full" />
+            ))}
+          </div>
+        ) : (data?.data?.length ?? 0) === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="No clients"
+            description="Try adjusting the search or filters above."
+          />
+        ) : (
+          <>
+            <Table columns={columns} data={data?.data ?? []} loading={isFetching} />
+            <Pagination meta={data?.meta} onPageChange={setPage} />
+          </>
+        )}
       </div>
 
       {/* Add Client Modal */}
@@ -248,8 +287,22 @@ export default function ClientList() {
             queryClient.invalidateQueries({ queryKey: ['clients'] })
           }}
         />
-      </Modal>
+            </Modal>
 
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        message={confirmMessage}
+        confirmLabel="Delete"
+        destructive
+        isPending={deleteMutation.isPending}
+        onConfirm={() => {
+          const fn = pendingConfirm
+          setConfirmOpen(false)
+          setPendingConfirm(null)
+          fn && fn()
+        }}
+      />
     </div>
   )
 }
