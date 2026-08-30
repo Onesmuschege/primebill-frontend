@@ -1,10 +1,10 @@
-import api from './axiosInstance'
+import api, { unwrapList, unwrapOne } from './axiosInstance'
 
-export const getRouters = () => api.get('/routers')
-export const getRouter = (id) => api.get(`/routers/${id}`)
-export const createRouter = (data) => api.post('/routers', data)
-export const updateRouter = (id, data) => api.put(`/routers/${id}`, data)
-export const deleteRouter = (id) => api.delete(`/routers/${id}`)
-export const testRouterConnection = (id) => api.post(`/routers/${id}/test-connection`)
-export const getRouterResources = (id) => api.get(`/routers/${id}/resources`)
-export const getRouterSessions = (id) => api.get(`/routers/${id}/sessions`)
+export const getRouters         = (params) => api.get('/routers', { params }).then(unwrapList)
+export const getRouter          = (id)     => api.get(`/routers/${id}`).then(unwrapOne)
+export const createRouter       = (data)   => api.post('/routers', data).then(unwrapOne)
+export const updateRouter       = (id, data) => api.put(`/routers/${id}`, data).then(unwrapOne)
+export const deleteRouter       = (id)     => api.delete(`/routers/${id}`).then(unwrapOne)
+export const testRouterConnection = (id)   => api.post(`/routers/${id}/test-connection`).then(unwrapOne)
+export const getRouterResources = (id)     => api.get(`/routers/${id}/resources`).then(unwrapOne)
+export const getRouterSessions  = (id)     => api.get(`/routers/${id}/sessions`).then(unwrapList)

@@ -2,19 +2,23 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getRouters, createRouter, testRouterConnection } from '../../api/routers.api'
 import Modal from '../../components/common/Modal'
-import { Plus, Wifi, WifiOff, RefreshCw } from 'lucide-react'
+import Skeleton from '../../components/common/Skeleton'
+import EmptyState from '../../components/common/EmptyState'
+import ErrorState from '../../components/common/ErrorState'
+import { Plus, Wifi, WifiOff, RefreshCw, Router } from 'lucide-react'
 import toast from 'react-hot-toast'
-import Spinner from '../../components/common/Spinner'
 
 export default function RouterList() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm]         = useState({ name: '', ip_address: '', username: 'admin', password: '', port: 8728, type: 'mikrotik', location: '' })
   const queryClient             = useQueryClient()
 
-  const { data: routers, isLoading } = useQuery({
+  const { data, isLoading, isError, error } = useQuery({
     queryKey: ['routers'],
-    queryFn: () => getRouters().then(r => r.data.data),
+    queryFn: () => getRouters(),
   })
+
+  const routers = data?.data ?? []
 
   const createMutation = useMutation({
     mutationFn: createRouter,
@@ -24,13 +28,30 @@ export default function RouterList() {
   const testMutation = useMutation({
     mutationFn: testRouterConnection,
     onSuccess: (res) => {
-      const connected = res.data.data.connected
+            const connected = res.connected
       toast[connected ? 'success' : 'error'](connected ? 'Router is online!' : 'Cannot connect to router')
       queryClient.invalidateQueries(['routers'])
     },
   })
 
-  if (isLoading) return <div className="py-20"><Spinner size="lg" /></div>
+  if (isError) {
+    return (
+      <ErrorState
+        message={error?.message ?? 'Failed to load routers'}
+        onRetry={() => queryClient.invalidateQueries(['routers'])}
+      />
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 w-full" />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -40,8 +61,15 @@ export default function RouterList() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {routers?.map(router => (
+            {routers.length === 0 ? (
+        <EmptyState
+          icon={Router}
+          title="No routers"
+          description="Add your first router to start managing network access."
+        />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {routers.map(router => (
           <div key={router.id} className="card">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
@@ -73,6 +101,7 @@ export default function RouterList() {
           </div>
         ))}
       </div>
+      )}
 
       <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Add Router">
         <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(form) }} className="space-y-4">
