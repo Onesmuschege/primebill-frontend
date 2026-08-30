@@ -15,19 +15,18 @@ import {
 } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
-// Groups reorganised (Aug 2026) to fix three problems found once the sidebar
-// grew past ~10 groups:
-//   1. Money was split across "Billing" and "Analytics" (Finance/Commissions)
-//      — now unified under one Billing & Finance group.
-//   2. Inventory/Stock-PO/RMA were buried as 3-of-11 items inside Network
-//      — now a standalone Inventory & Procurement group with room to grow.
-//   3. "Plans" (ISP data plans) and "Plans & Pricing" (PrimeBill's own SaaS
-//      tier) were near-duplicate labels in different groups — the PrimeBill
-//      one is renamed "Upgrade Plan" under "My PrimeBill Account" so the two
-//      are unambiguous at a glance.
-// Automation and System default to collapsed (see `collapsed` initial state
-// below) since they're config/power-user territory visited far less often
-// than Dashboard/Clients/Billing.
+// PrimeBill ten-section operating-console IA (see PHASE0_DISCOVERY.md §3):
+//
+//   Overview | Subscribers | Plans & Usage | Billing & Finance | Network |
+//   Support | Field Operations | Inventory & Procurement |
+//   Reports & Analytics | System
+//
+// "Sales & CRM", "Subscribers & Accounts", "Reporting & Intelligence",
+// "Growth & Retention" and "Licenses & Subscription" were collapsed into the
+// canonical ten groups above. Vouchers -> Plans & Usage; Loyalty/Referrals ->
+// Subscribers > Retention; Automation + My PrimeBill Account -> System.
+// System defaults to collapsed (config/power-user territory); Network stays
+// expanded because NOC/AAA work is a primary operator surface.
 // ---------------------------------------------------------------------------
 const NAV = [
   {
@@ -35,19 +34,29 @@ const NAV = [
     items: [
       { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     ],
-  },
+    },
   {
-    group: 'Sales & CRM',
+    group: 'Subscribers',
     items: [
+      { to: '/clients',   icon: Users,    label: 'Clients' },
       { to: '/leads',     icon: UserPlus, label: 'Leads' },
       { to: '/prospects', icon: Target,   label: 'Prospects' },
+      {
+        label: 'Retention',
+        icon: Gift,
+        children: [
+          { to: '/loyalty',   icon: Gift, label: 'Loyalty Points' },
+          { to: '/referrals', icon: Gift, label: 'Referrals' },
+        ],
+      },
     ],
   },
   {
-    group: 'Subscribers & Accounts',
+    group: 'Plans & Usage',
     items: [
-      { to: '/clients',  icon: Users, label: 'Clients' },
-      { to: '/plans',    icon: Wifi,  label: 'Plans & Tariffs' },
+      { to: '/plans',    icon: Wifi, label: 'Plans & Tariffs' },
+      { to: '/fup',      icon: Zap,  label: 'FUP Policies' },
+      { to: '/vouchers', icon: Tag,  label: 'Vouchers' },
     ],
   },
   {
@@ -56,38 +65,31 @@ const NAV = [
       { to: '/invoices', icon: FileText,   label: 'Invoices' },
       { to: '/payments', icon: CreditCard, label: 'Payments' },
       { to: '/payment-allocations', icon: ArrowRightLeft, label: 'Allocations' },
-      { to: '/collections', icon: Banknote, label: 'Collections' },
-      // V5 Batch 3 — Vouchers relocated from Subscribers & Accounts to the
-      // billing cluster of Billing & Finance (route /vouchers unchanged).
-      { to: '/vouchers',    icon: Tag,      label: 'Vouchers' },
+            { to: '/collections', icon: Banknote, label: 'Collections' },
       { to: '/expenditures', icon: Receipt, label: 'Expenditures' },
       { to: '/finance',   icon: DollarSign, label: 'Finance' },
       { to: '/commissions', icon: Banknote, label: 'Commissions & Payouts' },
     ],
   },
   {
-    group: 'Support & Communication',
+        group: 'Support',
     items: [
       { to: '/tickets',       icon: Ticket,        label: 'Tickets' },
-      // V5 Batch 5 — /tickets is the canonical ticket workspace. The
-      // /tickets/board route stays valid (see AppRoutes) but is no longer a
-      // sidebar item; it is an internal view within the Tickets workflow.
-      { to: '/sms',           icon: MessageSquare, label: 'SMS' },
+      // /tickets/board is an internal view of the Tickets workflow (see AppRoutes).
+      { to: '/sms',           icon: MessageSquare, label: 'SMS & Communications' },
     ],
   },
   {
-group: 'Network Infrastructure',
+        group: 'Network',
     items: [
       {
-        // Access & AAA — V5 Batch 4 subgroup. Routers / RADIUS / IPAM stay
-        // canonical; "Service Policies" is the Batch 3 label for /fup (kept).
+        // Access & AAA — routers, RADIUS, IPAM, Incidents. /fup moved to Plans & Usage.
         label: 'Access & AAA',
         icon: Network,
         children: [
           { to: '/routers',   icon: Router,        label: 'Routers' },
           { to: '/radius',    icon: Radio,         label: 'RADIUS' },
-          { to: '/ipam',      icon: Network,     label: 'IPAM' },
-          { to: '/fup',       icon: Zap,           label: 'Service Policies' },
+                    { to: '/ipam',      icon: Network,     label: 'IPAM' },
           { to: '/incidents', icon: AlertTriangle, label: 'Incidents' },
         ],
       },
@@ -130,59 +132,57 @@ group: 'Network Infrastructure',
       { to: '/work-orders/technicians', icon: Users, label: 'Technicians' },
     ],
   },
-  {
-    group: 'Reporting & Intelligence',
+    {
+    group: 'Reports & Analytics',
     items: [
-      // V5 Batch 5 ownership — Analytics = interactive insights/analysis;
-      // Reports = discrete/exportable reports. Both live under one domain.
       { to: '/analytics', icon: TrendingUp, label: 'Analytics' },
       { to: '/reports',   icon: BarChart2,  label: 'Reports' },
     ],
   },
   {
-    group: 'Growth & Retention',
-    items: [
-      { to: '/loyalty', icon: Gift, label: 'Loyalty Points' },
-      { to: '/referrals', icon: Gift, label: 'Referrals' },
-    ],
-  },
-  {
-    group: 'Licenses & Subscription',
-    items: [
-      { to: '/subscription/my',    icon: CreditCard,    label: 'My Subscription' },
-      { to: '/subscription/plans', icon: ArrowUpCircle, label: 'Plan & Pricing' },
-    ],
-  },
-  {
-    group: 'Automation',
-    items: [
-      { to: '/automation', icon: Bot, label: 'Overview' },
-      { to: '/automation/events', icon: Activity, label: 'Events' },
-      { to: '/automation/jobs', icon: PlayCircle, label: 'Jobs' },
-      { to: '/automation/failures', icon: AlertTriangle, label: 'Failures' },
-      { to: '/automation/rules', icon: Workflow, label: 'Rules & Workflows' },
-      { to: '/automation/history', icon: ScrollText, label: 'Execution History' },
-    ],
-  },
-  {
     group: 'System',
     items: [
-      { to: '/admin/users', icon: UserCog,    label: 'Admin Users' },
-      { to: '/admin/roles', icon: Shield,     label: 'Roles & Permissions' },
-      { to: '/logs',        icon: ScrollText, label: 'System Logs' },
-      { to: '/settings',    icon: Settings,   label: 'Settings' },
-      { to: '/security',    icon: ShieldCheck, label: 'Security Center' },
-      { to: '/mfa',         icon: Key,        label: 'MFA' },
-      { to: '/catalog',     icon: Database,   label: 'Catalog' },
+      {
+        label: 'Users & Access',
+        icon: UserCog,
+        children: [
+          { to: '/admin/users', icon: UserCog,    label: 'Admin Users' },
+          { to: '/admin/roles', icon: Shield,     label: 'Roles & Permissions' },
+        ],
+      },
+      { to: '/settings', icon: Settings,    label: 'Settings' },
+      { to: '/catalog',  icon: Database,    label: 'Catalog' },
+      { to: '/logs',     icon: ScrollText,  label: 'System Logs' },
+      { to: '/security', icon: ShieldCheck, label: 'Security Center' },
+      { to: '/mfa',      icon: Key,         label: 'MFA' },
+      {
+        label: 'Automation',
+        icon: Bot,
+        children: [
+          { to: '/automation',          icon: Bot,            label: 'Overview' },
+          { to: '/automation/events',   icon: Activity,       label: 'Events' },
+          { to: '/automation/jobs',     icon: PlayCircle,     label: 'Jobs' },
+          { to: '/automation/failures', icon: AlertTriangle,  label: 'Failures' },
+          { to: '/automation/rules',    icon: Workflow,       label: 'Rules & Workflows' },
+          { to: '/automation/history',  icon: ScrollText,     label: 'Execution History' },
+        ],
+      },
+      {
+        label: 'My PrimeBill Account',
+        icon: CreditCard,
+        children: [
+          { to: '/subscription/my',    icon: CreditCard,    label: 'My Subscription' },
+          { to: '/subscription/plans', icon: ArrowUpCircle, label: 'Upgrade Plan' },
+        ],
+      },
     ],
   },
 ]
 
 // Groups collapsed by default on first load — config/power-user territory,
-// one click away, but shouldn't compete with Dashboard/Clients/Billing for
-// the first screenful of the sidebar.
+// one click away, but System is power-user surface that should not compete
+// with the operational sections for the first screenful of the sidebar.
 const DEFAULT_COLLAPSED = {
-  Automation: true,
   System: true,
 }
 
