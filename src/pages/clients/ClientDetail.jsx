@@ -15,7 +15,9 @@ import { ArrowLeft, UserX, UserCheck, Edit2, Plus, Wifi, FileText, CreditCard, T
 import ServiceNetworkActions from '../../components/clients/ServiceNetworkActions'
 import ClientSubscriptions from './ClientSubscriptions'
 import toast from 'react-hot-toast'
-import Spinner from '../../components/common/Spinner'
+import Skeleton from '../../components/common/Skeleton'
+import EmptyState from '../../components/common/EmptyState'
+import ErrorState from '../../components/common/ErrorState'
 
 const TABS = [
   { key: 'accounts',      label: 'Internet Accounts', icon: Wifi },
@@ -33,20 +35,32 @@ export default function ClientDetail() {
   const [activeTab, setActiveTab]     = useState('accounts')
   const [showEdit, setShowEdit]       = useState(false)
   const [showAccount, setShowAccount] = useState(false)
-  const [editForm, setEditForm]       = useState(null)
+      const [editForm, setEditForm]      = useState(null)
   const [accountForm, setAccountForm] = useState({ plan_id: '', username: '', password: '', type: 'pppoe' })
 
-  const { data: client, isLoading } = useQuery({
+  const { data: client, isLoading, isError, error } = useQuery({
     queryKey: ['client', id],
-    queryFn: () => getClient(id).then(r => r.data.data),
+    queryFn: () => getClient(id),
     onSuccess: (data) => setEditForm(data),
+    staleTime: 30_000,
   })
 
-  const { data: accounts } = useQuery({ queryKey: ['client-accounts', id], queryFn: () => getClientAccounts(id).then(r => r.data.data), enabled: activeTab === 'accounts' })
-  const { data: invoices } = useQuery({ queryKey: ['client-invoices', id], queryFn: () => getClientInvoices(id).then(r => r.data.data), enabled: activeTab === 'invoices' })
-  const { data: payments } = useQuery({ queryKey: ['client-payments', id], queryFn: () => getClientPayments(id).then(r => r.data.data), enabled: activeTab === 'payments' })
-  const { data: tickets }  = useQuery({ queryKey: ['client-tickets', id],  queryFn: () => getClientTickets(id).then(r => r.data.data),  enabled: activeTab === 'tickets' })
-  const { data: plans }    = useQuery({ queryKey: ['plans'], queryFn: () => getPlans().then(r => r.data.data), enabled: showAccount })
+  // 404/403 → surface an ErrorState, not a raw error
+  const notFoundError = error?.response?.status === 404
+  const forbiddenError = error?.response?.status === 403
+
+      const { data: accounts } = useQuery({ queryKey: ['client-accounts', id], queryFn: () => getClientAccounts(id), enabled: activeTab === 'accounts' })
+  const { data: invoices } = useQuery({ queryKey: ['client-invoices', id], queryFn: () => getClientInvoices(id), enabled: activeTab === 'invoices' })
+  const { data: payments } = useQuery({ queryKey: ['client-payments', id], queryFn: () => getClientPayments(id), enabled: activeTab === 'payments' })
+  const { data: tickets }  = useQuery({ queryKey: ['client-tickets', id], queryFn: () => getClientTickets(id), enabled: activeTab === 'tickets' })
+  const { data: plansData } = useQuery({ queryKey: ['plans'], queryFn: () => getPlans(), enabled: showAccount })
+
+  // unwrap — each relationship query returns { data, meta } (unwrapList)
+  const plans = plansData?.data ?? plansData ?? []
+  const accountsList = Array.isArray(accounts?.data) ? accounts.data : (Array.isArray(accounts) ? accounts : [])
+  const invoicesList = Array.isArray(invoices?.data) ? invoices.data : (Array.isArray(invoices) ? invoices : [])
+  const paymentsList = Array.isArray(payments?.data) ? payments.data : (Array.isArray(payments) ? payments : [])
+  const ticketsList  = Array.isArray(tickets?.data)  ? tickets.data  : (Array.isArray(tickets)  ? tickets  : [])
 
   const updateMutation = useMutation({
     mutationFn: (data) => updateClient(id, data),
@@ -61,7 +75,34 @@ export default function ClientDetail() {
     onError: (err) => toast.error(err.response?.data?.message || 'Failed to create account'),
   })
 
-  if (isLoading) return <div className="py-20"><Spinner size="lg" /></div>
+    if (notFoundError) {
+    return (
+      <ErrorState
+        title="Client not found"
+        message="The requested client does not exist or you don't have access to it."
+        onRetry={() => queryClient.invalidateQueries({ queryKey: ['client', id] })}
+      />
+    )
+  }
+  if (forbiddenError) {
+    return (
+      <ErrorState
+        title="Access denied"
+        message="You don't have permission to view this client."
+      />
+    )
+  }
+  if (isError) {
+    return (
+      <ErrorState
+        message={error?.message ?? 'Failed to load client'}
+        onRetry={() => queryClient.invalidateQueries({ queryKey: ['client', id] })}
+      />
+    )
+  }
+
+  if (isLoading) return <Skeleton lines={8} />
+  if (!client) return <ErrorState title="Client not found" message="No client data returned." />
 
   const infoFields = [
     { label: 'Phone',     value: client?.phone },
@@ -135,7 +176,7 @@ export default function ClientDetail() {
 
       {/* Tabs */}
       <div className="flex gap-1" style={{ borderBottom: '1px solid var(--pb-border)' }}>
-        {TABS.map(({ key, label, icon: Icon }) => (
+                {TABS.map(({ key, label, icon: Icon }) => ( // eslint-disable-line no-unused-vars
           <button
             key={key}
             onClick={() => setActiveTab(key)}
@@ -157,10 +198,10 @@ export default function ClientDetail() {
               <Plus size={14} /> Add Account
             </button>
           </div>
-          {accounts?.length === 0 && (
+                    {accountsList.length === 0 && (
             <div className="card text-center py-10" style={{ color: 'var(--pb-text-3)' }}>No internet accounts yet.</div>
           )}
-          {accounts?.map(acc => (
+                    {accountsList.map(acc => (
             <div key={acc.id} className="card p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -200,8 +241,8 @@ export default function ClientDetail() {
               ))}
             </tr></thead>
             <tbody>
-              {!invoices?.length && <tr><td colSpan={4} className="px-4 py-10 text-center" style={{ color: 'var(--pb-text-3)' }}>No invoices found.</td></tr>}
-              {invoices?.map(inv => (
+                            {!invoicesList.length && <tr><td colSpan={4} className="px-4 py-10 text-center" style={{ color: 'var(--pb-text-3)' }}>No invoices found.</td></tr>}
+              {invoicesList.map(inv => (
                 <tr key={inv.id}>
                   <td style={tdStyle} className="px-4 py-3 font-medium">{inv.invoice_number}</td>
                   <td style={tdStyle} className="px-4 py-3">{formatKES(inv.total)}</td>
@@ -222,8 +263,8 @@ export default function ClientDetail() {
               {['Amount', 'Method', 'Reference', 'Date'].map(h => <th key={h} style={thBg}>{h}</th>)}
             </tr></thead>
             <tbody>
-              {!payments?.length && <tr><td colSpan={4} className="px-4 py-10 text-center" style={{ color: 'var(--pb-text-3)' }}>No payments found.</td></tr>}
-              {payments?.map(p => (
+                            {!paymentsList.length && <tr><td colSpan={4} className="px-4 py-10 text-center" style={{ color: 'var(--pb-text-3)' }}>No payments found.</td></tr>}
+              {paymentsList.map(p => (
                 <tr key={p.id}>
                   <td className="px-4 py-3 font-bold" style={{ color: '#60a5fa', borderBottom: '1px solid var(--pb-border)' }}>{formatKES(p.amount)}</td>
                   <td className="px-4 py-3 text-xs font-semibold uppercase" style={tdStyle}>{p.method}</td>
@@ -244,8 +285,8 @@ export default function ClientDetail() {
               {['#', 'Subject', 'Priority', 'Status', 'Created'].map(h => <th key={h} style={thBg}>{h}</th>)}
             </tr></thead>
             <tbody>
-              {!tickets?.length && <tr><td colSpan={5} className="px-4 py-10 text-center" style={{ color: 'var(--pb-text-3)' }}>No tickets found.</td></tr>}
-              {tickets?.map(t => (
+                            {!ticketsList.length && <tr><td colSpan={5} className="px-4 py-10 text-center" style={{ color: 'var(--pb-text-3)' }}>No tickets found.</td></tr>}
+              {ticketsList.map(t => (
                 <tr key={t.id} style={{ cursor: 'pointer' }} onClick={() => navigate(`/tickets/${t.id}`)}>
                   <td className="px-4 py-3" style={{ ...tdStyle, color: 'var(--pb-text-3)' }}>#{t.id}</td>
                   <td className="px-4 py-3 font-medium" style={tdStyle}>{t.subject}</td>

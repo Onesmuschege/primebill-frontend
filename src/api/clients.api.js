@@ -1,64 +1,32 @@
-import api, { unwrapList } from './axiosInstance'
+import api, { unwrapList, unwrapOne } from './axiosInstance'
 
 export const getClients = async (params) => {
   const response = await api.get('/clients', { params })
   return unwrapList(response)          // ✅ returns { data: [], meta: {} }
 }
 
-export const getClient = async (id) => {
-  const response = await api.get(`/clients/${id}`)
-  return response.data
-}
+export const getClient = (id) => api.get(`/clients/${id}`).then(unwrapOne)
 
-export const createClient = async (data) => {
-  const response = await api.post('/clients', data)
-  return response.data
-}
+export const createClient = (data) => api.post('/clients', data).then(unwrapOne)
 
-export const updateClient = async (id, data) => {
-  const response = await api.put(`/clients/${id}`, data)
-  return response.data
-}
+export const updateClient = (id, data) => api.put(`/clients/${id}`, data).then(unwrapOne)
 
-export const deleteClient = async (id) => {
-  const response = await api.delete(`/clients/${id}`)
-  return response.data
-}
+export const deleteClient = (id) => api.delete(`/clients/${id}`).then(unwrapOne)
 
-export const suspendClient = async (id) => {
-  const response = await api.post(`/clients/${id}/suspend`)
-  return response.data
-}
+export const suspendClient = (id) => api.post(`/clients/${id}/suspend`).then(unwrapOne)
 
-export const activateClient = async (id) => {
-  const response = await api.post(`/clients/${id}/activate`)
-  return response.data
-}
+export const activateClient = (id) => api.post(`/clients/${id}/activate`).then(unwrapOne)
 
-export const getClientAccounts = async (id) => {
-  const response = await api.get(`/clients/${id}/accounts`)
-  return response.data
-}
+export const getClientAccounts = (id) => api.get(`/clients/${id}/accounts`).then(unwrapList)
 
-export const getClientInvoices = async (id) => {
-  const response = await api.get(`/clients/${id}/invoices`)
-  return response.data
-}
+export const getClientInvoices = (id) => api.get(`/clients/${id}/invoices`).then(unwrapList)
 
-export const getClientPayments = async (id) => {
-  const response = await api.get(`/clients/${id}/payments`)
-  return response.data
-}
+export const getClientPayments = (id) => api.get(`/clients/${id}/payments`).then(unwrapList)
 
-export const getClientTickets = async (id) => {
-  const response = await api.get(`/clients/${id}/tickets`)
-  return response.data
-}
+export const getClientTickets = (id) => api.get(`/clients/${id}/tickets`).then(unwrapList)
 
-export const createClientAccount = async (clientId, data) => {
-  const response = await api.post(`/clients/${clientId}/accounts`, data)
-  return response.data
-}
+export const createClientAccount = (clientId, data) =>
+  api.post(`/clients/${clientId}/accounts`, data).then(unwrapOne)
 
 // CRM — Notes
 export const getClientNotes = async (clientId, params) => {

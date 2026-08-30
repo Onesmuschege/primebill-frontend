@@ -10,13 +10,17 @@ import {
 import Modal from '../common/Modal'
 import Badge from '../common/Badge'
 import Spinner from '../common/Spinner'
+import ConfirmDialog from '../common/ConfirmDialog'
 import toast from 'react-hot-toast'
 import { Activity, Pause, Play, WifiOff, Gauge } from 'lucide-react'
 
+const normalizeState = (s) => (s || '').toLowerCase()
+
 const stateVariant = (s) => {
-  if (s === 'active' || s === 'provisioned') return 'active'
-  if (s === 'suspended') return 'suspended'
-  if (s === 'past_due' || s === 'grace') return 'overdue'
+  const state = normalizeState(s)
+  if (state === 'active' || state === 'provisioned') return 'active'
+  if (state === 'suspended') return 'suspended'
+  if (state === 'past_due' || state === 'grace') return 'overdue'
   return 'inactive'
 }
 
@@ -24,12 +28,22 @@ export default function ServiceNetworkActions({ accountId, onChanged }) {
   const [open, setOpen] = useState(false)
   const [coaOpen, setCoaOpen] = useState(false)
   const [reason, setReason] = useState('')
-  const [coaForm, setCoaForm] = useState({
+    const [coaForm, setCoaForm] = useState({
     download_speed: '',
     upload_speed: '',
     session_timeout: '',
     idle_timeout: '',
   })
+
+  // ── Confirmation surface (replaces ad-hoc window.confirm) ──────────────────
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [confirmMessage, setConfirmMessage] = useState('')
+  const [pendingAction, setPendingAction] = useState(null)
+  const askConfirm = (message, action) => {
+    setConfirmMessage(message)
+    setPendingAction(() => action)
+    setConfirmOpen(true)
+  }
 
   const statusQuery = useQuery({
     queryKey: ['service-network', accountId],
@@ -86,7 +100,8 @@ export default function ServiceNetworkActions({ accountId, onChanged }) {
   })
 
   const st = statusQuery.data
-  const serviceState = st?.service_state ?? 'unknown'
+  const serviceState = normalizeState(st?.service_state ?? 'unknown')
+  const isAdminHold = Boolean(st?.administrative_hold) || st?.suspension_type === 'admin'
 
   return (
     <>
@@ -117,8 +132,18 @@ export default function ServiceNetworkActions({ accountId, onChanged }) {
             <>
               <div className="flex flex-wrap items-center gap-3 text-xs">
                 <span className="font-medium" style={{ color: 'var(--pb-text-2)' }}>
-                  Service state: <Badge label={serviceState} variant={stateVariant(serviceState)} />
+                  Service state: <Badge label={st?.service_state ?? serviceState} variant={stateVariant(serviceState)} />
                 </span>
+                {isAdminHold && serviceState === 'suspended' && (
+                  <span className="font-medium" style={{ color: '#f87171' }}>
+                    <Badge label="Administrative hold" variant="suspended" />
+                  </span>
+                )}
+                {serviceState === 'suspended' && st?.suspension_type === 'billing' && (
+                  <span className="font-medium" style={{ color: 'var(--pb-text-3)' }}>
+                    <Badge label="Billing suspension" variant="overdue" />
+                  </span>
+                )}
                 <span style={{ color: 'var(--pb-text-3)' }}>
                   Access: <strong>{st?.access_method ?? '—'}</strong>
                 </span>
@@ -156,8 +181,8 @@ export default function ServiceNetworkActions({ accountId, onChanged }) {
                     <Play size={13} /> {restore.isPending ? 'Restoring…' : 'Restore'}
                   </button>
                 )}
-                <button
-                  onClick={() => { if (window.confirm('Disconnect active session(s)?')) disconnect.mutate() }}
+                                <button
+                  onClick={() => askConfirm('Disconnect active session(s)?', () => disconnect.mutate())}
                   disabled={disconnect.isPending}
                   className="px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5"
                   style={{ background: 'rgba(239,68,68,0.15)', color: '#f87171' }}
@@ -219,7 +244,22 @@ export default function ServiceNetworkActions({ accountId, onChanged }) {
             </button>
           </div>
         </form>
-      </Modal>
+            </Modal>
+
+      <ConfirmDialog
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        message={confirmMessage}
+        confirmLabel="Disconnect"
+        destructive
+        isPending={disconnect.isPending}
+        onConfirm={() => {
+          const fn = pendingAction
+          setConfirmOpen(false)
+          setPendingAction(null)
+          fn && fn()
+        }}
+      />
     </>
   )
 }
