@@ -14,17 +14,17 @@ export default function LoyaltyPoints() {
 
   const { data: leaders = [] } = useQuery({
     queryKey: ['loyalty-leaderboard'],
-    queryFn: () => getLoyaltyLeaders().then(r => r.data.data),
+    queryFn: () => getLoyaltyLeaders(),
   })
 
   const { data: clientsData } = useQuery({
     queryKey: ['clients-list'],
-    queryFn: () => getClients({ per_page: 100 }).then(r => r.data),
+    queryFn: () => getClients({ per_page: 100 }),
   })
 
   const { data: loyaltyData } = useQuery({
     queryKey: ['client-loyalty', selectedClient],
-    queryFn: () => getClientLoyalty(selectedClient).then(r => r.data.data),
+    queryFn: () => getClientLoyalty(selectedClient),
     enabled: !!selectedClient,
   })
 
@@ -93,7 +93,7 @@ export default function LoyaltyPoints() {
                 className="input flex-1"
               >
                 <option value="">Select a client to view points…</option>
-                {clientsData?.map(c => (
+                {clientsData?.data?.map(c => (
                   <option key={c.id} value={c.id}>{c.first_name} {c.last_name} — {c.phone}</option>
                 ))}
               </select>

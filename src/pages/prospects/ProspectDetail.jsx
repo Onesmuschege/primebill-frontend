@@ -36,15 +36,14 @@ export default function ProspectDetail() {
 
   const { data: prospect, isLoading } = useQuery({
     queryKey: ['prospect', id],
-        queryFn: () => getProspect(id),
+    queryFn: () => getProspect(id),
   })
 
   // NOTE: getClients() already calls unwrapList() internally and resolves to
-  // { data: [], meta: {} } — NOT a raw axios response — so only one .data
-  // unwrap is needed here (see the same fix in InvoiceList.jsx / TicketList.jsx).
+  // { data: [], meta: {} } — NOT a raw axios response — so no extra unwrap.
   const { data: clientsData } = useQuery({
     queryKey: ['clients-list'],
-    queryFn: () => getClients({ per_page: 100 }).then(r => r.data),
+    queryFn: () => getClients({ per_page: 100 }),
     enabled: showWon,
   })
 
@@ -145,7 +144,7 @@ export default function ProspectDetail() {
               </button>
             )}
             {canMarkWon && (
-              <button onClick={() => { setClients(clientsData || []); setShowWon(true) }} className="btn-primary" style={{ background: '#059669' }}>
+              <button onClick={() => { setClients(clientsData?.data || []); setShowWon(true) }} className="btn-primary" style={{ background: '#059669' }}>
                 <Trophy size={14} /> Mark Won
               </button>
             )}

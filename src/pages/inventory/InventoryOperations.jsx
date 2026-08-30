@@ -104,7 +104,7 @@ function TransfersTab({ items, warehouses }) {
 
   const { data, isLoading } = useQuery({
     queryKey: ['stock-transfers', page],
-    queryFn: () => inventoryOperationsApi.listTransfers({ page }).then(unwrapList),
+    queryFn: () => inventoryOperationsApi.listTransfers({ page }),
   })
 
   const invalidate = () => {
@@ -267,7 +267,7 @@ function PurchaseOrdersTab({ items, warehouses, suppliers }) {
 
   const { data, isLoading } = useQuery({
     queryKey: ['purchase-orders', page],
-    queryFn: () => inventoryOperationsApi.listPurchaseOrders({ page }).then(unwrapList),
+    queryFn: () => inventoryOperationsApi.listPurchaseOrders({ page }),
   })
 
   const invalidate = () => {
@@ -510,11 +510,11 @@ export default function InventoryOperations() {
   })
   const { data: warehousesRes } = useQuery({
     queryKey: ['warehouses-picker'],
-    queryFn: () => inventoryOperationsApi.listWarehouses().then(r => r.data.data),
+    queryFn: () => inventoryOperationsApi.listWarehouses(),
   })
   const { data: suppliersRes } = useQuery({
     queryKey: ['suppliers-picker'],
-    queryFn: () => inventoryOperationsApi.listSuppliers().then(r => r.data.data),
+    queryFn: () => inventoryOperationsApi.listSuppliers(),
   })
 
   const items = itemsData?.data
@@ -527,7 +527,9 @@ export default function InventoryOperations() {
         {[
           { key: 'transfers', label: 'Stock Transfers', icon: ArrowRightLeft },
           { key: 'pos',       label: 'Purchase Orders',  icon: ShoppingCart },
-        ].map(({ key, label, icon: Icon }) => (
+        ].map(({ key, label,
+          // eslint-disable-next-line no-unused-vars -- used in JSX below
+          icon: Icon }) => (
           <button
             key={key}
             onClick={() => setTab(key)}
