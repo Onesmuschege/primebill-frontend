@@ -28,7 +28,7 @@ export default function LeadDetail() {
 
   const { data: lead, isLoading } = useQuery({
     queryKey: ['lead', id],
-    queryFn: () => getLead(id).then(r => r.data.data),
+        queryFn: () => getLead(id),
   })
 
   const convertMutation = useMutation({
@@ -40,7 +40,7 @@ export default function LeadDetail() {
       queryClient.invalidateQueries({ queryKey: ['leads'] })
       queryClient.invalidateQueries({ queryKey: ['prospects'] })
       // Navigate to the new prospect
-      const prospectId = res?.data?.data?.id
+      const prospectId = res?.id
       if (prospectId) navigate(`/prospects/${prospectId}`)
     },
     onError: (err) => toast.error(err.response?.data?.message || 'Conversion failed'),

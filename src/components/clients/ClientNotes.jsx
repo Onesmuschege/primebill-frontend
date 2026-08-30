@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { clientsApi } from '../../api/clients.api';
+import { getClientNotes, createClientNote, toggleNotePin } from '../../api/clients.api';
 
 export default function ClientNotes({ clientId }) {
   const [notes, setNotes] = useState([]);
@@ -13,8 +13,8 @@ export default function ClientNotes({ clientId }) {
 
   const loadNotes = async () => {
     try {
-      const response = await clientsApi.getNotes(clientId);
-      setNotes(response.data.data);
+      const response = await getClientNotes(clientId);
+      setNotes(response.data);
     } catch (error) {
       console.error('Failed to load notes:', error);
     } finally {
@@ -29,7 +29,7 @@ export default function ClientNotes({ clientId }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await clientsApi.createNote(clientId, formData);
+      await createClientNote(clientId, formData);
       setFormData({ note: '', type: 'general', priority: 'normal' });
       setShowForm(false);
       loadNotes();
@@ -40,7 +40,7 @@ export default function ClientNotes({ clientId }) {
 
   const handleTogglePin = async (noteId) => {
     try {
-      await clientsApi.toggleNotePin(clientId, noteId);
+      await toggleNotePin(clientId, noteId);
       loadNotes();
     } catch (error) {
       console.error('Failed to toggle pin:', error);

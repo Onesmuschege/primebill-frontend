@@ -14,7 +14,7 @@ export default function ClientTags({ clientId }) {
       try {
         const response = await getClientTags(clientId);
         if (mounted) {
-          setTags(response.data.data || []);
+          setTags(response.data || []);
         }
         
         // Load all available tags (in real app, you'd have a separate endpoint)
@@ -45,7 +45,7 @@ export default function ClientTags({ clientId }) {
       await assignTagToClient(clientId, tagId);
       // Reload tags after assignment
       const response = await getClientTags(clientId);
-      setTags(response.data.data || []);
+      setTags(response.data || []);
     } catch (error) {
       console.error('Failed to assign tag:', error);
     }
@@ -56,7 +56,7 @@ export default function ClientTags({ clientId }) {
       await removeTagFromClient(clientId, tagId);
       // Reload tags after removal
       const response = await getClientTags(clientId);
-      setTags(response.data.data || []);
+      setTags(response.data || []);
     } catch (error) {
       console.error('Failed to remove tag:', error);
     }

@@ -1,4 +1,4 @@
-import api, { unwrapList } from './axiosInstance'
+import api, { unwrapList, unwrapOne } from './axiosInstance'
 
 // ─── Leads ────────────────────────────────────────────────────────────────
 
@@ -12,35 +12,19 @@ export const getLeadStats = async () => {
   return response.data
 }
 
-export const getLead = async (id) => {
-  const response = await api.get(`/leads/${id}`)
-  return response.data
-}
+export const getLead = (id) => api.get(`/leads/${id}`).then(unwrapOne)
 
-export const createLead = async (data) => {
-  const response = await api.post('/leads', data)
-  return response.data
-}
+export const createLead = (data) => api.post('/leads', data).then(unwrapOne)
 
-export const updateLead = async (id, data) => {
-  const response = await api.put(`/leads/${id}`, data)
-  return response.data
-}
+export const updateLead = (id, data) => api.put(`/leads/${id}`, data).then(unwrapOne)
 
-export const deleteLead = async (id) => {
-  const response = await api.delete(`/leads/${id}`)
-  return response.data
-}
+export const deleteLead = (id) => api.delete(`/leads/${id}`).then(unwrapOne)
 
-export const convertLeadToProspect = async (id, data) => {
-  const response = await api.post(`/leads/${id}/convert`, data)
-  return response.data
-}
+export const convertLeadToProspect = (id, data) =>
+  api.post(`/leads/${id}/convert`, data).then(unwrapOne)
 
-export const markLeadAsLost = async (id, lostReason) => {
-  const response = await api.post(`/leads/${id}/lost`, { lost_reason: lostReason })
-  return response.data
-}
+export const markLeadAsLost = (id, lostReason) =>
+  api.post(`/leads/${id}/lost`, { lost_reason: lostReason }).then(unwrapOne)
 
 // ─── Prospects ────────────────────────────────────────────────────────────
 
@@ -54,37 +38,19 @@ export const getProspectStats = async () => {
   return response.data
 }
 
-export const getProspect = async (id) => {
-  const response = await api.get(`/prospects/${id}`)
-  return response.data
-}
+export const getProspect = (id) => api.get(`/prospects/${id}`).then(unwrapOne)
 
-export const createProspect = async (data) => {
-  const response = await api.post('/prospects', data)
-  return response.data
-}
+export const createProspect = (data) => api.post('/prospects', data).then(unwrapOne)
 
-export const updateProspect = async (id, data) => {
-  const response = await api.put(`/prospects/${id}`, data)
-  return response.data
-}
+export const updateProspect = (id, data) => api.put(`/prospects/${id}`, data).then(unwrapOne)
 
-export const deleteProspect = async (id) => {
-  const response = await api.delete(`/prospects/${id}`)
-  return response.data
-}
+export const deleteProspect = (id) => api.delete(`/prospects/${id}`).then(unwrapOne)
 
-export const advanceProspect = async (id, pipelineStage) => {
-  const response = await api.post(`/prospects/${id}/advance`, { pipeline_stage: pipelineStage })
-  return response.data
-}
+export const advanceProspect = (id, pipelineStage) =>
+  api.post(`/prospects/${id}/advance`, { pipeline_stage: pipelineStage }).then(unwrapOne)
 
-export const markProspectAsWon = async (id, clientId) => {
-  const response = await api.post(`/prospects/${id}/won`, { client_id: clientId })
-  return response.data
-}
+export const markProspectAsWon = (id, clientId) =>
+  api.post(`/prospects/${id}/won`, { client_id: clientId }).then(unwrapOne)
 
-export const markProspectAsLost = async (id, lostReason) => {
-  const response = await api.post(`/prospects/${id}/lost`, { lost_reason: lostReason })
-  return response.data
-}
+export const markProspectAsLost = (id, lostReason) =>
+  api.post(`/prospects/${id}/lost`, { lost_reason: lostReason }).then(unwrapOne)

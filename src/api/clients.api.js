@@ -29,46 +29,30 @@ export const createClientAccount = (clientId, data) =>
   api.post(`/clients/${clientId}/accounts`, data).then(unwrapOne)
 
 // CRM — Notes
-export const getClientNotes = async (clientId, params) => {
-  const response = await api.get(`/clients/${clientId}/notes`, { params })
-  return response.data
-}
+export const getClientNotes = (clientId, params) =>
+  api.get(`/clients/${clientId}/notes`, { params }).then(unwrapList)
 
-export const createClientNote = async (clientId, data) => {
-  const response = await api.post(`/clients/${clientId}/notes`, data)
-  return response.data
-}
+export const createClientNote = (clientId, data) =>
+  api.post(`/clients/${clientId}/notes`, data).then(unwrapOne)
 
-export const toggleNotePin = async (clientId, noteId) => {
-  const response = await api.post(`/clients/${clientId}/notes/${noteId}/pin`)
-  return response.data
-}
+export const toggleNotePin = (clientId, noteId) =>
+  api.post(`/clients/${clientId}/notes/${noteId}/pin`).then(unwrapOne)
 
 // CRM — Tags
-export const getClientTags = async (clientId) => {
-  const response = await api.get(`/clients/${clientId}/tags`)
-  return response.data
-}
+export const getClientTags = (clientId) =>
+  api.get(`/clients/${clientId}/tags`).then(unwrapList)
 
-export const assignTagToClient = async (clientId, clientTagId) => {
-  const response = await api.post(`/clients/${clientId}/tags/assign`, { client_tag_id: clientTagId })
-  return response.data
-}
+export const assignTagToClient = (clientId, clientTagId) =>
+  api.post(`/clients/${clientId}/tags/assign`, { client_tag_id: clientTagId }).then(unwrapOne)
 
-export const removeTagFromClient = async (clientId, tagId) => {
-  const response = await api.delete(`/clients/${clientId}/tags/remove`, {
-    data: { client_tag_id: tagId }
-  })
-  return response.data
-}
+export const removeTagFromClient = (clientId, tagId) =>
+  api.delete(`/clients/${clientId}/tags/remove`, {
+    data: { client_tag_id: tagId },
+  }).then(unwrapOne)
 
 // CRM — Custom Fields
-export const getClientCustomFieldValues = async (clientId) => {
-  const response = await api.get(`/clients/${clientId}/custom-fields`)
-  return response.data
-}
+export const getClientCustomFieldValues = (clientId) =>
+  api.get(`/clients/${clientId}/custom-fields`).then(unwrapOne)
 
-export const updateClientCustomFieldValues = async (clientId, values) => {
-  const response = await api.put(`/clients/${clientId}/custom-fields`, { values })
-  return response.data
-}
+export const updateClientCustomFieldValues = (clientId, values) =>
+  api.put(`/clients/${clientId}/custom-fields`, { values }).then(unwrapOne)

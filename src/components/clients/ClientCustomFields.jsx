@@ -10,8 +10,8 @@ export default function ClientCustomFields({ clientId }) {
   const loadData = async () => {
     try {
       const response = await getClientCustomFieldValues(clientId);
-      setFields(response.data.data?.fields || []);
-      setValues(response.data.data?.values || {});
+      setFields(response.fields || []);
+      setValues(response.values || {});
     } catch (error) {
       console.error('Failed to load custom fields:', error);
     } finally {

@@ -36,7 +36,7 @@ export default function ProspectDetail() {
 
   const { data: prospect, isLoading } = useQuery({
     queryKey: ['prospect', id],
-    queryFn: () => getProspect(id).then(r => r.data.data),
+        queryFn: () => getProspect(id),
   })
 
   // NOTE: getClients() already calls unwrapList() internally and resolves to
