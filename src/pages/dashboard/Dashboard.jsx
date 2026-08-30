@@ -7,6 +7,7 @@ import { formatKES } from '../../utils/formatCurrency'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Users, DollarSign, Wifi, Ticket, Activity } from 'lucide-react'
 import Spinner from '../../components/common/Spinner'
+import ErrorState from '../../components/common/ErrorState'
 
 // Format ISO timestamp → "Jun 25 14:00"
 function formatTrafficTime(raw) {
@@ -24,15 +25,15 @@ const mutedText = { color: 'var(--pb-text-3)' }
 const chartCursor = { fill: 'rgba(37,99,235,0.08)' }
 
 export default function Dashboard() {
-  const { data: statsData, isLoading: statsLoading } = useQuery({
+  const { data: statsData, isLoading: statsLoading, isError: statsError, error: statsErr, refetch: refetchStats } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: () => getDashboardStats().then(r => r.data.data),
+    queryFn: () => getDashboardStats(),
     refetchInterval: 30000,
   })
 
   const { data: traffic } = useQuery({
     queryKey: ['dashboard-traffic'],
-    queryFn: () => getTrafficData('day').then(r => r.data.data),
+    queryFn: () => getTrafficData('day'),
     refetchInterval: 60000,
   })
 
@@ -42,8 +43,17 @@ export default function Dashboard() {
   // a top-N ranking with a "View all" link to the RADIUS page instead.
   const { data: downloaders, isLoading: downloadersLoading } = useQuery({
     queryKey: ['top-downloaders', DASHBOARD_LIMITS.topDownloaders],
-    queryFn: () => getTopDownloaders(DASHBOARD_LIMITS.topDownloaders).then(r => r.data.data),
+    queryFn: () => getTopDownloaders(DASHBOARD_LIMITS.topDownloaders),
   })
+
+  if (statsError) {
+    return (
+      <ErrorState
+        message={statsErr?.message ?? 'Failed to load dashboard'}
+        onRetry={() => refetchStats()}
+      />
+    )
+  }
 
   if (statsLoading) return <div className="py-20"><Spinner size="lg" /></div>
 
