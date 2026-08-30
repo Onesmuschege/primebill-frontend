@@ -26,17 +26,17 @@ const ALERT_TYPE_LABELS = {
 export default function NocDashboard() {
   const { data: overview, isLoading: loadingOverview } = useQuery({
     queryKey: ['noc-overview'],
-    queryFn: () => getNocOverview().then(r => r.data.data),
+    queryFn: () => getNocOverview(),
   })
 
   const { data: devices, isLoading: loadingDevices } = useQuery({
     queryKey: ['noc-devices'],
-    queryFn: () => getNocDevices({ per_page: 8 }).then(r => r.data.data),
+    queryFn: () => getNocDevices({ per_page: 8 }),
   })
 
   const { data: alerts, isLoading: loadingAlerts } = useQuery({
     queryKey: ['noc-alerts'],
-    queryFn: () => getNocAlerts({ per_page: 6, status: 'open' }).then(r => r.data.data),
+    queryFn: () => getNocAlerts({ per_page: 6, status: 'open' }),
   })
 
   if (loadingOverview || loadingDevices || loadingAlerts) {
@@ -73,7 +73,9 @@ export default function NocDashboard() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {stats.map(({ label, value, icon: Icon, color }) => (
+        {stats.map(({ label, value,
+          // eslint-disable-next-line no-unused-vars -- used in JSX below
+          icon: Icon, color }) => (
           <div key={label} className="card p-4">
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-lg ${color}`}>
@@ -94,7 +96,7 @@ export default function NocDashboard() {
           title="Devices"
           icon={Server}
           items={devices?.data}
-          total={Number.isFinite(devices?.total) ? devices.total : null}
+          total={Number.isFinite(devices?.meta?.total) ? devices.meta.total : null}
           limit={DASHBOARD_LIMITS.nocDevices}
           viewAllTo="/noc/devices"
           emptyMessage="No devices registered yet."
@@ -131,7 +133,7 @@ export default function NocDashboard() {
           title="Active Alerts"
           icon={AlertTriangle}
           items={alerts?.data}
-          total={Number.isFinite(alerts?.total) ? alerts.total : null}
+          total={Number.isFinite(alerts?.meta?.total) ? alerts.meta.total : null}
           limit={DASHBOARD_LIMITS.nocAlerts}
           viewAllTo="/noc/alerts"
           emptyMessage="No active alerts. All systems nominal."

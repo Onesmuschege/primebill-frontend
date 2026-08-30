@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getNocAlerts, acknowledgeNocAlert, resolveNocAlert } from '../../api/noc.api'
-import { unwrapList } from '../../api/axiosInstance'
 import Spinner from '../../components/common/Spinner'
 import toast from 'react-hot-toast'
 import { AlertTriangle, CheckCircle2, Eye, RefreshCw } from 'lucide-react'
@@ -34,7 +33,7 @@ export default function NocAlerts() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['noc-alerts', status],
-    queryFn: () => getNocAlerts({ status, per_page: 25 }).then(unwrapList),
+        queryFn: () => getNocAlerts({ status, per_page: 25 }),
   })
 
   const acknowledgeMutation = useMutation({

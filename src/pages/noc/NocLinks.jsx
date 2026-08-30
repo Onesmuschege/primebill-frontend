@@ -34,7 +34,7 @@ export default function NocLinks() {
 
   const { data: devices } = useQuery({
     queryKey: ['noc-devices-all'],
-    queryFn: () => getNocDevices({ per_page: 100 }).then(unwrapList).then(r => r.data),
+        queryFn: () => getNocDevices({ per_page: 100 }).then(r => r.data),
   })
 
   const createMutation = useMutation({

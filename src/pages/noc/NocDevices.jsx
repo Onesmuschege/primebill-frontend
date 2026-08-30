@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getNocDevices } from '../../api/noc.api'
-import { unwrapList } from '../../api/axiosInstance'
 import Spinner from '../../components/common/Spinner'
 import { Server, Wifi, WifiOff, Cpu, Activity } from 'lucide-react'
 
@@ -19,7 +18,7 @@ export default function NocDevices() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['noc-devices', deviceType, status],
-    queryFn: () => getNocDevices({ device_type: deviceType || undefined, status: status || undefined, per_page: 25 }).then(unwrapList),
+        queryFn: () => getNocDevices({ device_type: deviceType || undefined, status: status || undefined, per_page: 25 }),
   })
 
   if (isLoading) return <div className="py-20"><Spinner size="lg" /></div>
