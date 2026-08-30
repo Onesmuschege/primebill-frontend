@@ -6,7 +6,6 @@ import toast from 'react-hot-toast'
 import Spinner from '../../components/common/Spinner'
 
 export default function RadiusTab() {
-  const [testing, setTesting] = useState(false)
   const [testResult, setTestResult] = useState(null)
 
   const { data: settingsData, isLoading } = useQuery({
@@ -17,8 +16,8 @@ export default function RadiusTab() {
   const testMutation = useMutation({
     mutationFn: testRadiusConnection,
     onSuccess: (res) => {
-      setTestResult(res.data.data)
-      toast.success(res.data.message)
+      setTestResult(res.result)
+      toast.success(res.message || 'RADIUS test passed')
     },
     onError: (err) => {
       setTestResult({ success: false, message: err.response?.data?.message })
@@ -26,7 +25,7 @@ export default function RadiusTab() {
     },
   })
 
-  const settings = settingsData?.data?.data || {}
+  const settings = settingsData || {}
 
   if (isLoading) return <div className="py-8"><Spinner size="md" /></div>
 

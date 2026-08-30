@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import api, { unwrapList } from '../../api/axiosInstance'
+import { getRadiusSessions, getRadiusStats } from '../../api/radius.api'
 import Table from '../../components/common/Table'
 import Pagination from '../../components/common/Pagination'
+import Skeleton from '../../components/common/Skeleton'
+import EmptyState from '../../components/common/EmptyState'
+import ErrorState from '../../components/common/ErrorState'
 import { formatDateTime } from '../../utils/formatDate'
 import { Search, Radio, Wifi } from 'lucide-react'
 
@@ -23,17 +26,17 @@ export default function RadiusPage() {
   const [page, setPage]     = useState(1)
   const [search, setSearch] = useState('')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['radius-sessions', page, search],
-    queryFn: () =>
-      api.get('/radius/sessions', { params: { page, search, per_page: 20 } })
-        .then(unwrapList),
+    queryFn: () => getRadiusSessions({ page, search, per_page: 20 }),
   })
 
   const { data: stats } = useQuery({
     queryKey: ['radius-stats'],
-    queryFn: () => api.get('/radius/stats').then(r => r.data.data),
+    queryFn: () => getRadiusStats(),
   })
+
+  const sessions = data?.data ?? []
 
   const columns = [
     { key: 'username',    label: 'Username',   render: (r) => (
@@ -60,6 +63,15 @@ export default function RadiusPage() {
     )},
   ]
 
+  if (isError) {
+    return (
+      <ErrorState
+        message={error?.message ?? 'Failed to load RADIUS sessions'}
+        onRetry={() => refetch()}
+      />
+    )
+  }
+
   return (
     <div className="space-y-4">
       {/* Stats */}
@@ -69,7 +81,9 @@ export default function RadiusPage() {
             { label: 'Active Sessions', value: stats.active_sessions || 0,  color: 'text-green-600', icon: Wifi },
             { label: 'Total Sessions',  value: stats.total_sessions || 0,   color: 'text-gray-800',  icon: Radio },
             { label: 'Unique Users',    value: stats.unique_users || 0,     color: 'text-blue-600',  icon: Radio },
-          ].map(({ label, value, color, icon: Icon }) => (
+          ].map(({ label, value, color,
+            // eslint-disable-next-line no-unused-vars -- used in JSX below
+            icon: Icon }) => (
             <div key={label} className="card flex items-center gap-4">
               <div className={`p-3 rounded-xl bg-gray-50 ${color}`}><Icon size={20} /></div>
               <div>
@@ -94,9 +108,25 @@ export default function RadiusPage() {
         </div>
       </div>
 
-      <div className="card p-0 overflow-hidden">
-        <Table columns={columns} data={data?.data} loading={isLoading} />
-        <Pagination meta={data?.meta} onPageChange={setPage} />
+            <div className="card p-0 overflow-hidden">
+        {isLoading && sessions.length === 0 ? (
+          <div className="p-4 space-y-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-4 w-full" />
+            ))}
+          </div>
+        ) : sessions.length === 0 ? (
+          <EmptyState
+            icon={Wifi}
+            title="No RADIUS sessions"
+            description="No sessions match the current search."
+          />
+        ) : (
+          <>
+            <Table columns={columns} data={sessions} loading={isLoading} />
+            <Pagination meta={data?.meta} onPageChange={setPage} />
+          </>
+        )}
       </div>
     </div>
   )
