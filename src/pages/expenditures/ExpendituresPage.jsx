@@ -23,16 +23,10 @@ export default function ExpendituresPage() {
 
   const listQuery = useQuery({
     queryKey: ['expenditures', page, search],
-    queryFn: async () => {
-      const res = await getExpenditures({ page, per_page: 20 })
-      const body = res.data?.data
-      const data = body?.data ?? (Array.isArray(body) ? body : [])
-      const meta = body?.meta ?? body ?? {}
-      return { data, meta }
-    },
+    queryFn: () => getExpenditures({ page, per_page: 20 }),
   })
-  const categories = useQuery({ queryKey: ['expenditure-categories'], queryFn: async () => (await getExpenditureCategories()).data.data })
-  const summary = useQuery({ queryKey: ['expenditure-summary'], queryFn: async () => (await getExpenditureSummary()).data.data })
+  const categories = useQuery({ queryKey: ['expenditure-categories'], queryFn: () => getExpenditureCategories() })
+  const summary = useQuery({ queryKey: ['expenditure-summary'], queryFn: () => getExpenditureSummary() })
 
   const save = useMutation({
     mutationFn: (payload) => editing ? updateExpenditure(editing.id, payload) : createExpenditure(payload),
@@ -48,7 +42,7 @@ export default function ExpendituresPage() {
   const openNew = () => { setEditing(null); setForm(EMPTY); setModal(true) }
   const openEdit = (row) => { setEditing(row); setForm({ description: row.description || '', category: row.category || '', amount: row.amount ?? '', date: (row.date || '').slice(0, 10) || new Date().toISOString().slice(0, 10) }); setModal(true) }
 
-  const catList = Array.isArray(categories.data) ? categories.data : []
+  const catList = Array.isArray(categories.data?.data) ? categories.data.data : []
   const total = Array.isArray(summary.data)
     ? summary.data.reduce((s, x) => s + (Number(x.sum || x.total || 0) || 0), 0)
     : (Number(summary.data?.total) || 0)

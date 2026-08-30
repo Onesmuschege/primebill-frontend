@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { RotateCcw, AlertTriangle, Zap } from 'lucide-react'
-import api from '../../api/axiosInstance'
+import { getFupLogs, getFupStats, resetFupLog } from '../../api/fup.api'
 import toast from 'react-hot-toast'
 import Table from '../../components/common/Table'
 import Pagination from '../../components/common/Pagination'
@@ -12,24 +12,19 @@ export default function FupManagement() {
 
   const { data: statsData } = useQuery({
     queryKey: ['fup-stats'],
-    queryFn: () => api.get('/fup/stats').then(r => r.data.data),
+    queryFn: () => getFupStats(),
   })
 
   const { data, isLoading } = useQuery({
     queryKey: ['fup-accounts', page],
-    queryFn: () =>
-      api.get('/fup/logs', {
-        params: {
-          page,
-        },
-      }).then(r => r.data.data),
+    queryFn: () => getFupLogs({ page }),
   })
 
   const resetMutation = useMutation({
-    mutationFn: (accountId) => api.post(`/fup/reset/${accountId}`),
+    mutationFn: (accountId) => resetFupLog(accountId),
 
     onSuccess: (r) => {
-      toast.success(r.data.message)
+      toast.success(r.message || 'FUP usage reset')
 
       qc.invalidateQueries({
         queryKey: ['fup-accounts'],

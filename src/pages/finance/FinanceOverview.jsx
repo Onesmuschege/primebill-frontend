@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api from '../../api/axiosInstance'
 import {
   getWalletBalance,
   getWalletTransactions,
@@ -17,6 +16,7 @@ import {
   getTrialBalance,
   verifyLedger,
 } from '../../api/finance.api'
+import { getExpenditureSummary } from '../../api/expenditures.api'
 import Table from '../../components/common/Table'
 import { DASHBOARD_LIMITS } from '../../utils/dashboardLimits'
 import Pagination from '../../components/common/Pagination'
@@ -76,19 +76,19 @@ export default function FinanceOverview() {
   // ── Overview summary ──────────────────────────────────────────────
   const { data: summary } = useQuery({
     queryKey: ['finance', 'summary'],
-    queryFn: () => api.get('/expenditures/summary').then(r => r.data.data),
+    queryFn: () => getExpenditureSummary(),
   })
 
   const { data: ledgerCheck } = useQuery({
     queryKey: ['finance', 'ledger'],
-    queryFn: () => verifyLedger().then(r => r.data.data),
+    queryFn: () => verifyLedger(),
   })
 
   // ── Wallets ───────────────────────────────────────────────────────
   const walletOn = !!clientId
   const { data: balance } = useQuery({
     queryKey: ['finance', 'wallet', clientId],
-    queryFn: () => getWalletBalance(clientId).then(r => r.data.data),
+    queryFn: () => getWalletBalance(clientId),
     enabled: walletOn,
   })
     // Server-side limit via /finance/wallet/transactions?limit=N — the endpoint
@@ -96,7 +96,7 @@ export default function FinanceOverview() {
   // full-page wallet view, so this widget shows "Showing N" only.
   const { data: transactions } = useQuery({
     queryKey: ['finance', 'wallet-tx', clientId, DASHBOARD_LIMITS.recentTransactions],
-    queryFn: () => getWalletTransactions(clientId, DASHBOARD_LIMITS.recentTransactions).then(r => r.data.data),
+    queryFn: () => getWalletTransactions(clientId, DASHBOARD_LIMITS.recentTransactions),
     enabled: walletOn,
   })
   const recentTransactions = (Array.isArray(transactions) ? transactions : [])
@@ -121,7 +121,7 @@ export default function FinanceOverview() {
   })
   const { data: trialBalance } = useQuery({
     queryKey: ['finance', 'trial-balance'],
-    queryFn: () => getTrialBalance().then(r => r.data.data),
+    queryFn: () => getTrialBalance(),
   })
 
   // ── Mutations ─────────────────────────────────────────────────────

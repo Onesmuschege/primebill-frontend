@@ -1,4 +1,4 @@
-import api, { unwrapList } from './axiosInstance'
+import api, { unwrapList, unwrapOne } from './axiosInstance'
 
 const clean = (params = {}) =>
   Object.fromEntries(
@@ -9,13 +9,14 @@ const clean = (params = {}) =>
 // Wallets
 // ---------------------------------------------------------------------------
 export const getWalletBalance = (clientId) =>
-  api.get('/finance/wallet/balance', { params: clean({ client_id: clientId }) })
+  api.get('/finance/wallet/balance', { params: clean({ client_id: clientId }) }).then(unwrapOne)
 
+// Returns a plain array (no total metadata) — unwrapOne passes it through.
 export const getWalletTransactions = (clientId, limit = 50) =>
-  api.get('/finance/wallet/transactions', { params: clean({ client_id: clientId, limit }) })
+  api.get('/finance/wallet/transactions', { params: clean({ client_id: clientId, limit }) }).then(unwrapOne)
 
-export const walletDeposit = (data) => api.post('/finance/wallet/deposit', data)
-export const walletWithdraw = (data) => api.post('/finance/wallet/withdraw', data)
+export const walletDeposit = (data) => api.post('/finance/wallet/deposit', data).then(unwrapOne)
+export const walletWithdraw = (data) => api.post('/finance/wallet/withdraw', data).then(unwrapOne)
 
 // ---------------------------------------------------------------------------
 // Credit Notes
@@ -65,10 +66,10 @@ export const recordInstallmentPayment = (installmentId, data) =>
 // Financial Statements
 // ---------------------------------------------------------------------------
 export const getTrialBalance = (params) =>
-  api.get('/finance/statement/trial-balance', { params: clean(params) })
+  api.get('/finance/statement/trial-balance', { params: clean(params) }).then(unwrapOne)
 export const getRevenueRecognition = (params) =>
-  api.get('/finance/statement/revenue', { params: clean(params) })
-export const verifyLedger = () => api.get('/finance/statement/verify-ledger')
+  api.get('/finance/statement/revenue', { params: clean(params) }).then(unwrapOne)
+export const verifyLedger = () => api.get('/finance/statement/verify-ledger').then(unwrapOne)
 
 // ---------------------------------------------------------------------------
 // Usage Billing
