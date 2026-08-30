@@ -9,6 +9,22 @@ vi.mock('../../api/axiosInstance', () => ({
     put: vi.fn(() => Promise.resolve({ data: { success: true, data: {} } })),
     delete: vi.fn(() => Promise.resolve({ data: { success: true, data: {} } })),
   },
+  unwrapList: (response) => {
+    const body = response?.data
+    if (Array.isArray(body)) return { data: body, meta: {} }
+    if (body && Array.isArray(body.data)) return { data: body.data, meta: body.meta || {} }
+    if (body && body.data && Array.isArray(body.data.data)) {
+      return { data: body.data.data, meta: body.data.meta || {} }
+    }
+    return { data: [], meta: {} }
+  },
+  unwrapOne: (response) => {
+    const body = response?.data
+    if (body && typeof body === 'object' && 'data' in body && 'success' in body) {
+      return body.data
+    }
+    return body
+  },
 }))
 
 describe('tickets api — relationships & knowledge (Release 4)', () => {

@@ -15,7 +15,7 @@ export default function TicketDetail() {
 
   const { data: ticket, isLoading } = useQuery({
     queryKey: ['ticket', id],
-    queryFn: () => getTicket(id).then(r => r.data.data),
+        queryFn: () => getTicket(id),
   })
 
   const replyMutation = useMutation({

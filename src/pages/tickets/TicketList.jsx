@@ -28,12 +28,12 @@ export default function TicketList() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['tickets', page, status],
-    queryFn: () => getTickets({ page, status }).then(r => r.data.data),
+        queryFn: () => getTickets({ page, status }),
   })
 
   const { data: stats } = useQuery({
     queryKey: ['ticket-stats'],
-    queryFn: () => getTicketStats().then(r => r.data.data),
+        queryFn: () => getTicketStats(),
   })
 
   // NOTE: getClients() already calls unwrapList() internally and resolves to
@@ -41,7 +41,7 @@ export default function TicketList() {
   // unwrap is needed here (see the same fix in InvoiceList.jsx).
   const { data: clientsData } = useQuery({
     queryKey: ['clients-all'],
-    queryFn: () => getClients({ per_page: 200 }).then(r => r.data),
+        queryFn: () => getClients({ per_page: 200 }),
     enabled: showCreate,
   })
 
