@@ -149,9 +149,9 @@ export default function AppRoutes() {
 
         {/* Subscribers */}
         <Route path="/clients" element={<ClientList />} />
-        <Route path="/clients/:id" element={<ClientDetail />} />
-        {/* Service 360 workspace (§15): reached from ClientDetail account cards
-            and relationship navigation — no sidebar entry by design. */}
+          {/* Service 360 workspace (§15): reached from ClientDetail account cards
+              and relationship navigation — no sidebar entry by design. Canonical
+              §38 structure for new routes; existing flat routes untouched. */}
         <Route path="/subscribers/services/:accountId" element={<ServiceDetail />} />
         <Route path="/plans" element={<PlanList />} />
         <Route path="/vouchers" element={<VoucherList />} />

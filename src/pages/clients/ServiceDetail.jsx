@@ -13,19 +13,20 @@ import EntityHeader from '../../components/ops/EntityHeader'
 import StateChain from '../../components/ops/StateChain'
 import OperationalTimeline from '../../components/ops/OperationalTimeline'
 import RelationshipNav from '../../components/ops/RelationshipNav'
+import ServiceActionsRail from './ServiceActionsRail'
+
 import {
   buildServiceStateChain,
   serviceStateMeta,
   serviceStateToneClass,
-  STATUS_TONES,
   SERVICE_ALLOWED_TRANSITIONS,
 } from '../../utils/statusMeta'
+
 import { formatDateTime } from '../../utils/formatDate'
 import ErrorState from '../../components/common/ErrorState'
 import Skeleton from '../../components/common/Skeleton'
 import Modal from '../../components/common/Modal'
 import toast from 'react-hot-toast'
-import { Pause, Play, WifiOff, Gauge } from 'lucide-react'
 
 /**
  * ServiceDetail — the Service 360 operating workspace (§15 master prompt).
@@ -48,14 +49,7 @@ const fmtBytes = (n) => {
   return `${v} B`
 }
 
-// Log tone from the REAL RadiusControlLog.status vocabulary
-// (success | failed | pending | processing — backend enum).
-const logTone = (status) => {
-  if (status === 'success') return 'success'
-  if (status === 'failed') return 'danger'
-  if (status === 'pending' || status === 'processing') return 'info'
-  return 'muted'
-}
+// ---- (logTone removed — tone mapping now lives in the OperationalTimeline event mapper) ----
 
 export default function ServiceDetail() {
   const { accountId } = useParams()
@@ -214,14 +208,21 @@ export default function ServiceDetail() {
       {!statusQuery.isLoading && !statusQuery.isError && account && (
         <>
           <EntityHeader
+            typeLabel="SERVICE"
             title={account.username || `Service #${accountId}`}
-            subtitle={[account.type?.toUpperCase(), account.plan?.name, account.nas?.name].filter(Boolean).join(' · ')}
-            status={
-              <span className={`badge ${serviceStateToneClass(st.service_state)}`}>
-                {serviceStateMeta(st.service_state).label}
-              </span>
-            }
-            meta={refetchLabel}
+            identifier={`#${accountId} · ${String(account.type || '').toUpperCase()}`}
+            status={serviceStateMeta(st.service_state)}
+            badges={[
+              { label: st.is_entitled ? 'Entitled' : 'Not entitled', tone: st.is_entitled ? 'success' : 'warning' },
+              ...(st.administrative_hold ? [{ label: 'Admin hold', tone: 'danger' }] : []),
+              ...((st.active_sessions?.length ?? 0) > 0 ? [{ label: `${st.active_sessions.length} online`, tone: 'info' }] : []),
+            ]}
+            meta={[
+              { label: 'Plan', value: account.plan?.name || '—' },
+              { label: 'NAS', value: account.nas?.name || '—' },
+              { label: 'Access', value: st.access_method || account.access_method || '—' },
+            ]}
+            lastUpdated={refetchLabel}
             actions={
               <ServiceActionsRail
                 stateLabel={serviceStateMeta(st.service_state).label}
@@ -300,25 +301,29 @@ export default function ServiceDetail() {
               ))}
             </div>
 
-            {/* Recent RADIUS control history — the authoritative action trail */}
+            {/* RADIUS control history — the authoritative action trail,
+                rendered through the shared OperationalTimeline primitive (§27).
+                Events come ONLY from real RadiusControlLog rows. */}
             <div className="card p-4 space-y-2">
               <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--pb-text-3)' }}>Recent RADIUS activity</p>
-              {(st.recent_control_logs || []).length === 0 && (
-                <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>No RADIUS control operations recorded.</p>
-              )}
-              <ul className="space-y-1.5">
-                {(st.recent_control_logs || []).slice(0, 6).map((log) => (
-                  <li key={log.id} className="flex items-center justify-between text-xs gap-2">
-                    <span style={{ color: 'var(--pb-text-1)' }}>
-                      {log.action}{log.username ? ` · ${log.username}` : ''}
-                    </span>
-                    <span className={`badge ${STATUS_TONES[logTone(log.status)]?.badge}`}>
-                      {log.status}
-                      {log.completed_at ? ` · ${formatDateTime(log.completed_at)}` : ''}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <OperationalTimeline
+                dense
+                maxItems={8}
+                emptyTitle="No RADIUS control operations recorded"
+                emptyDescription="Suspensions, restorations, disconnects and CoA results will appear here."
+                events={(st.recent_control_logs || []).map((log) => ({
+                  id: log.id,
+                  timestamp: log.completed_at || log.created_at,
+                  title: log.action,
+                  description: log.error || log.result || undefined,
+                  actor: log.username || undefined,
+                  tone:
+                    log.status === 'success' ? 'success'
+                    : log.status === 'failed' ? 'danger'
+                    : 'info',
+                  meta: log.status,
+                }))}
+              />
             </div>
           </div>
 
