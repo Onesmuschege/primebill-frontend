@@ -1,4 +1,4 @@
-import api from './axiosInstance'
+import api, { unwrapList, unwrapOne } from './axiosInstance'
 
 const clean = (params = {}) =>
   Object.fromEntries(
@@ -12,39 +12,39 @@ const clean = (params = {}) =>
 =========================== */
 
 export const getAdminUsers = (params) =>
-  api.get('/admin/users', { params: clean(params) })
+  api.get('/admin/users', { params: clean(params) }).then(unwrapList)
 
 export const createAdminUser = (data) =>
-  api.post('/admin/users', data)
+  api.post('/admin/users', data).then(unwrapOne)
 
 export const updateAdminUser = (id, data) =>
-  api.put(`/admin/users/${id}`, data)
+  api.put(`/admin/users/${id}`, data).then(unwrapOne)
 
 export const deleteAdminUser = (id) =>
-  api.delete(`/admin/users/${id}`)
+  api.delete(`/admin/users/${id}`).then(unwrapOne)
 
 /* ===========================
    Roles
 =========================== */
 
 export const getAdminRoles = () =>
-  api.get('/admin/roles')
+  api.get('/admin/roles').then(unwrapList)
 
 export const createAdminRole = (data) =>
-  api.post('/admin/roles', data)
+  api.post('/admin/roles', data).then(unwrapOne)
 
 export const updateAdminRole = (id, data) =>
-  api.put(`/admin/roles/${id}`, data)
+  api.put(`/admin/roles/${id}`, data).then(unwrapOne)
 
 export const syncRolePermissions = (roleId, data) =>
-  api.put(`/admin/roles/${roleId}`, data)
+  api.put(`/admin/roles/${roleId}`, data).then(unwrapOne)
 
 /* ===========================
    Permissions
 =========================== */
 
 export const getAdminPermissions = () =>
-  api.get('/admin/roles/permissions')
+  api.get('/admin/roles/permissions').then(unwrapList)
 
 /* ===================================================
    Aliases for newer frontend components

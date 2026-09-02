@@ -34,12 +34,12 @@ export default function PlatformTenants() {
   // ── Data ────────────────────────────────────────────────────────────────
   const { data: tenantsData, isLoading } = useQuery({
     queryKey: ['platform-tenants'],
-    queryFn: () => getPlatformTenants().then(r => r.data.data),
+    queryFn: () => getPlatformTenants(),
     refetchInterval: 60000,
   })
 
   const tenants = useMemo(() => {
-    const list = Array.isArray(tenantsData) ? tenantsData : []
+    const list = Array.isArray(tenantsData?.data) ? tenantsData.data : []
     const term = search.trim().toLowerCase()
     return list.filter(t => {
       const matchesSearch = !term

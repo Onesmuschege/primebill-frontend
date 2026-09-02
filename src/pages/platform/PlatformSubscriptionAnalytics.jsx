@@ -14,13 +14,13 @@ import {
 export default function PlatformSubscriptionAnalytics() {
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['platform-subscription-stats'],
-    queryFn: () => getSubscriptionStats().then(r => r.data.data),
+    queryFn: () => getSubscriptionStats(),
     refetchInterval: 60000,
   })
 
   const { data: subs, isLoading: subsLoading } = useQuery({
     queryKey: ['platform-subscriptions-analytics'],
-    queryFn: () => getPlatformSubscriptions().then(r => r.data.data),
+    queryFn: () => getPlatformSubscriptions(),
     refetchInterval: 60000,
   })
 

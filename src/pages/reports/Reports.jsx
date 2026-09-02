@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import api from '../../api/axiosInstance'
+import { getReportData, exportReport } from '../../api/reports.api'
 import { formatKES } from '../../utils/formatCurrency'
 import { formatDate } from '../../utils/formatDate'
 import Spinner from '../../components/common/Spinner'
@@ -266,16 +266,13 @@ export default function Reports() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['report', type, from, to],
-    queryFn: () => api.get(`/reports/${type}`, { params: { from, to } }).then(r => r.data.data),
+    queryFn: () => getReportData(type, { from, to }),
     enabled: !!from && !!to,
   })
 
   const handleExport = async () => {
     try {
-      const res = await api.get(`/reports/${type}/export`, {
-        params: { from, to },
-        responseType: 'blob',
-      })
+      const res = await exportReport(type, { from, to })
       const url = window.URL.createObjectURL(new Blob([res.data]))
       const link = document.createElement('a')
       link.href = url
@@ -294,7 +291,7 @@ export default function Reports() {
       {/* Controls */}
       <div className="card flex items-center gap-4 flex-wrap">
         <div className="flex gap-2 flex-wrap">
-          {REPORT_TYPES.map(({ key, label, icon: Icon }) => (
+          {REPORT_TYPES.map(({ key, label, icon: Icon }) => ( // eslint-disable-line no-unused-vars
             <button
               key={key}
               onClick={() => setType(key)}

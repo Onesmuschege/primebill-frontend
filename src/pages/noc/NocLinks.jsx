@@ -34,7 +34,7 @@ export default function NocLinks() {
 
   const { data: devices } = useQuery({
     queryKey: ['noc-devices-all'],
-        queryFn: () => getNocDevices({ per_page: 100 }).then(r => r.data),
+        queryFn: () => getNocDevices({ per_page: 100 }),
   })
 
   const createMutation = useMutation({
@@ -132,7 +132,7 @@ export default function NocLinks() {
                 required
               >
                 <option value="">Select device</option>
-                {devices?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                {devices?.data?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
             </div>
             <div>
@@ -144,7 +144,7 @@ export default function NocLinks() {
                 required
               >
                 <option value="">Select device</option>
-                {devices?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                {devices?.data?.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
             </div>
             <div>

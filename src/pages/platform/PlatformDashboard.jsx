@@ -67,7 +67,7 @@ export default function PlatformDashboard() {
   // ── Data ────────────────────────────────────────────────────────────────
   const { data: statsData, isLoading: statsLoading } = useQuery({
     queryKey: ['platform-stats'],
-    queryFn: () => getPlatformStats().then(r => r.data.data),
+    queryFn: () => getPlatformStats(),
     refetchInterval: 60000,
   })
 
@@ -81,16 +81,16 @@ export default function PlatformDashboard() {
       per_page: DASHBOARD_LIMITS.platformTenants,
       search: debouncedSearch || undefined,
       status: statusFilter || undefined,
-    }).then(r => r.data.data),
+    }),
     keepPreviousData: true,
   })
 
   const tenants = tenantsPage?.data || []
-  const tenantsTotal = Number.isFinite(tenantsPage?.total) ? tenantsPage.total : null
+  const tenantsTotal = Number.isFinite(tenantsPage?.meta?.total) ? tenantsPage.meta.total : null
 
   const { data: tenantDetail, isLoading: detailLoading } = useQuery({
     queryKey: ['platform-tenant-detail', detailTenant?.id],
-    queryFn: () => getPlatformTenant(detailTenant.id).then(r => r.data.data),
+    queryFn: () => getPlatformTenant(detailTenant.id),
     enabled: !!showDetail && !!detailTenant?.id,
   })
 

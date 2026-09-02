@@ -9,15 +9,18 @@ export default function AdminRoles() {
   const [selected, setSelected] = useState({}) // roleId → Set of permission names
   const qc = useQueryClient()
 
-  const { data: roles = [] } = useQuery({
+  const { data: rolesData = [] } = useQuery({
     queryKey: ['roles'],
-    queryFn: () => getRoles().then(r => r.data.data),
+    queryFn: () => getRoles(),
   })
 
-  const { data: permissions = [] } = useQuery({
+  const { data: permissionsData = [] } = useQuery({
     queryKey: ['permissions'],
-    queryFn: () => getPermissions().then(r => r.data.data),
+    queryFn: () => getPermissions(),
   })
+
+  const roles = Array.isArray(rolesData?.data) ? rolesData.data : []
+  const permissions = Array.isArray(permissionsData?.data) ? permissionsData.data : []
 
   const syncMutation = useMutation({
     mutationFn: ({ roleId, perms }) => syncRolePermissions(roleId, { permissions: perms }),

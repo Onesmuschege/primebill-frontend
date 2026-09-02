@@ -17,7 +17,7 @@ import { Users, ShieldCheck, KeyRound, Lock } from 'lucide-react'
 export default function PlatformUsers() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ['platform-users'],
-    queryFn: () => getPlatformUsers().then(r => r.data.data),
+    queryFn: () => getPlatformUsers(),
     refetchInterval: 60000,
   })
 

@@ -3,7 +3,7 @@ import {
   BarChart, Bar, AreaChart, Area, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
-import api from '../../api/axiosInstance'
+import { getIncomeAnalytics, getDashboardStats } from '../../api/dashboard.api'
 import Spinner from '../../components/common/Spinner'
 import { TrendingUp, Users, DollarSign, Wifi } from 'lucide-react'
 
@@ -14,12 +14,12 @@ const KES = (n) => `KES ${Number(n || 0).toLocaleString()}`
 export default function Analytics() {
   const { data: income, isLoading: incomeLoading } = useQuery({
     queryKey: ['analytics-income'],
-    queryFn: () => api.get('/analytics/income').then(r => r.data.data),
+    queryFn: () => getIncomeAnalytics(),
   })
 
   const { data: stats } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: () => api.get('/dashboard/stats').then(r => r.data.data),
+    queryFn: () => getDashboardStats(),
   })
 
   if (incomeLoading) return <div className="py-20"><Spinner size="lg" /></div>
@@ -42,7 +42,7 @@ export default function Analytics() {
           { icon: TrendingUp, label: 'Revenue Today',      value: KES(stats?.income_today?.amount), color: 'stat-accent-cyan' },
           { icon: Users,      label: 'Total Clients',      value: stats?.total_users || 0,          color: 'stat-accent-green' },
           { icon: Wifi,       label: 'Active Users',       value: stats?.active_users || 0,         color: 'stat-accent-purple' },
-        ].map(({ icon: Icon, label, value, color }) => (
+        ].map(({ icon: Icon, label, value, color }) => ( // eslint-disable-line no-unused-vars
           <div key={label} className={`card ${color}`}>
             <div className="flex items-center gap-3">
               <Icon size={20} style={{ color: '#60a5fa' }} />

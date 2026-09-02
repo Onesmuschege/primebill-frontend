@@ -54,23 +54,23 @@ export default function PlatformSubscriptions() {
   // ── Data ────────────────────────────────────────────────────────────────
   const { data: subsData, isLoading } = useQuery({
     queryKey: ['platform-subscriptions'],
-    queryFn: () => getPlatformSubscriptions().then(r => r.data.data),
+    queryFn: () => getPlatformSubscriptions(),
     refetchInterval: 60000,
   })
 
   const { data: stats } = useQuery({
     queryKey: ['subscription-stats'],
-    queryFn: () => getSubscriptionStats().then(r => r.data.data),
+    queryFn: () => getSubscriptionStats(),
     refetchInterval: 60000,
   })
 
   const { data: plans } = useQuery({
     queryKey: ['platform-plans'],
-    queryFn: () => getPlatformPlans().then(r => r.data.data),
+    queryFn: () => getPlatformPlans(),
   })
 
-  const subs = Array.isArray(subsData) ? subsData : []
-  const planList = Array.isArray(plans) ? plans : []
+  const subs = Array.isArray(subsData?.data) ? subsData.data : []
+  const planList = Array.isArray(plans?.data) ? plans.data : []
 
   // ── Mutations ───────────────────────────────────────────────────────────
   const refresh = () => {

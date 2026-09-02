@@ -39,6 +39,7 @@ const TABS = [
 ]
 
 // ── Small shared UI ────────────────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars -- used in JSX below
 function InfoCard({ icon: Icon, title, lines }) {
   return (
     <div className="rounded-lg p-3" style={{ background: 'var(--pb-raised)', border: '1px solid var(--pb-border)' }}>
@@ -95,7 +96,7 @@ export default function PlatformTenantDetail() {
 
   const { data: detail, isLoading } = useQuery({
     queryKey: ['platform-tenant-detail', id],
-    queryFn: () => getPlatformTenant(id).then(r => r.data.data),
+    queryFn: () => getPlatformTenant(id),
     enabled: !!id,
   })
 
@@ -206,7 +207,7 @@ const refresh = () => {
 
       {/* Tabs */}
       <div className="flex gap-2 flex-wrap">
-        {TABS.map(({ key, label, icon: Icon }) => (
+        {TABS.map(({ key, label, icon: Icon }) => ( // eslint-disable-line no-unused-vars
           <button
             key={key}
             onClick={() => setTab(key)}
@@ -360,6 +361,7 @@ function OverviewTab({ detail }) {
 }
 
 // ── Configuration tab ──────────────────────────────────────────────────────
+// eslint-disable-next-line no-unused-vars -- used in JSX below
 function ConfigForm({ title, icon: Icon, fields, submitting, onSubmit, submitLabel = 'Save' }) {
   const initial = {}
   fields.forEach((f) => { initial[f.name] = f.initial !== undefined ? f.initial : '' })

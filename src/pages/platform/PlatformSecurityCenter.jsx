@@ -52,14 +52,14 @@ export default function PlatformSecurityCenter() {
 
   const { data: statsData } = useQuery({
     queryKey: ['platform-stats-security'],
-    queryFn: () => getPlatformStats().then(r => r.data.data),
+    queryFn: () => getPlatformStats(),
   })
 
   const securityStats = statsData?.security || {}
 
   const { data, isLoading, isFetching, isError } = useQuery({
     queryKey: ['platform-audit-log-security', queryParams, page],
-    queryFn: () => getPlatformAuditLog({ ...queryParams, page }).then(r => r.data.data),
+    queryFn: () => getPlatformAuditLog({ ...queryParams, page }),
     keepPreviousData: true,
   })
 

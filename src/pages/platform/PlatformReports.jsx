@@ -209,17 +209,17 @@ export default function PlatformReports() {
 
   const revenueQuery = useQuery({
     queryKey: ['platform-report-revenue', from, to],
-    queryFn: () => getPlatformRevenueReport({ from, to }).then(r => r.data.data),
+    queryFn: () => getPlatformRevenueReport({ from, to }),
     enabled: type === 'revenue' && !!from && !!to,
   })
   const tenantsQuery = useQuery({
     queryKey: ['platform-report-tenants', from, to],
-    queryFn: () => getPlatformTenantsReport({ from, to }).then(r => r.data.data),
+    queryFn: () => getPlatformTenantsReport({ from, to }),
     enabled: type === 'tenants' && !!from && !!to,
   })
   const usageQuery = useQuery({
     queryKey: ['platform-report-usage'],
-    queryFn: () => getPlatformUsageReport().then(r => r.data.data),
+    queryFn: () => getPlatformUsageReport(),
     enabled: type === 'usage',
   })
 
@@ -258,7 +258,7 @@ export default function PlatformReports() {
 
       <div className="card flex items-center gap-4 flex-wrap">
         <div className="flex gap-2 flex-wrap">
-          {REPORT_TYPES.map(({ key, label, icon: Icon }) => (
+          {REPORT_TYPES.map(({ key, label, icon: Icon }) => ( // eslint-disable-line no-unused-vars
             <button
               key={key}
               onClick={() => setType(key)}

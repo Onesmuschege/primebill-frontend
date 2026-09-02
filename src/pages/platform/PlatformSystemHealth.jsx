@@ -23,18 +23,18 @@ function HealthDot({ ok }) {
 export default function PlatformSystemHealth() {
   const { data: statsData, isLoading: statsLoading } = useQuery({
     queryKey: ['platform-stats-health'],
-    queryFn: () => getPlatformStats().then(r => r.data.data),
+    queryFn: () => getPlatformStats(),
     refetchInterval: 30000,
   })
 
   const { data: tenantsData } = useQuery({
     queryKey: ['platform-tenants-health'],
-    queryFn: () => getPlatformTenants().then(r => r.data.data),
+    queryFn: () => getPlatformTenants(),
     refetchInterval: 60000,
   })
 
   const infra = statsData?.infrastructure || {}
-  const tenants = Array.isArray(tenantsData) ? tenantsData : []
+  const tenants = Array.isArray(tenantsData?.data) ? tenantsData.data : []
 
   const isLoading = statsLoading
 
