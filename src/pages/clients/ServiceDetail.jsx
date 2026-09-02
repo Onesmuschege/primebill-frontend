@@ -67,7 +67,15 @@ export default function ServiceDetail() {
 
   const statusQuery = useQuery({
     queryKey: ['service-network', accountId],
-    queryFn: () => getServiceNetworkStatus(accountId),
+    // The axios instance does NOT unwrap responses (interceptor returns the
+    // raw axios response), so extract the body here — same convention as
+    // ServiceNetworkActions. Without this, st would be the axios envelope
+    // and every panel would silently render empty (caught by the workspace
+    // integration test).
+    queryFn: async () => {
+      const res = await getServiceNetworkStatus(accountId)
+      return res.data
+    },
   })
 
   const st = statusQuery.data
@@ -271,7 +279,7 @@ export default function ServiceDetail() {
           )}
 
           {/* ── Operational state chain — real service_state only, §14 ── */}
-          <StateChain stages={buildServiceStateChain(st.service_state)} />
+          <StateChain items={buildServiceStateChain(st.service_state)} ariaLabel="Service lifecycle state" />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Commercial identity */}
