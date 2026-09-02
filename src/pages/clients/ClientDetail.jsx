@@ -16,6 +16,7 @@ import { formatDate, formatDateTime } from '../../utils/formatDate'
 import { formatKES } from '../../utils/formatCurrency'
 import { ArrowLeft, UserX, UserCheck, Edit2, Plus, Wifi, FileText, CreditCard, Ticket, Repeat } from 'lucide-react'
 import ServiceNetworkActions from '../../components/clients/ServiceNetworkActions'
+import RelationshipNav from '../../components/ops/RelationshipNav'
 import ClientSubscriptions from './ClientSubscriptions'
 import toast from 'react-hot-toast'
 import Skeleton from '../../components/common/Skeleton'
@@ -23,7 +24,8 @@ import EmptyState from '../../components/common/EmptyState'
 import ErrorState from '../../components/common/ErrorState'
 
 const TABS = [
-  { key: 'accounts',      label: 'Internet Accounts', icon: Wifi },
+  { key: 'overview',      label: 'Overview',           icon: UserCheck },
+  { key: 'accounts',      label: 'Internet Accounts',  icon: Wifi },
   { key: 'subscriptions', label: 'Subscriptions',      icon: Repeat },
   { key: 'invoices',      label: 'Invoices',           icon: FileText },
   { key: 'payments',      label: 'Payments',           icon: CreditCard },
@@ -35,7 +37,7 @@ export default function ClientDetail() {
   const navigate    = useNavigate()
   const queryClient = useQueryClient()
 
-  const [activeTab, setActiveTab]     = useState('accounts')
+  const [activeTab, setActiveTab]     = useState('overview')
   const [showEdit, setShowEdit]       = useState(false)
   const [showAccount, setShowAccount] = useState(false)
       const [editForm, setEditForm]      = useState(null)
@@ -52,10 +54,10 @@ export default function ClientDetail() {
   const notFoundError = error?.response?.status === 404
   const forbiddenError = error?.response?.status === 403
 
-      const { data: accounts } = useQuery({ queryKey: ['client-accounts', id], queryFn: () => getClientAccounts(id), enabled: activeTab === 'accounts' })
-  const { data: invoices } = useQuery({ queryKey: ['client-invoices', id], queryFn: () => getClientInvoices(id), enabled: activeTab === 'invoices' })
-  const { data: payments } = useQuery({ queryKey: ['client-payments', id], queryFn: () => getClientPayments(id), enabled: activeTab === 'payments' })
-  const { data: tickets }  = useQuery({ queryKey: ['client-tickets', id], queryFn: () => getClientTickets(id), enabled: activeTab === 'tickets' })
+      const { data: accounts } = useQuery({ queryKey: ['client-accounts', id], queryFn: () => getClientAccounts(id), enabled: ['overview', 'accounts'].includes(activeTab) })
+  const { data: invoices } = useQuery({ queryKey: ['client-invoices', id], queryFn: () => getClientInvoices(id), enabled: ['overview', 'invoices'].includes(activeTab) })
+  const { data: payments } = useQuery({ queryKey: ['client-payments', id], queryFn: () => getClientPayments(id), enabled: ['overview', 'payments'].includes(activeTab) })
+  const { data: tickets }  = useQuery({ queryKey: ['client-tickets', id], queryFn: () => getClientTickets(id), enabled: ['overview', 'tickets'].includes(activeTab) })
   const { data: plansData } = useQuery({ queryKey: ['plans'], queryFn: () => getPlans(), enabled: showAccount })
 
   // unwrap — each relationship query returns { data, meta } (unwrapList)
@@ -192,6 +194,85 @@ export default function ClientDetail() {
           </button>
         ))}
       </div>
+
+      {/* ── Overview Tab (default) — Customer 360 operational summary ── */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          {/* Identity + key account facts */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="card p-5 lg:col-span-2 space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold" style={{ background: 'rgba(99,102,241,0.15)', color: '#818cf8' }}>
+                  {client.first_name?.[0]}{client.last_name?.[0]}
+                </div>
+                <div>
+                  <p className="text-base font-semibold" style={{ color: 'var(--pb-text-1)' }}>{client.first_name} {client.last_name}</p>
+                  <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>{client.email} · {client.phone}</p>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 pt-1">
+                <span className={`badge ${clientStatusBadge(client.status)}`}>{client.status}</span>
+                {client.county && <span className="badge" style={{ background: 'var(--pb-raised)', color: 'var(--pb-text-2)' }}>{client.county}</span>}
+              </div>
+            </div>
+            <div className="card p-5 space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--pb-text-3)' }}>Account</p>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between"><span style={{ color: 'var(--pb-text-3)' }}>Type</span><span style={{ color: 'var(--pb-text-1)' }}>{client.account_type || '—'}</span></div>
+                <div className="flex justify-between"><span style={{ color: 'var(--pb-text-3)' }}>Since</span><span style={{ color: 'var(--pb-text-1)' }}>{formatDate(client.created_at)}</span></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Operational metrics from real relationship data */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { label: 'Active services', value: accountsList.filter((a) => a.service_state === 'ACTIVE').length, total: accountsList.length },
+              { label: 'Open tickets', value: tickets?.data?.filter((t) => !['closed', 'resolved'].includes(String(t.status).toLowerCase())).length ?? 0 },
+              { label: 'Unpaid invoices', value: invoices?.data?.filter((i) => !['paid', 'void'].includes(String(i.status).toLowerCase())).length ?? 0 },
+              { label: 'Recent payments', value: payments?.data?.length ?? 0 },
+            ].map((m) => (
+              <div key={m.label} className="card p-4">
+                <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>{m.label}</p>
+                <p className="text-2xl font-bold mt-1" style={{ color: 'var(--pb-text-1)' }}>
+                  {m.value}{m.total !== undefined && <span className="text-sm font-normal" style={{ color: 'var(--pb-text-3)' }}> / {m.total}</span>}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Per-service state visibility — real service_state per account */}
+          {accountsList.length > 0 && (
+            <div className="card p-4 space-y-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--pb-text-3)' }}>Service states</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {accountsList.slice(0, 4).map((acc) => (
+                  <div key={acc.id} className="rounded-lg p-3" style={{ background: 'var(--pb-raised)' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium" style={{ color: 'var(--pb-text-1)' }}>{acc.username}</span>
+                      <span className={`badge ${serviceStateToneClass(acc.service_state)}`}>{serviceStateMeta(acc.service_state).label}</span>
+                    </div>
+                    <StateChain size="sm" items={buildServiceStateChain(acc.service_state)} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Connected-entity navigation (§8) */}
+          <div className="card p-4 space-y-2">
+            <p className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--pb-text-3)' }}>Navigate to</p>
+            <RelationshipNav
+              links={[
+                { label: 'Internet accounts', to: '#', onClick: (e) => { e.preventDefault(); setActiveTab('accounts') } },
+                { label: 'Invoices', to: '#', onClick: (e) => { e.preventDefault(); setActiveTab('invoices') } },
+                { label: 'Payments', to: '#', onClick: (e) => { e.preventDefault(); setActiveTab('payments') } },
+                { label: 'Tickets', to: '#', onClick: (e) => { e.preventDefault(); setActiveTab('tickets') } },
+              ]}
+            />
+          </div>
+        </div>
+      )}
 
       {/* ── Accounts Tab ── */}
       {activeTab === 'accounts' && (
