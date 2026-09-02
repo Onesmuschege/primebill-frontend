@@ -16,6 +16,7 @@ import Dashboard from '../pages/dashboard/Dashboard'
 // Clients
 import ClientList from '../pages/clients/ClientList'
 import ClientDetail from '../pages/clients/ClientDetail'
+import ServiceDetail from '../pages/clients/ServiceDetail'
 
 // Plans
 import PlanList from '../pages/plans/PlanList'
@@ -149,6 +150,9 @@ export default function AppRoutes() {
         {/* Subscribers */}
         <Route path="/clients" element={<ClientList />} />
         <Route path="/clients/:id" element={<ClientDetail />} />
+        {/* Service 360 workspace (§15): reached from ClientDetail account cards
+            and relationship navigation — no sidebar entry by design. */}
+        <Route path="/subscribers/services/:accountId" element={<ServiceDetail />} />
         <Route path="/plans" element={<PlanList />} />
         <Route path="/vouchers" element={<VoucherList />} />
         <Route path="/fup" element={<FupManagement />} />

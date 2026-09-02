@@ -9,6 +9,11 @@ vi.mock('../axiosInstance', () => ({
     put: vi.fn(() => Promise.resolve({ data: {} })),
     delete: vi.fn(() => Promise.resolve({ data: {} })),
   },
+  // envelope unwrapper used by every api module fn — real signature is
+  // unwrapOne(response) / unwrapList(response) (applied via .then(fn)),
+  // so the mock receives the axios response object, not a promise.
+  unwrapOne: vi.fn((response) => response?.data),
+  unwrapList: vi.fn((response) => response?.data),
 }))
 
 describe('service-network.api', () => {

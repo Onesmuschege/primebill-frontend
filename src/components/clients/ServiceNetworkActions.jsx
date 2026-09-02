@@ -47,7 +47,7 @@ export default function ServiceNetworkActions({ accountId, onChanged }) {
 
   const statusQuery = useQuery({
     queryKey: ['service-network', accountId],
-    queryFn: () => getServiceNetworkStatus(accountId).then((r) => r.data),
+    queryFn: () => getServiceNetworkStatus(accountId),
     enabled: open,
   })
 

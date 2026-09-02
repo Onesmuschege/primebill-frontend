@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   getClient, updateClient, suspendClient, activateClient,
@@ -9,6 +10,7 @@ import {
 import { getPlans } from '../../api/plans.api'
 import Modal from '../../components/common/Modal'
 import { clientStatusBadge, invoiceStatusBadge, ticketPriorityColor } from '../../utils/statusColors'
+import { serviceStateMeta, serviceStateToneClass } from '../../utils/statusMeta'
 import { formatDate, formatDateTime } from '../../utils/formatDate'
 import { formatKES } from '../../utils/formatCurrency'
 import { ArrowLeft, UserX, UserCheck, Edit2, Plus, Wifi, FileText, CreditCard, Ticket, Repeat } from 'lucide-react'
@@ -209,13 +211,19 @@ export default function ClientDetail() {
                     <Wifi size={18} style={{ color: '#60a5fa' }} />
                   </div>
                   <div>
-                    <p className="font-semibold text-sm" style={{ color: 'var(--pb-text-1)' }}>{acc.username}</p>
+                    <p className="font-semibold text-sm" style={{ color: 'var(--pb-text-1)' }}>
+                      <Link to={`/subscribers/services/${acc.id}`} className="hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 rounded">
+                        {acc.username}
+                      </Link>
+                    </p>
                     <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>{acc.type?.toUpperCase()} · {acc.plan?.name}</p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-bold" style={{ color: '#60a5fa' }}>{formatKES(acc.plan?.price)}<span className="text-xs font-normal" style={{ color: 'var(--pb-text-3)' }}>/mo</span></p>
-                  <span className={acc.status === 'active' ? 'badge badge-active' : 'badge badge-suspended'}>{acc.status}</span>
+                  <Link to={`/subscribers/services/${acc.id}`} className={`badge ${serviceStateToneClass(acc.service_state || acc.status)}`} title="Open Service 360 workspace">
+                    {serviceStateMeta(acc.service_state || acc.status).label} ↗
+                  </Link>
                 </div>
               </div>
               <div className="mt-3" style={{ borderTop: '1px solid var(--pb-border)', paddingTop: '0.75rem' }}>
