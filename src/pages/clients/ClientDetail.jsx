@@ -10,7 +10,8 @@ import {
 import { getPlans } from '../../api/plans.api'
 import Modal from '../../components/common/Modal'
 import { clientStatusBadge, invoiceStatusBadge, ticketPriorityColor } from '../../utils/statusColors'
-import { serviceStateMeta, serviceStateToneClass } from '../../utils/statusMeta'
+import { serviceStateMeta, serviceStateToneClass, buildServiceStateChain } from '../../utils/statusMeta'
+import StateChain from '../../components/ops/StateChain'
 import { formatDate, formatDateTime } from '../../utils/formatDate'
 import { formatKES } from '../../utils/formatCurrency'
 import { ArrowLeft, UserX, UserCheck, Edit2, Plus, Wifi, FileText, CreditCard, Ticket, Repeat } from 'lucide-react'
@@ -225,6 +226,14 @@ export default function ClientDetail() {
                     {serviceStateMeta(acc.service_state || acc.status).label} ↗
                   </Link>
                 </div>
+              </div>
+              {/* Service lifecycle chain — answers "what state is this service in?" at a glance (§14) */}
+              <div className="mt-3" style={{ borderTop: '1px solid var(--pb-border)', paddingTop: '0.75rem' }}>
+                <StateChain
+                  items={buildServiceStateChain(acc.service_state || acc.status)}
+                  orientation="horizontal"
+                  ariaLabel={`Service lifecycle state for ${acc.username}`}
+                />
               </div>
               <div className="mt-3" style={{ borderTop: '1px solid var(--pb-border)', paddingTop: '0.75rem' }}>
                 <ServiceNetworkActions accountId={acc.id} onChanged={() => queryClient.invalidateQueries(['client-accounts', id])} />
