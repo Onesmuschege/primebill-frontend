@@ -9,4 +9,5 @@ export { default as BulkActionsBar } from './BulkActionsBar'
 export { default as NotificationCenter } from './NotificationCenter'
 export { default as GlobalSearch } from './GlobalSearch'
 export { default as CommandPalette } from './CommandPalette'
+export { default as SavedViewsBar } from './SavedViewsBar'
 

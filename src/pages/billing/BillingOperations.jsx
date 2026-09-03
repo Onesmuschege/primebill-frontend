@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useBillingOperations } from '../../hooks/useBillingOperations'
 import EntityHeader from '../../components/ops/EntityHeader'
+import SavedViewsBar from '../../components/ops/SavedViewsBar'
 import { formatKES } from '../../utils/formatCurrency'
 import { formatDate, timeAgo } from '../../utils/formatDate'
 import {
@@ -54,11 +55,17 @@ export default function BillingOperations() {
     { key: 'unallocated', label: 'Unallocated', count: counts.unallocated },
     { key: 'aging', label: 'Aging', count: agingBuckets.length },
   ]
+  // Saved-view integration (P2 §21) — persists the active tab as the
+  // operator's device-local Billing Operations view.
+  const applySavedView = (cfg) => {
+    if (cfg?.tab && tabs.some((t) => t.key === cfg.tab)) setActiveTab(cfg.tab)
+  }
   return (
     <div className="space-y-6">
       <EntityHeader title="Billing Operations" subtitle="Financial exceptions requiring action" icon={DollarSign}
         meta={[{ label: 'Overdue', value: formatKES(totals.overdue) }, { label: 'Unpaid', value: formatKES(totals.unpaid) }]}
         lastUpdated={loading ? 'Loading…' : `Updated ${new Date().toLocaleTimeString('en-KE')}`} />
+      <SavedViewsBar viewType="billing-operations" config={{ tab: activeTab }} onApply={applySavedView} />
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <SummaryCard icon={AlertTriangle} label="Overdue" value={counts.overdue} sub={formatKES(totals.overdue)} tone="danger" />
         <SummaryCard icon={Clock} label="Unpaid" value={counts.unpaid} sub={formatKES(totals.unpaid)} tone="warning" />
