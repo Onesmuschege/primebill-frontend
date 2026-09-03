@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { getRouters, createRouter, testRouterConnection } from '../../api/routers.api'
 import Modal from '../../components/common/Modal'
 import Skeleton from '../../components/common/Skeleton'
@@ -96,7 +97,12 @@ export default function RouterList() {
               }`}>
                 {router.status}
               </span>
-              <span className="text-xs text-gray-400">{router.type.toUpperCase()}</span>
+              <div className="flex items-center gap-3">
+                <Link to={`/routers/${router.id}`} className="text-xs font-medium" style={{ color: '#818cf8' }}>
+                  Diagnose
+                </Link>
+                <span className="text-xs text-gray-400">{router.type.toUpperCase()}</span>
+              </div>
             </div>
           </div>
         ))}

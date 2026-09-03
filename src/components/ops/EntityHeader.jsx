@@ -1,4 +1,8 @@
 import { Link } from 'react-router-dom'
+import { STATUS_TONES } from '../../utils/statusMeta'
+
+const statusClass = ({ tone, toneClass } = {}) =>
+  toneClass || STATUS_TONES[tone]?.badge || STATUS_TONES.muted.badge
 
 /**
  * EntityHeader — compact, standardised identity header for entity workspaces.
@@ -72,7 +76,7 @@ export default function EntityHeader({
             )}
             {status?.label && (
               <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${status.toneClass ?? ''}`}
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusClass(status)}`}
                 data-entity-status={status.label}
               >
                 {status.label}
@@ -81,7 +85,7 @@ export default function EntityHeader({
             {badges.map((b, i) => (
               <span
                 key={`${b.label}-${i}`}
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${b.toneClass ?? 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800/40 dark:text-slate-300 dark:border-slate-700'}`}
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${statusClass(b)}`}
               >
                 {b.label}
               </span>
