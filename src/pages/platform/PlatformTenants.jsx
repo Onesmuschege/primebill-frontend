@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
@@ -23,8 +23,11 @@ const STATUSES = ['trial', 'active', 'suspended', 'archived']
 export default function PlatformTenants() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [searchParams] = useSearchParams()
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
+  // Status filter deep-linkable: /platform/tenants?status=suspended|trial|…
+  // (used by the command palette and notification center).
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || '')
   const [createOpen, setCreateOpen] = useState(false)
   const [editTarget, setEditTarget] = useState(null) // tenant object
   const [confirmTarget, setConfirmTarget] = useState(null) // { tenant, action }

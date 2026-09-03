@@ -132,6 +132,9 @@ export default function PlatformDashboard() {
   const infra     = statsData?.infrastructure || {}
   const security  = statsData?.security  || {}
   const activity  = Array.isArray(statsData?.activity) ? statsData.activity : []
+  // PrimeBill's own commercial position with its tenants (PlatformInvoice) —
+  // deliberately distinct from the client Payment/Invoice volume below (§1).
+  const billing   = statsData?.billing   || {}
 
   const revenueByMethod = Object.entries(revenue.by_method || {})
     .map(([method, amount]) => ({ method, amount }))
@@ -324,14 +327,14 @@ export default function PlatformDashboard() {
             <StatCard
               title="Platform MRR"
               value={formatKES(overview.mrr)}
-              subtitle={`ARR ${formatKES(overview.arr)}`}
+              subtitle={`ARR ${formatKES(overview.arr)} · from active tenant subscriptions`}
               icon={DollarSign}
               color="green"
             />
             <StatCard
-              title="Outstanding Invoices"
-              value={formatKES(overview.outstanding_invoices)}
-              subtitle="Pending & overdue, all tenants"
+              title="Outstanding (PrimeBill)"
+              value={formatKES(billing.outstanding_total)}
+              subtitle={`${billing.overdue_count ?? 0} overdue · PrimeBill invoices to tenants`}
               icon={AlertCircle}
               color="orange"
             />
@@ -340,16 +343,16 @@ export default function PlatformDashboard() {
           {/* ── Secondary metrics row ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
-              title="Revenue Today"
+              title="Client Collections Today"
               value={formatKES(revenue.today)}
-              subtitle={`This month ${formatKES(revenue.this_month)}`}
+              subtitle={`This month ${formatKES(revenue.this_month)} · tenant-client payments, all ISPs`}
               icon={CreditCard}
               color="cyan"
             />
             <StatCard
-              title="Total Payments"
+              title="Client Payments"
               value={formatNumber(overview.total_payments)}
-              subtitle={`Total revenue ${formatKES(overview.total_revenue)}`}
+              subtitle={`Client payment volume ${formatKES(overview.total_revenue)} (not PrimeBill revenue)`}
               icon={TrendingUp}
               color="green"
             />

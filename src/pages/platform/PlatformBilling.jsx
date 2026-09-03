@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
@@ -63,13 +64,28 @@ function StatusBadge({ status }) {
 
 export default function PlatformBilling() {
   const queryClient = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [page, setPage] = useState(1)
-  const [statusFilter, setStatusFilter] = useState('')
+  // Status filter deep-linkable: /platform/billing?status=overdue (used by the
+  // command palette and notification center).
+  const [statusFilter, setStatusFilter] = useState(() => {
+    const s = searchParams.get('status') || ''
+    return STATUS_FILTERS.some((f) => f.value === s) ? s : ''
+  })
   const [tenantSearch, setTenantSearch] = useState('')
   const [period, setPeriod] = useState('')
   const [selected, setSelected] = useState(null)
   const [payRef, setPayRef] = useState('')
   const [voidReason, setVoidReason] = useState('')
+
+  // Keep the URL in sync when the filter changes via the dropdown.
+  useEffect(() => {
+    const current = searchParams.get('status') || ''
+    if (statusFilter !== current) {
+      setSearchParams(statusFilter ? { status: statusFilter } : {}, { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter])
 
   // Paginated invoice list. The backend returns a Laravel paginator, so
   // `r.data.data` is the paginator object itself: `.data` holds the rows and
