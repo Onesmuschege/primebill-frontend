@@ -49,14 +49,14 @@ export default function IpamPage() {
   const [modal, setModal] = useState(false)
   const [form, setForm] = useState(EMPTY.pools)
 
-  const list = async (fn) => {
+    const list = async (fn) => {
     const res = await fn({ per_page: 50, search: search || undefined })
-    return res.data.data?.data ?? res.data.data ?? []
+    return Array.isArray(res?.data) ? res.data : []
   }
 
   const summary = useQuery({
     queryKey: ['ipam', 'summary'],
-    queryFn: async () => (await getIpamSummary()).data.data,
+        queryFn: () => getIpamSummary(),
     enabled: tab === 'summary',
   })
   const pools = useQuery({ queryKey: ['ipam', 'pools', search], queryFn: () => list(getIpPools), enabled: tab === 'pools' })

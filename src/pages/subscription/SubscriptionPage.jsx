@@ -27,19 +27,19 @@ export default function SubscriptionPage() {
   // unwrap and read the envelope object itself, which broke plans.map().
   const { data: currentSub } = useQuery({
     queryKey: ['subscription-current'],
-    queryFn: () => subscriptionApi.getCurrent().then((res) => res.data.data),
+        queryFn: () => subscriptionApi.getCurrent(),
   });
 
   // Fetch plans
   const { data: plansData, isLoading: loadingPlans } = useQuery({
     queryKey: ['subscription-plans'],
-    queryFn: () => subscriptionApi.getPlans().then((res) => res.data.data),
+        queryFn: () => subscriptionApi.getPlans(),
   });
 
   // Fetch usage
   const { data: usageData } = useQuery({
     queryKey: ['subscription-usage'],
-    queryFn: () => subscriptionApi.getUsage().then((res) => res.data.data),
+        queryFn: () => subscriptionApi.getUsage(),
   });
 
   // Convert to paid mutation

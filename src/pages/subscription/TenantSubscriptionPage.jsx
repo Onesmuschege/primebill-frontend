@@ -1,7 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { subscriptionApi } from '../../api/subscription.api';
-import { unwrapList } from '../../api/axiosInstance';
 import {
   CreditCard,
   X,
@@ -39,7 +38,7 @@ export default function TenantSubscriptionPage() {
   // SubscriptionPage.jsx, and the convention used app-wide, e.g. AdminRoles.jsx).
   const { data: currentSub, isLoading } = useQuery({
     queryKey: ['subscription-current'],
-    queryFn: () => subscriptionApi.getCurrent().then((res) => res.data.data),
+        queryFn: () => subscriptionApi.getCurrent(),
   });
 
   // Fetch invoices — this endpoint returns a Laravel paginator inside `data`,
@@ -47,7 +46,7 @@ export default function TenantSubscriptionPage() {
   // list in the app) rather than a plain `.data` read.
   const { data: invoicesData } = useQuery({
     queryKey: ['subscription-invoices'],
-    queryFn: () => subscriptionApi.getInvoices().then(unwrapList),
+        queryFn: () => subscriptionApi.getInvoices(),
   });
 
   // Cancel subscription mutation

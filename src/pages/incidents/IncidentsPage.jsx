@@ -30,13 +30,10 @@ export default function IncidentsPage() {
 
   const list = useQuery({
     queryKey: ['incidents', page, status, severity],
-    queryFn: async () => {
-      const res = await getIncidents({ page, per_page: 20, status: status || undefined, severity: severity || undefined })
-      const body = res.data.data
-      return { data: body?.data ?? [], meta: body?.meta ?? body ?? {} }
-    },
+        queryFn: () => getIncidents({ page, per_page: 20, status: status || undefined, severity: severity || undefined }),
   })
-  const stats = useQuery({ queryKey: ['incidents', 'stats'], queryFn: async () => (await getIncidentStats()).data.data })
+  const stats = useQuery({ queryKey: ['incidents', 'stats'], queryFn: () => getIncidentStats() })
+
 
   const create = useMutation({
     mutationFn: () => createIncident(form),

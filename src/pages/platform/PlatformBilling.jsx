@@ -82,7 +82,7 @@ export default function PlatformBilling() {
         status: statusFilter,
         tenant: tenantSearch,
         per_page: 15,
-      }).then((r) => r.data.data),
+      }),
     keepPreviousData: true,
   })
 
@@ -90,7 +90,7 @@ export default function PlatformBilling() {
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['platform-billing-stats'],
-    queryFn: () => getPlatformBillingStats().then((r) => r.data.data),
+    queryFn: () => getPlatformBillingStats(),
   })
 
   const refresh = () => {
