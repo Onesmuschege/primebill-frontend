@@ -7,4 +7,5 @@ export { buildServiceStateChain } from '../../utils/statusMeta'
 export { default as WorkQueue } from './WorkQueue'
 export { default as BulkActionsBar } from './BulkActionsBar'
 export { default as NotificationCenter } from './NotificationCenter'
+export { default as GlobalSearch } from './GlobalSearch'
 
