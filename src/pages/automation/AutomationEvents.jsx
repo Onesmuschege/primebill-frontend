@@ -15,12 +15,9 @@ export default function AutomationEvents() {
 
   const list = useQuery({
     queryKey: ['automation', 'events', page, status, type],
-    queryFn: async () => {
-      const res = await getAutomationEvents({ page, per_page: 20, status: status || undefined, type: type || undefined })
-      const body = res.data?.data
-      return { data: body?.data ?? [], meta: body?.meta ?? body ?? {} }
-    },
+        queryFn: () => getAutomationEvents({ page, per_page: 20, status: status || undefined, type: type || undefined }),
   })
+
 
   const d = list.data || { data: [], meta: {} }
 

@@ -1,18 +1,23 @@
-import { useQuery } from '@tanstack/react-query'
-import { getAutomationJobs } from '../../api/automation.api'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { getAutomationJobs, retryAutomationJob } from '../../api/automation.api'
 import Badge from '../../components/common/Badge'
 import Spinner from '../../components/common/Spinner'
 
 const variant = { processing: 'pending', done: 'active', failed: 'overdue', cancelled: 'inactive' }
 
 export default function AutomationJobs() {
-  const jobs = useQuery({
+    const jobs = useQuery({
     queryKey: ['automation', 'jobs'],
-    queryFn: async () => {
-      const res = await getAutomationJobs()
-      return res.data?.data ?? {}
-    },
+    queryFn: () => getAutomationJobs(),
   })
+  const qc = useQueryClient()
+  const retry = useMutation({
+    mutationFn: (id) => retryAutomationJob(id),
+    onSuccess: () => { alert('Retry queued'); qc.invalidateQueries(['automation', 'jobs']) },
+    onError: (e) => alert(e.response?.data?.message || 'Retry failed'),
+  })
+
+
 
   if (jobs.isLoading) return <Spinner />
 
@@ -71,7 +76,15 @@ export default function AutomationJobs() {
                   </div>
                   <div className="text-xs truncate" style={{ color: 'var(--pb-text-3)' }}>{f.error}</div>
                 </div>
-                <Badge label={f.attempts > 1 ? `${f.attempts} attempts` : '1 attempt'} variant={f.attempts > 1 ? 'overdue' : 'pending'} />
+                                <div className="flex items-center gap-2">
+                  <Badge label={f.attempts > 1 ? `${f.attempts} attempts` : '1 attempt'} variant={f.attempts > 1 ? 'overdue' : 'pending'} />
+                  <button
+                    onClick={() => retry.mutate(f.id)}
+                    disabled={retry.isPending}
+                    className="px-2 py-1 rounded text-xs font-medium" style={{ background: 'rgba(59,130,223,0.15)', color: '#3b82f6' }}
+                    title="Retry this failed job"
+                  >↻ Retry</button>
+                </div>
               </div>
             ))}
           </div>

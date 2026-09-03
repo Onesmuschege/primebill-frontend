@@ -12,13 +12,9 @@ export default function AutomationFailures() {
   const [page, setPage] = useState(1)
   const [resolved, setResolved] = useState(false)
 
-  const list = useQuery({
+    const list = useQuery({
     queryKey: ['automation', 'failures', page, resolved],
-    queryFn: async () => {
-      const res = await getAutomationFailures({ page, per_page: 20, resolved })
-      const body = res.data?.data
-      return { data: body?.data ?? [], meta: body?.meta ?? body ?? {} }
-    },
+    queryFn: () => getAutomationFailures({ page, per_page: 20, resolved }),
   })
 
   const retry = useMutation({
