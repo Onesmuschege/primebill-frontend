@@ -10,4 +10,5 @@ export { default as NotificationCenter } from './NotificationCenter'
 export { default as GlobalSearch } from './GlobalSearch'
 export { default as CommandPalette } from './CommandPalette'
 export { default as SavedViewsBar } from './SavedViewsBar'
+export { default as LocationPanel } from './LocationPanel'
 

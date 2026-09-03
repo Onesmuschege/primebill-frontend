@@ -17,6 +17,7 @@ import { formatKES } from '../../utils/formatCurrency'
 import { ArrowLeft, UserX, UserCheck, Edit2, Plus, Wifi, FileText, CreditCard, Ticket, Repeat } from 'lucide-react'
 import ServiceNetworkActions from '../../components/clients/ServiceNetworkActions'
 import RelationshipNav from '../../components/ops/RelationshipNav'
+import LocationPanel from '../../components/ops/LocationPanel'
 import ClientSubscriptions from './ClientSubscriptions'
 import toast from 'react-hot-toast'
 import Skeleton from '../../components/common/Skeleton'
@@ -223,6 +224,9 @@ export default function ClientDetail() {
               </div>
             </div>
           </div>
+
+          {/* Real GPS location when the backend has it (P2 §24) */}
+          <LocationPanel lat={client.gps_lat} lng={client.gps_lng} label="GPS coordinates" />
 
           {/* Operational metrics from real relationship data */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

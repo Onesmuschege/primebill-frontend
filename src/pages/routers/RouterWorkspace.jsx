@@ -10,6 +10,7 @@ import {
 import EntityHeader from '../../components/ops/EntityHeader'
 import StateChain from '../../components/ops/StateChain'
 import RelationshipNav from '../../components/ops/RelationshipNav'
+import LocationPanel from '../../components/ops/LocationPanel'
 import ActionRail from '../../components/ops/ActionRail'
 import ErrorState from '../../components/common/ErrorState'
 import Skeleton from '../../components/common/Skeleton'
@@ -301,6 +302,9 @@ export default function RouterWorkspace() {
             </div>
           ))}
         </dl>
+        <div className="mt-3">
+          <LocationPanel lat={router.location_lat} lng={router.location_lng} label="Router site coordinates" />
+        </div>
       </div>
     </div>
   )
