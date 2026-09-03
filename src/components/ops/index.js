@@ -4,4 +4,5 @@ export { default as ActionRail } from './ActionRail'
 export { default as OperationalTimeline } from './OperationalTimeline'
 export { default as RelationshipNav } from './RelationshipNav'
 export { buildServiceStateChain } from '../../utils/statusMeta'
+export { default as WorkQueue } from './WorkQueue'
 
