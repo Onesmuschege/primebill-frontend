@@ -17,6 +17,7 @@ import Dashboard from '../pages/dashboard/Dashboard'
 import ClientList from '../pages/clients/ClientList'
 import ClientDetail from '../pages/clients/ClientDetail'
 import ServiceDetail from '../pages/clients/ServiceDetail'
+import MyWork from '../pages/work/MyWork'
 
 // Plans
 import PlanList from '../pages/plans/PlanList'
@@ -175,6 +176,9 @@ export default function AppRoutes() {
                 <Route path="/tickets/:id" element={<TicketDetail />} />
         <Route path="/tickets/board" element={<TicketBoard />} />
         <Route path="/sms" element={<SmsDashboard />} />
+
+        {/* My Work — operational inbox (no sidebar entry; reached via command palette) */}
+        <Route path="/my-work" element={<MyWork />} />
 
 {/* Network */}
         <Route path="/routers" element={<RouterList />} />
