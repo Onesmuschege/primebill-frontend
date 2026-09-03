@@ -65,6 +65,7 @@ import WorkOrderDetail from '../pages/work-orders/WorkOrderDetail'
 
 // Automation (Release 5 — event-driven OSS/BSS pipeline)
 import AutomationIndex from '../pages/automation/AutomationIndex'
+import AutomationCommandCenter from '../pages/automation/AutomationCommandCenter'
 import AutomationEvents from '../pages/automation/AutomationEvents'
 import AutomationJobs from '../pages/automation/AutomationJobs'
 import AutomationFailures from '../pages/automation/AutomationFailures'
@@ -217,6 +218,7 @@ export default function AppRoutes() {
 
         {/* Automation (Release 5) */}
         <Route path="/automation" element={<AutomationIndex />} />
+        <Route path="/automation/command" element={<AutomationCommandCenter />} />
         <Route path="/automation/events" element={<AutomationEvents />} />
         <Route path="/automation/jobs" element={<AutomationJobs />} />
         <Route path="/automation/failures" element={<AutomationFailures />} />

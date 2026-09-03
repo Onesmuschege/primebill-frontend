@@ -42,6 +42,11 @@ function WorkQueueItem({ item, selected, onToggle, onAction }) {
           {item.owner && <span className="flex items-center gap-1"><User size={11} />{item.owner}</span>}
           {item.source && <span className="capitalize">{item.source.replace('_', ' ')}</span>}
         </div>
+        {item.detail && (
+          <p className="mt-1 text-xs truncate" title={item.detail} style={{ color: 'var(--pb-text-3)' }}>
+            {item.detail}
+          </p>
+        )}
       </div>
       <div className="flex items-center gap-2">
         <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded"

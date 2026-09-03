@@ -51,7 +51,7 @@ export default function AutomationIndex() {
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {TILES.map(({ to, icon: Icon, label, desc, color }) => (
+        {TILES.map(({ to, icon: Icon, label, desc, color }) => ( // eslint-disable-line no-unused-vars
           <Link key={to} to={to} className="card group hover:border-blue-500/40 transition-colors">
             <div className="flex items-start justify-between">
               <Icon size={22} style={{ color }} />
