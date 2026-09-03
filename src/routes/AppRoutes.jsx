@@ -19,6 +19,7 @@ import ClientDetail from '../pages/clients/ClientDetail'
 import ServiceDetail from '../pages/clients/ServiceDetail'
 import MyWork from '../pages/work/MyWork'
 import BillingOperations from '../pages/billing/BillingOperations'
+import NetworkCommandCenter from '../pages/network/NetworkCommandCenter'
 
 // Plans
 import PlanList from '../pages/plans/PlanList'
@@ -181,6 +182,7 @@ export default function AppRoutes() {
         {/* My Work — operational inbox (no sidebar entry; reached via command palette) */}
         <Route path="/my-work" element={<MyWork />} />
         <Route path="/billing-operations" element={<BillingOperations />} />
+        <Route path="/network-command" element={<NetworkCommandCenter />} />
 
 {/* Network */}
         <Route path="/routers" element={<RouterList />} />
