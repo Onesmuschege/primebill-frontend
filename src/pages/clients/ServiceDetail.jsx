@@ -14,6 +14,7 @@ import StateChain from '../../components/ops/StateChain'
 import OperationalTimeline from '../../components/ops/OperationalTimeline'
 import RelationshipNav from '../../components/ops/RelationshipNav'
 import ServiceActionsRail from './ServiceActionsRail'
+import DiagnosticsPanel from '../../components/ops/DiagnosticsPanel'
 
 import {
   buildServiceStateChain,
@@ -334,6 +335,10 @@ export default function ServiceDetail() {
               />
             </div>
           </div>
+
+          {/* ── Evidence-chain diagnostics (§19): conclusions derived ONLY
+              from the authoritative status payload ── */}
+          <DiagnosticsPanel status={st} />
 
           <RelationshipNav
             links={[
