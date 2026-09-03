@@ -9,7 +9,7 @@ import Spinner from '../../components/common/Spinner'
 import Modal from '../../components/common/Modal'
 import toast from 'react-hot-toast'
 import {
-  ArrowLeft, Activity, Plus, RefreshCw, Trash2, Radio,
+  ArrowLeft, Activity, Plus, RefreshCw, Trash2, Radio, Network,
 } from 'lucide-react'
 
 const ONT_STATUS = {
@@ -89,6 +89,9 @@ export default function OltDetail() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Link to={`/fiber/topology/${id}`} className="btn-secondary flex items-center gap-2">
+            <Network size={15} /> Topology
+          </Link>
           <button onClick={() => pollSignalMutation.mutate()} className="btn-secondary flex items-center gap-2"
             disabled={pollSignalMutation.isPending}>
             <RefreshCw size={15} /> {pollSignalMutation.isPending ? 'Polling...' : 'Poll Signal'}

@@ -56,6 +56,7 @@ import OltList from '../pages/fiber/OltList'
 import OltDetail from '../pages/fiber/OltDetail'
 import FiberMap from '../pages/fiber/FiberMap'
 import FiberCapacity from '../pages/fiber/FiberCapacity'
+import FiberTopology from '../pages/fiber/FiberTopology'
 
 // Field Operations
 import WorkOrdersPage from '../pages/work-orders/WorkOrdersPage'
@@ -206,6 +207,7 @@ export default function AppRoutes() {
         <Route path="/fiber/olts" element={<OltList />} />
         <Route path="/fiber/olts/:id" element={<OltDetail />} />
                 <Route path="/fiber/map" element={<FiberMap />} />
+        <Route path="/fiber/topology/:id" element={<FiberTopology />} />
         <Route path="/fiber/capacity" element={<FiberCapacity />} />
 
         {/* Field Operations */}
