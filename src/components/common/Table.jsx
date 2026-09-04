@@ -1,3 +1,4 @@
+import { ChevronUp, ChevronDown } from 'lucide-react'
 import Spinner from './Spinner'
 
 export default function Table({
@@ -6,6 +7,8 @@ export default function Table({
   loading,
   emptyMessage = 'No data found',
   onRowClick,
+  sort,
+  onSort,
 }) {
   if (loading) {
     return (
@@ -17,13 +20,35 @@ export default function Table({
 
   const safeData = Array.isArray(data) ? data : []
 
+  const handleSort = (col) => {
+    if (!onSort || !col.sortable) return
+    const direction = sort?.key === col.key && sort.direction === 'asc' ? 'desc' : 'asc'
+    onSort({ key: col.key, direction })
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="table w-full">
         <thead>
           <tr>
             {columns.map((col) => (
-              <th key={col.key}>{col.label}</th>
+              <th
+                key={col.key}
+                onClick={() => handleSort(col)}
+                style={{
+                  cursor: col.sortable && onSort ? 'pointer' : 'default',
+                  userSelect: 'none',
+                }}
+              >
+                <span className="inline-flex items-center gap-1">
+                  {col.label}
+                  {col.sortable && onSort && sort?.key === col.key && (
+                    sort.direction === 'asc'
+                      ? <ChevronUp size={12} />
+                      : <ChevronDown size={12} />
+                  )}
+                </span>
+              </th>
             ))}
           </tr>
         </thead>

@@ -32,7 +32,13 @@ export default function ImpersonationBanner() {
     >
       <span className="flex items-center gap-2 font-medium">
         <Satellite size={15} />
-        Impersonating <strong>{impersonation.tenantName}</strong>
+        {impersonation.mode === 'view' ? 'Viewing' : 'Acting as'} <strong>{impersonation.tenantName}</strong>
+        <span
+          className="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
+          style={{ background: 'rgba(255,255,255,0.22)', color: '#fff' }}
+        >
+          {impersonation.mode === 'view' ? 'View' : 'Act'}
+        </span>
       </span>
       <button
         onClick={handleEnd}

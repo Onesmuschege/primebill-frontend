@@ -14,11 +14,18 @@ export const getPlatformStats = () => api.get('/platform/stats').then(unwrapOne)
 export const getPlatformPlans = () => api.get('/platform/plans').then(unwrapList)
 
 // ── Tenant CRUD ──────────────────────────────────────────────────────────
-// params: { status, search } for full-page use (legacy: returns the FULL
-// enriched array), or { per_page, page } for dashboard widgets — the backend
-// then returns a compact slice + real total so widgets can render
-// "Showing N of TOTAL" without pulling every tenant's metrics.
+// getPlatformTenants({ status, search }) — legacy full-array mode (returns the
+// complete enriched list). Used by consumers that need every tenant.
+//
+// getPlatformTenantsPaginated({ page, per_page, sort, direction, status, search })
+// — server-side paginated mode for the full-page /platform/tenants view. The
+// backend filters/sorts at the DB level and enriches only the current page's
+// tenants, so this scales to thousands of tenants without pulling every
+// tenant's metrics into memory. Returns { data, meta } where meta contains
+// { current_page, per_page, total, last_page, from, to }.
 export const getPlatformTenants = (params) => api.get('/platform/tenants', { params }).then(unwrapList)
+export const getPlatformTenantsPaginated = (params) =>
+  api.get('/platform/tenants', { params: { ...params, per_page: params?.per_page ?? 20 } }).then(unwrapList)
 export const getPlatformTenant = (id) => api.get(`/platform/tenants/${id}`).then(unwrapOne)
 export const createTenant = (payload) => api.post('/platform/tenants', payload).then(unwrapOne)
 export const updateTenant = (id, payload) => api.put(`/platform/tenants/${id}`, payload).then(unwrapOne)
@@ -49,7 +56,10 @@ export const getTenantBilling = (id) => api.get(`/platform/tenants/${id}/billing
 export const getTenantSubscription = (id) => api.get(`/platform/tenants/${id}/subscription`).then(unwrapOne)
 
 // ── Impersonation ────────────────────────────────────────────────────────
-export const impersonateTenant = (id) => api.post(`/platform/tenants/${id}/impersonate`).then(unwrapOne)
+// reason: required audit-trail justification (min 10 chars, backend-enforced).
+// mode:   'view' (read-only UI inspection) or 'act' (full tenant-admin authority).
+export const impersonateTenant = (id, reason, mode = 'act') =>
+  api.post(`/platform/tenants/${id}/impersonate`, { reason, mode }).then(unwrapOne)
 export const endImpersonation = () => api.post('/platform/impersonate/end').then(unwrapOne)
 
 // ── Admin User Management ────────────────────────────────────────────────

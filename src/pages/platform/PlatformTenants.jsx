@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -11,6 +11,7 @@ import {
   archiveTenant,
 } from '../../api/platform.api'
 import Table from '../../components/common/Table'
+import Pagination from '../../components/common/Pagination'
 import Modal from '../../components/common/Modal'
 import { formatKES, formatNumber } from '../../utils/formatCurrency'
 import { formatDate } from '../../utils/formatDate'
@@ -19,39 +20,65 @@ import { Search, Plus, Eye, UserX, UserCheck, Archive, Wifi } from 'lucide-react
 
 const PLANS = ['starter', 'professional', 'enterprise']
 const STATUSES = ['trial', 'active', 'suspended', 'archived']
+const PER_PAGE = 20
 
 export default function PlatformTenants() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [searchParams] = useSearchParams()
-  const [search, setSearch] = useState('')
-  // Status filter deep-linkable: /platform/tenants?status=suspended|trial|…
-  // (used by the command palette and notification center).
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // Server-side state — all synced to URL for deep-linkability.
+  const [page, setPage] = useState(() => Number(searchParams.get('page')) || 1)
+  const [search, setSearch] = useState(searchParams.get('search') || '')
+  const [debouncedSearch, setDebouncedSearch] = useState(search)
   const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || '')
+  const [sort, setSort] = useState({ key: searchParams.get('sort') || 'created_at', direction: searchParams.get('direction') || 'desc' })
+
   const [createOpen, setCreateOpen] = useState(false)
-  const [editTarget, setEditTarget] = useState(null) // tenant object
-  const [confirmTarget, setConfirmTarget] = useState(null) // { tenant, action }
-  const [archiveTarget, setArchiveTarget] = useState(null) // tenant + typed confirm
+  const [editTarget, setEditTarget] = useState(null)
+  const [confirmTarget, setConfirmTarget] = useState(null)
+  const [archiveTarget, setArchiveTarget] = useState(null)
   const [archiveConfirm, setArchiveConfirm] = useState('')
+
+  // Debounce search → avoids a query keystroke-per-keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search.trim())
+      setPage(1) // reset to first page on new search
+    }, 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  // Sync state → URL (so reloads and deep links preserve filters).
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (page > 1) params.set('page', page)
+    if (debouncedSearch) params.set('search', debouncedSearch)
+    if (statusFilter) params.set('status', statusFilter)
+    if (sort.key !== 'created_at') params.set('sort', sort.key)
+    if (sort.direction !== 'desc') params.set('direction', sort.direction)
+    setSearchParams(params, { replace: true })
+  }, [page, debouncedSearch, statusFilter, sort, setSearchParams])
 
   // ── Data ────────────────────────────────────────────────────────────────
   const { data: tenantsData, isLoading } = useQuery({
-    queryKey: ['platform-tenants'],
-    queryFn: () => getPlatformTenants(),
-    refetchInterval: 60000,
+    queryKey: ['platform-tenants', 'paginated', page, PER_PAGE, debouncedSearch, statusFilter, sort.key, sort.direction],
+    queryFn: () => getPlatformTenants({
+      page,
+      per_page: PER_PAGE,
+      search: debouncedSearch || undefined,
+      status: statusFilter || undefined,
+      sort: sort.key,
+      direction: sort.direction,
+    }),
+    keepPreviousData: true,
   })
 
   const tenants = useMemo(() => {
-    const list = Array.isArray(tenantsData?.data) ? tenantsData.data : []
-    const term = search.trim().toLowerCase()
-    return list.filter(t => {
-      const matchesSearch = !term
-        || t.name.toLowerCase().includes(term)
-        || t.slug.toLowerCase().includes(term)
-      const matchesStatus = !statusFilter || t.status === statusFilter
-      return matchesSearch && matchesStatus
-    })
-  }, [tenantsData, search, statusFilter])
+    return Array.isArray(tenantsData?.data) ? tenantsData.data : []
+  }, [tenantsData])
+
+  const meta = tenantsData?.meta || {}
 
   // ── Mutations ───────────────────────────────────────────────────────────
   const refresh = () => {
@@ -124,6 +151,7 @@ export default function PlatformTenants() {
     {
       key: 'name',
       label: 'Tenant',
+      sortable: true,
       render: (t) => (
         <button
           onClick={() => navigate(`/platform/tenants/${t.id}`)}
@@ -137,11 +165,13 @@ export default function PlatformTenants() {
     {
       key: 'status',
       label: 'Status',
+      sortable: true,
       render: (t) => <span className={tenantStatusBadge(t.status)}>{t.status}</span>,
     },
     {
       key: 'plan',
       label: 'Plan',
+      sortable: true,
       render: (t) => (
         <span className="capitalize" style={{ color: 'var(--pb-text-2)' }}>{t.plan || '—'}</span>
       ),
@@ -149,6 +179,7 @@ export default function PlatformTenants() {
     {
       key: 'client_count',
       label: 'Clients',
+      sortable: true,
       render: (t) => (
         <span style={{ color: 'var(--pb-text-2)' }}>
           {formatNumber(t.client_count)}{t.max_clients ? ` / ${formatNumber(t.max_clients)}` : ''}
@@ -174,6 +205,7 @@ export default function PlatformTenants() {
     {
       key: 'created_at',
       label: 'Joined',
+      sortable: true,
       render: (t) => (
         <span style={{ color: 'var(--pb-text-3)' }}>{formatDate(t.created_at)}</span>
       ),
@@ -274,7 +306,7 @@ export default function PlatformTenants() {
           </div>
           <select
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
             className="input w-auto"
           >
             <option value="">All Status</option>
@@ -289,8 +321,11 @@ export default function PlatformTenants() {
           columns={columns}
           data={tenants}
           loading={isLoading}
+          sort={sort}
+          onSort={setSort}
           emptyMessage={search || statusFilter ? 'No tenants match your filters' : 'No tenants yet'}
         />
+        {meta?.last_page > 1 && <Pagination meta={meta} onPageChange={setPage} />}
       </div>
 
       {/* ── Create Tenant modal ── */}

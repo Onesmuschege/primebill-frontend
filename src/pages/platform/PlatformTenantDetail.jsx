@@ -93,6 +93,10 @@ export default function PlatformTenantDetail() {
   const [archiveTarget, setArchiveTarget] = useState(false)
   const [archiveConfirm, setArchiveConfirm] = useState('')
   const [adminOpen, setAdminOpen] = useState(false)
+  const [impersonateOpen, setImpersonateOpen] = useState(false)
+  const [impersonationMode, setImpersonationMode] = useState('view')
+  const [impersonationReason, setImpersonationReason] = useState('')
+  const [impersonating, setImpersonating] = useState(false)
 
   const { data: detail, isLoading } = useQuery({
     queryKey: ['platform-tenant-detail', id],
@@ -178,7 +182,13 @@ const refresh = () => {
   }
 
   const handleImpersonate = async () => {
-    const res = await startImpersonation(Number(id), detail.name)
+    if (impersonationReason.trim().length < 10) {
+      toast.error('A reason of at least 10 characters is required')
+      return
+    }
+    setImpersonating(true)
+    const res = await startImpersonation(Number(id), detail.name, impersonationReason.trim(), impersonationMode)
+    setImpersonating(false)
     if (res.success) navigate('/dashboard', { replace: true })
   }
 
@@ -200,8 +210,8 @@ const refresh = () => {
             <p className="text-sm" style={{ color: 'var(--pb-text-3)' }}>{detail.slug}</p>
           </div>
         </div>
-        <button onClick={handleImpersonate} className="btn-primary">
-          <LogIn size={15} className="mr-1.5" /> Log in as tenant admin
+        <button onClick={() => setImpersonateOpen(true)} className="btn-primary">
+          <LogIn size={15} className="mr-1.5" /> Impersonate
         </button>
       </div>
 
@@ -260,6 +270,87 @@ const refresh = () => {
           mutating={suspendMutation.isPending || activateMutation.isPending}
         />
       )}
+
+      {/* ── Impersonation (reason + VIEW AS / ACT AS, audited) ── */}
+      <Modal isOpen={impersonateOpen} onClose={() => !impersonating && setImpersonateOpen(false)} title="Impersonate tenant" size="md">
+        <div className="space-y-4">
+          <p className="text-sm" style={{ color: 'var(--pb-text-2)' }}>
+            You are about to enter <strong style={{ color: 'var(--pb-text-1)' }}>{detail.name}</strong> as its administrator.
+            The reason and mode are recorded in the platform audit log, and the mode is shown in the session banner until you end it.
+          </p>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--pb-text-3)' }}>
+              Mode
+            </label>
+            <div className="space-y-2">
+              <label
+                className="flex items-start gap-2.5 p-3 rounded-lg cursor-pointer"
+                style={{
+                  background: 'var(--pb-raised)',
+                  border: impersonationMode === 'view' ? '1px solid rgba(96,165,250,0.6)' : '1px solid var(--pb-border)',
+                }}
+              >
+                <input type="radio" name="imp-mode" checked={impersonationMode === 'view'} onChange={() => setImpersonationMode('view')} className="mt-1" />
+                <span>
+                  <span className="block text-sm font-medium" style={{ color: 'var(--pb-text-1)' }}>
+                    View as tenant <span className="text-xs font-normal" style={{ color: 'var(--pb-text-3)' }}>— inspection</span>
+                  </span>
+                  <span className="block text-xs mt-0.5" style={{ color: 'var(--pb-text-3)' }}>
+                    Investigate the tenant's console without taking action on the ISP's behalf.
+                  </span>
+                </span>
+              </label>
+              <label
+                className="flex items-start gap-2.5 p-3 rounded-lg cursor-pointer"
+                style={{
+                  background: 'var(--pb-raised)',
+                  border: impersonationMode === 'act' ? '1px solid rgba(167,139,250,0.6)' : '1px solid var(--pb-border)',
+                }}
+              >
+                <input type="radio" name="imp-mode" checked={impersonationMode === 'act'} onChange={() => setImpersonationMode('act')} className="mt-1" />
+                <span>
+                  <span className="block text-sm font-medium" style={{ color: 'var(--pb-text-1)' }}>
+                    Act as tenant <span className="text-xs font-normal" style={{ color: 'var(--pb-text-3)' }}>— full authority</span>
+                  </span>
+                  <span className="block text-xs mt-0.5" style={{ color: 'var(--pb-text-3)' }}>
+                    Operate the tenant console as this ISP's admin to resolve configuration or billing issues.
+                  </span>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--pb-text-3)' }}>
+              Reason <span className="normal-case font-normal">(required · min 10 characters)</span>
+            </label>
+            <textarea
+              value={impersonationReason}
+              onChange={(e) => setImpersonationReason(e.target.value)}
+              rows={3}
+              className="input w-full"
+              placeholder="e.g. Investigating support ticket #4321"
+            />
+          </div>
+
+          <p className="text-xs flex items-start gap-1.5" style={{ color: 'var(--pb-text-3)' }}>
+            <Shield size={13} className="shrink-0 mt-0.5" />
+            Session is audited (actor, tenant, reason, mode). End it from the banner when done.
+          </p>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button onClick={() => setImpersonateOpen(false)} disabled={impersonating} className="btn-secondary">Cancel</button>
+            <button
+              onClick={handleImpersonate}
+              disabled={impersonating || impersonationReason.trim().length < 10}
+              className="btn-primary"
+            >
+              {impersonating ? 'Starting…' : impersonationMode === 'view' ? 'View tenant' : 'Act as tenant'}
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Create admin modal */}
       <Modal isOpen={adminOpen} onClose={() => !adminMutation.isPending && setAdminOpen(false)} title="Create tenant admin" size="md">

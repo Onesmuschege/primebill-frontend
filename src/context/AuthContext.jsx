@@ -12,6 +12,10 @@ const AuthContext = createContext(null)
 const IMP_KEY = 'pb-impersonation'
 const ORIG_TOKEN_KEY = 'pb-original-token'
 
+// Role hierarchy (least → most privileged): client → staff → admin → super_admin.
+// Module-level constant so it is referentially stable across renders.
+const ROLE_LEVELS = { client: 0, staff: 1, admin: 2, super_admin: 3 }
+
 export function AuthProvider({ children }) {
   const [user, setUser]       = useState(() => JSON.parse(localStorage.getItem('user')))
   const [token, setToken]     = useState(() => localStorage.getItem('token'))
@@ -205,10 +209,11 @@ export function AuthProvider({ children }) {
   // tenant's admin user), swaps the active token/user to that admin, and keeps
   // the original platform token+user in storage so we can restore on exit.
   // ---------------------------------------------------------------------------
-  const startImpersonation = useCallback(async (tenantId, tenantName) => {
+  const startImpersonation = useCallback(async (tenantId, tenantName, reason = null, mode = 'act') => {
     setLoading(true)
     try {
-      const res = await impersonateTenant(tenantId)
+      // reason + mode are required by the backend (audit trail + VIEW AS/ACT AS).
+      const res = await impersonateTenant(tenantId, reason, mode)
       const data = res.data.data
 
       // Keep the original platform identity so we can switch back.
@@ -248,6 +253,8 @@ export function AuthProvider({ children }) {
         tenantName: tenant.name || tenantName,
         adminId: admin.id,
         adminEmail: admin.email,
+        reason: reason ?? null,
+        mode: mode ?? 'act',
       }
       setImpersonation(imp)
       localStorage.setItem(IMP_KEY, JSON.stringify(imp))
@@ -312,8 +319,6 @@ export function AuthProvider({ children }) {
   // be 'staff' in their home tenant AND a platform admin at the same time.
   // Only gates the /platform/* routes — never implied by any role check.
   // ---------------------------------------------------------------------------
-  const ROLE_LEVELS = { client: 0, staff: 1, admin: 2, super_admin: 3 }
-
   const primaryRole = user?.roles?.[0] ?? 'client'
   const isPlatformAdmin = user?.is_platform_admin === true
 
@@ -355,6 +360,7 @@ export function AuthProvider({ children }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- hook export next to provider component
 export const useAuth = () => {
   const ctx = useContext(AuthContext)
   if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>')
