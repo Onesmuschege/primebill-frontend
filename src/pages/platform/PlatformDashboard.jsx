@@ -13,6 +13,8 @@ import Table from '../../components/common/Table'
 import Modal from '../../components/common/Modal'
 import StatCard from '../../components/dashboard/StatCard'
 import DashboardListSection from '../../components/dashboard/DashboardListSection'
+import PlatformOpsQueues from '../../components/platform/PlatformOpsQueues'
+import { summarizeAttention } from '../../utils/platformOverview'
 import { DASHBOARD_LIMITS } from '../../utils/dashboardLimits'
 import Spinner from '../../components/common/Spinner'
 import { formatKES, formatNumber } from '../../utils/formatCurrency'
@@ -135,6 +137,10 @@ export default function PlatformDashboard() {
   // PrimeBill's own commercial position with its tenants (PlatformInvoice) —
   // deliberately distinct from the client Payment/Invoice volume below (§1).
   const billing   = statsData?.billing   || {}
+  // Layer-6 operational queues (§8) — real backend-derived attention conditions.
+  const opsQueues = statsData?.ops_queues || {}
+  // Layer-1 aggregate platform status, derived from the same real queues.
+  const attention = summarizeAttention(opsQueues)
 
   const revenueByMethod = Object.entries(revenue.by_method || {})
     .map(([method, amount]) => ({ method, amount }))
@@ -295,12 +301,40 @@ export default function PlatformDashboard() {
             Cross-tenant command center — every ISP running on the PrimeBill ISP Platform, not just your own workspace.
           </p>
         </div>
+        {/* Layer-1: live platform status derived from the ops queues (§8).
+            Color + count; text label keeps it accessible without color alone. */}
         <div
-          className="hidden sm:flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full shrink-0"
-          style={{ color: '#a78bfa', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)' }}
+          className="hidden sm:flex flex-col items-end gap-1 shrink-0"
+          title={attention.level === 'ok'
+            ? 'All operational queues are clear'
+            : `${attention.total} operational condition${attention.total === 1 ? '' : 's'} need attention`}
         >
-          <ShieldAlert size={13} />
-          Platform-only
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full"
+            style={{
+              color: attention.level === 'ok' ? '#34d399' : attention.level === 'critical' ? '#f87171' : '#fbbf24',
+              background: attention.level === 'ok' ? 'rgba(16,185,129,0.1)' : attention.level === 'critical' ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)',
+              border: `1px solid ${attention.level === 'ok' ? 'rgba(16,185,129,0.25)' : attention.level === 'critical' ? 'rgba(239,68,68,0.25)' : 'rgba(245,158,11,0.25)'}`,
+            }}
+          >
+            <span
+              aria-hidden="true"
+              className="w-2 h-2 rounded-full"
+              style={{
+                backgroundColor: attention.level === 'ok' ? '#34d399' : attention.level === 'critical' ? '#f87171' : '#fbbf24',
+              }}
+            />
+            {attention.level === 'ok'
+              ? 'All systems nominal'
+              : attention.level === 'critical'
+                ? `${attention.total} critical`
+                : `${attention.total} need attention`}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full"
+            style={{ color: '#a78bfa', background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.25)' }}
+          >
+            <ShieldAlert size={13} />
+            Platform-only
+          </div>
         </div>
       </div>
 
@@ -602,6 +636,11 @@ export default function PlatformDashboard() {
               </div>
             </div>
           </div>
+
+          {/* ── Layer 6: operational queues (§8) — every actionable condition,
+                 deep-linked to its operational view. Backend-gap queues render
+                 an honest unavailable state, never a fabricated count. ── */}
+          <PlatformOpsQueues queues={opsQueues} />
 
           {/* ── Recent activity feed ── */}
           <DashboardListSection
