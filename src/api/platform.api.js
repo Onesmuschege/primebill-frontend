@@ -38,7 +38,7 @@ export const configureLocalization = (id, payload) => api.post(`/platform/tenant
 export const assignPlan = (id, payload) => api.post(`/platform/tenants/${id}/plan`, payload).then(unwrapOne)
 
 // ── Tenant Lifecycle ─────────────────────────────────────────────────────
-export const suspendTenant = (id) => api.post(`/platform/tenants/${id}/suspend`).then(unwrapOne)
+export const suspendTenant = (id, payload = {}) => api.post(`/platform/tenants/${id}/suspend`, payload).then(unwrapOne)
 export const activateTenant = (id) => api.post(`/platform/tenants/${id}/activate`).then(unwrapOne)
 export const archiveTenant = (id) => api.post(`/platform/tenants/${id}/archive`).then(unwrapOne)
 
