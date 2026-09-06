@@ -6,9 +6,14 @@ import {
   getPlatformStats,
   getPlatformTenants,
   getPlatformTenant,
+  getPlatformRevenueAnalytics,
+  getPlatformBillingStats,
+  getPlatformSecurityOverview,
+  getPlatformUsageReport,
   suspendTenant,
   activateTenant,
 } from '../../api/platform.api'
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import Table from '../../components/common/Table'
 import Modal from '../../components/common/Modal'
 import StatCard from '../../components/dashboard/StatCard'
@@ -26,6 +31,19 @@ import {
   Server, CreditCard, ShieldCheck, Clock, TrendingUp,
   Wifi, Eye, ArrowLeft, Mail, Phone, MapPin, Database, ArrowUpRight,
 } from 'lucide-react'
+
+// ── Chart helpers (paid-revenue trend / plan mix from /platform/analytics) ─
+const TREND_COLORS = ['#a78bfa', '#34d399', '#60a5fa', '#fbbf24', '#f87171']
+
+function TrendTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="card px-3 py-2 text-xs">
+      <p className="font-medium mb-1" style={{ color: 'var(--pb-text-1)' }}>{label}</p>
+      <p style={{ color: 'var(--pb-text-2)' }}>{formatKES(payload[0].value)}</p>
+    </div>
+  )
+}
 
 // ── Small helpers ────────────────────────────────────────────────────────
 function HealthDot({ ok }) {
@@ -96,6 +114,29 @@ export default function PlatformDashboard() {
     enabled: !!showDetail && !!detailTenant?.id,
   })
 
+  // ── Enhanced stat feeds ─────────────────────────────────────────────────
+  // Independent read-only queries powering the deepened cockpit KPIs: net-new
+  // MRR deltas + paid-revenue trend (analytics), PrimeBill invoice pipeline
+  // (billing), 7-day login posture (security overview) and cross-tenant quota
+  // utilization (usage report). Each query fails alone — a feed that errors
+  // degrades only its own card instead of blanking the whole dashboard.
+  const { data: analyticsData } = useQuery({
+    queryKey: ['platform-revenue-analytics', 'dashboard'],
+    queryFn: getPlatformRevenueAnalytics,
+  })
+  const { data: billingStatsData } = useQuery({
+    queryKey: ['platform-billing-stats', 'dashboard'],
+    queryFn: getPlatformBillingStats,
+  })
+  const { data: securityOverviewData } = useQuery({
+    queryKey: ['platform-security-overview', 'dashboard'],
+    queryFn: getPlatformSecurityOverview,
+  })
+  const { data: usageReportData } = useQuery({
+    queryKey: ['platform-usage-report', 'dashboard'],
+    queryFn: getPlatformUsageReport,
+  })
+
   // ── Mutations ───────────────────────────────────────────────────────────
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['platform-tenants'] })
@@ -157,6 +198,41 @@ export default function PlatformDashboard() {
 // Revenue time series (monthly 12m)
   const monthlyRevenue = Array.isArray(revenue.monthly) ? revenue.monthly : []
   const maxMonthly = Math.max(1, ...monthlyRevenue.map(m => m.total))
+
+  // ── Enhanced-cockpit derived stats (real backend aggregations only) ──────
+  const analytics = analyticsData || {}
+  const analyticsMrr = analytics.mrr || {}
+  // Net MRR movement this month — real new/churned deltas, not a projection.
+  const netMrr = (analyticsMrr.new_this_month ?? 0) - (analyticsMrr.churned_this_month ?? 0)
+  // Paid-revenue series (12m, settled PrimeBill invoices) + per-plan mix.
+  const paidTrend = Array.isArray(analytics.monthly_trend) ? analytics.monthly_trend : []
+  const revenueByPlan = Array.isArray(analytics.by_plan) ? analytics.by_plan : []
+  // PrimeBill invoice pipeline — deepened /platform/billing/stats fields layered
+  // over the /platform/stats billing slice that feeds the Outstanding card.
+  const billingLive = { ...(billing || {}), ...(billingStatsData || {}) }
+  // 7-day login posture — overview feed layered over the stats security slice.
+  const securityLive = { ...(security || {}), ...(securityOverviewData || {}) }
+  const loginsThisWeek = (securityLive.successful_logins_this_week ?? 0) + (securityLive.failed_logins_this_week ?? 0)
+  const loginSuccessRate = loginsThisWeek > 0
+    ? Math.round((securityLive.successful_logins_this_week / loginsThisWeek) * 100)
+    : null
+  // Cross-tenant quota headroom: worst (peak) utilization per category across
+  // every tenant, plus the single hottest tenant overall.
+  const usageRows = Array.isArray(usageReportData?.rows) ? usageReportData.rows : []
+  const usageCategories = usageReportData?.categories
+    || { clients: 'clients_pct', routers: 'routers_pct', api_calls: 'api_calls_pct', storage: 'storage_pct' }
+  const peakUsage = Object.entries(usageCategories).map(([label, key]) => ({
+    label: label.replace(/_/g, ' '),
+    pct: usageRows.reduce((max, r) => Math.max(max, Number(r[key]) || 0), 0),
+  }))
+  const hottestTenant = usageRows.reduce((worst, r) => {
+    const pct = Math.max(
+      Number(r.clients_pct) || 0,
+      Number(r.api_calls_pct) || 0,
+      Number(r.storage_pct) || 0,
+    )
+    return pct > worst.pct ? { name: r.name, pct } : worst
+  }, { name: null, pct: 0 })
 
   // ── Server-side search/filter for the dashboard tenant preview ──────────
   // Filtering happens in the API call (getTenants supports search + status),
@@ -406,6 +482,42 @@ export default function PlatformDashboard() {
             />
           </div>
 
+          {/* ── Enhanced commercial & posture KPIs — net MRR movement, collected
+                 revenue, login posture and quota headroom. All real backend
+                 aggregations from the deepened feeds; no fabricated figures. ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard
+              title="Net MRR Movement"
+              value={formatKES(netMrr)}
+              subtitle={`+${formatKES(analyticsMrr.new_this_month ?? 0)} new · −${formatKES(analyticsMrr.churned_this_month ?? 0)} churned this month`}
+              icon={TrendingUp}
+              color={netMrr >= 0 ? 'green' : 'red'}
+            />
+            <StatCard
+              title="Collected This Month"
+              value={formatKES(billingLive.paid_this_month)}
+              subtitle={`${formatNumber(billingLive.total_invoices)} invoices total · ${formatNumber(billingLive.overdue_count)} overdue`}
+              icon={CreditCard}
+              color="cyan"
+            />
+            <StatCard
+              title="Login Success (7d)"
+              value={loginSuccessRate === null ? '—' : `${loginSuccessRate}%`}
+              subtitle={`${formatNumber(securityLive.successful_logins_this_week ?? 0)} passed · ${formatNumber(securityLive.failed_logins_this_week ?? 0)} failed this week`}
+              icon={ShieldCheck}
+              color={loginSuccessRate !== null && loginSuccessRate < 95 ? 'orange' : 'blue'}
+            />
+            <StatCard
+              title="Peak Quota Usage"
+              value={hottestTenant.name ? `${Math.round(hottestTenant.pct)}%` : '—'}
+              subtitle={hottestTenant.name
+                ? `${hottestTenant.name} is closest to a limit`
+                : 'No quota usage data yet'}
+              icon={Server}
+              color={hottestTenant.pct >= 90 ? 'red' : 'purple'}
+            />
+          </div>
+
           {/* ── Revenue & usage visualization row ── */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Monthly revenue bar chart */}
@@ -483,6 +595,104 @@ export default function PlatformDashboard() {
             </div>
           </div>
 
+          {/* ── Paid-revenue trend & plan mix — real /platform/analytics series
+                 (settled PrimeBill invoices only, 12-month filled axis) ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="card p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--pb-text-1)' }}>
+                  Paid Revenue Trend (12 months)
+                </h3>
+                <span className="text-xs" style={{ color: 'var(--pb-text-3)' }}>
+                  Settled PrimeBill invoices
+                </span>
+              </div>
+              {paidTrend.length === 0 ? (
+                <p className="text-sm py-8 text-center" style={{ color: 'var(--pb-text-3)' }}>
+                  No paid invoice data yet
+                </p>
+              ) : (
+                <ResponsiveContainer width="100%" height={180}>
+                  <AreaChart
+                    data={paidTrend.map(({ period, total }) => ({ period: period?.slice(2), total }))}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="dashRevGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#a78bfa" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" />
+                    <XAxis
+                      dataKey="period"
+                      tick={{ fontSize: 10, fill: 'var(--pb-text-3)' }}
+                      tickLine={false}
+                      axisLine={false}
+                      interval={1}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: 'var(--pb-text-3)' }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={38}
+                      tickFormatter={(v) => `${Math.round(v / 1000)}k`}
+                    />
+                    <Tooltip content={<TrendTooltip />} />
+                    <Area
+                      type="monotone"
+                      dataKey="total"
+                      name="Paid"
+                      stroke="#a78bfa"
+                      strokeWidth={2}
+                      fill="url(#dashRevGrad)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+
+            <div className="card p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-semibold" style={{ color: 'var(--pb-text-1)' }}>
+                  Revenue by Plan
+                </h3>
+                <span className="text-xs" style={{ color: 'var(--pb-text-3)' }}>
+                  Paid invoices per plan
+                </span>
+              </div>
+              {revenueByPlan.length === 0 ? (
+                <p className="text-sm py-8 text-center" style={{ color: 'var(--pb-text-3)' }}>
+                  No plan revenue data yet
+                </p>
+              ) : (
+                <ResponsiveContainer width="100%" height={180}>
+                  <BarChart data={revenueByPlan} margin={{ top: 5, right: 5, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.15)" />
+                    <XAxis
+                      dataKey="plan_name"
+                      tick={{ fontSize: 10, fill: 'var(--pb-text-3)' }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: 'var(--pb-text-3)' }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={38}
+                      tickFormatter={(v) => `${Math.round(v / 1000)}k`}
+                    />
+                    <Tooltip content={<TrendTooltip />} />
+                    <Bar dataKey="revenue" name="Revenue" radius={[4, 4, 0, 0]}>
+                      {revenueByPlan.map((_, i) => (
+                        <Cell key={i} fill={TREND_COLORS[i % TREND_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
           {/* ── Plans / clients / infrastructure / security row ── */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Plan distribution */}
@@ -635,6 +845,47 @@ export default function PlatformDashboard() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* ── Cross-tenant quota headroom — real per-tenant utilization from
+                 /platform/reports/usage. Shows the peak (worst) utilization per
+                 category so the operator sees the tightest resource first. ── */}
+          <div className="card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold" style={{ color: 'var(--pb-text-1)' }}>
+                Quota Headroom Across Tenants
+              </h3>
+              <span className="text-xs" style={{ color: 'var(--pb-text-3)' }}>
+                Peak utilization per category{hottestTenant.name ? ` · hottest: ${hottestTenant.name}` : ''}
+              </span>
+            </div>
+            {peakUsage.length === 0 ? (
+              <p className="text-sm py-4 text-center" style={{ color: 'var(--pb-text-3)' }}>
+                No usage report data yet
+              </p>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {peakUsage.map(({ label, pct }) => (
+                  <div key={label}>
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="capitalize" style={{ color: 'var(--pb-text-2)' }}>{label}</span>
+                      <span style={{ color: pct >= 90 ? '#f87171' : pct >= 75 ? '#fbbf24' : 'var(--pb-text-1)' }}>
+                        {Math.round(pct)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-black/20 rounded-full h-2 overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.min(100, pct)}%`,
+                          background: pct >= 90 ? '#f87171' : pct >= 75 ? '#fbbf24' : 'linear-gradient(90deg,#34d399,#06b6d4)',
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* ── Layer 6: operational queues (§8) — every actionable condition,
