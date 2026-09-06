@@ -120,6 +120,8 @@ import PlatformTenants from '../pages/platform/PlatformTenants'
 import PlatformTenantDetail from '../pages/platform/PlatformTenantDetail'
 import PlatformSubscriptions from '../pages/platform/PlatformSubscriptions'
 import PlatformSubscriptionAnalytics from '../pages/platform/PlatformSubscriptionAnalytics'
+import PlatformPlans from '../pages/platform/PlatformPlans'
+import PlatformSettings from '../pages/platform/PlatformSettings'
 import PlatformAuditLog from '../pages/platform/PlatformAuditLog'
 import PlatformSecurityCenter from '../pages/platform/PlatformSecurityCenter'
 import PlatformSystemHealth from '../pages/platform/PlatformSystemHealth'
@@ -285,6 +287,8 @@ export default function AppRoutes() {
         <Route path="/platform/subscriptions" element={<PlatformSubscriptions />} />
         {/* Reuses PlatformSubscriptionAnalytics for the platform analytics IA. */}
         <Route path="/platform/analytics" element={<PlatformSubscriptionAnalytics />} />
+        <Route path="/platform/plans" element={<PlatformPlans />} />
+        <Route path="/platform/settings" element={<PlatformSettings />} />
         <Route path="/platform/audit-log" element={<PlatformAuditLog />} />
         <Route path="/platform/reports" element={<PlatformReports />} />
         <Route path="/platform/users" element={<PlatformUsers />} />

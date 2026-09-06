@@ -98,3 +98,22 @@ export const getPlatformRevenueReport = (params) => api.get('/platform/reports/r
 export const getPlatformTenantsReport = (params) => api.get('/platform/reports/tenants', { params }).then(unwrapOne)
 export const getPlatformUsageReport = () => api.get('/platform/reports/usage').then(unwrapOne)
 export const exportPlatformReport = (type, params) => api.get(`/platform/reports/${type}/export`, { params, responseType: 'blob' })
+
+// ── Platform Analytics (deepened revenue analytics) ───────────────────────
+export const getPlatformRevenueAnalytics = () => api.get('/platform/analytics').then(unwrapOne)
+
+// ── Platform Plans catalog CRUD ───────────────────────────────────────────
+export const createPlatformPlan = (payload) => api.post('/platform/plans', payload).then(unwrapOne)
+export const updatePlatformPlan = (id, payload) => api.put(`/platform/plans/${id}`, payload).then(unwrapOne)
+export const deletePlatformPlan = (id) => api.delete(`/platform/plans/${id}`).then(unwrapOne)
+
+// ── Platform Security ─────────────────────────────────────────────────────
+export const getPlatformSecurityEvents = (params) => api.get('/platform/security/events', { params }).then(unwrapList)
+export const getPlatformSuspiciousActivity = () => api.get('/platform/security/suspicious').then(unwrapOne)
+export const getPlatformSecurityOverview = () => api.get('/platform/security/overview').then(unwrapOne)
+
+// ── Platform Settings (operator preferences driving the console) ─────────
+// Grouped, schema-driven settings for PrimeBill itself. Values genuinely
+// drive behavior: security suspicion thresholds + billing numbering/terms.
+export const getPlatformSettings = () => api.get('/platform/settings').then(unwrapOne)
+export const updatePlatformSettings = (settings) => api.put('/platform/settings', { settings }).then(unwrapOne)

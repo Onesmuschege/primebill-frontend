@@ -1,6 +1,6 @@
 import {
   LayoutDashboard, Building2, UserCog, CreditCard, ReceiptText,
-  Activity, TrendingUp, BarChart3, Lock, ScrollText,
+  Activity, TrendingUp, BarChart3, Lock, ScrollText, Package, Settings2,
 } from 'lucide-react'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -26,6 +26,7 @@ export const PLATFORM_NAV = [
     items: [
       { to: '/platform/tenants', icon: Building2, label: 'Tenants' },
       { to: '/platform/users', icon: UserCog, label: 'Platform Users' },
+      { to: '/platform/settings', icon: Settings2, label: 'Platform Settings' },
     ],
   },
   {
@@ -33,6 +34,7 @@ export const PLATFORM_NAV = [
     items: [
       { to: '/platform/subscriptions', icon: CreditCard, label: 'Subscriptions' },
       { to: '/platform/billing', icon: ReceiptText, label: 'Billing & Revenue' },
+      { to: '/platform/plans', icon: Package, label: 'Plans' },
     ],
   },
   {
@@ -63,8 +65,10 @@ const TITLE_OVERRIDES = [
   { match: (p) => /^\/platform\/tenants\/\d+$/.test(p), label: 'Tenant Detail' },
   { match: (p) => p.startsWith('/platform/tenants'), label: 'Tenants' },
   { match: (p) => p.startsWith('/platform/users'), label: 'Platform Users' },
+  { match: (p) => p.startsWith('/platform/settings'), label: 'Platform Settings' },
   { match: (p) => p.startsWith('/platform/subscriptions'), label: 'Subscriptions' },
   { match: (p) => p.startsWith('/platform/billing'), label: 'Billing & Revenue' },
+  { match: (p) => p.startsWith('/platform/plans'), label: 'Plans' },
   { match: (p) => p.startsWith('/platform/analytics'), label: 'Analytics' },
   { match: (p) => p.startsWith('/platform/reports'), label: 'Reports' },
   { match: (p) => p.startsWith('/platform/audit-log'), label: 'Audit Log' },

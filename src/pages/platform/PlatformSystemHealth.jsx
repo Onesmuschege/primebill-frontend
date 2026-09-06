@@ -4,18 +4,26 @@ import StatCard from '../../components/dashboard/StatCard'
 import Spinner from '../../components/common/Spinner'
 import { formatNumber } from '../../utils/formatCurrency'
 import {
-  Activity, Server, HardDrive, Cpu, Wifi, AlertTriangle,
+  Activity, Server, AlertTriangle,
   CheckCircle2, XCircle, Clock,
 } from 'lucide-react'
 
-function HealthDot({ ok }) {
+// Service states are real measurements (up/down via probes), fleet aggregates
+// (degraded), or an honest "unverified" for signals not instrumented yet — we
+// never claim a service is up when we have no heartbeat to prove it.
+const SERVICE_PALETTE = {
+  up: { dot: '#34d399', glow: 'rgba(52,211,153,0.6)', text: 'Operational', fg: '#34d399', bg: 'rgba(52,211,153,0.12)' },
+  degraded: { dot: '#fbbf24', glow: 'rgba(251,191,36,0.6)', text: 'Degraded', fg: '#fbbf24', bg: 'rgba(251,191,36,0.12)' },
+  down: { dot: '#f87171', glow: 'rgba(248,113,113,0.6)', text: 'Down', fg: '#f87171', bg: 'rgba(248,113,113,0.12)' },
+  unverified: { dot: '#94a3b8', glow: 'rgba(148,163,184,0.4)', text: 'Unverified', fg: '#94a3b8', bg: 'rgba(148,163,184,0.12)' },
+}
+
+function HealthDot({ status }) {
+  const tone = SERVICE_PALETTE[status] ?? SERVICE_PALETTE.unverified
   return (
     <span
-      className="inline-block w-2.5 h-2.5 rounded-full mr-1.5"
-      style={{
-        backgroundColor: ok ? '#34d399' : '#f87171',
-        boxShadow: ok ? '0 0 8px rgba(52,211,153,0.6)' : '0 0 8px rgba(248,113,113,0.6)',
-      }}
+      className="inline-block w-2.5 h-2.5 rounded-full mr-1.5 shrink-0"
+      style={{ backgroundColor: tone.dot, boxShadow: `0 0 8px ${tone.glow}` }}
     />
   )
 }
@@ -87,22 +95,32 @@ export default function PlatformSystemHealth() {
           color={healthIssues.length > 0 ? 'orange' : 'green'}
         />
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="card">
           <h3 className="font-semibold mb-4" style={{ color: 'var(--pb-text-1)' }}>Service Status</h3>
           <div className="space-y-3">
-            {(infra.services || []).map(service => (
-              <div key={service.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <HealthDot ok={service.status === 'up'} />
-                  <span className="text-sm font-medium" style={{ color: 'var(--pb-text-1)' }}>{service.name}</span>
+            {(infra.services || []).map(service => {
+              const tone = SERVICE_PALETTE[service.status] ?? SERVICE_PALETTE.unverified
+              return (
+                <div key={service.name} className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <HealthDot status={service.status} />
+                    <div className="min-w-0">
+                      <span className="text-sm font-medium block" style={{ color: 'var(--pb-text-1)' }}>{service.name}</span>
+                      {service.detail && (
+                        <span className="text-xs block truncate" style={{ color: 'var(--pb-text-3)' }}>{service.detail}</span>
+                      )}
+                    </div>
+                  </div>
+                  <span
+                    className="text-xs px-2 py-0.5 rounded-full capitalize shrink-0"
+                    style={{ color: tone.fg, background: tone.bg }}
+                  >
+                    {tone.text}
+                  </span>
                 </div>
-                <span className="text-xs capitalize" style={{ color: 'var(--pb-text-3)' }}>
-                  {service.status === 'up' ? 'Operational' : service.status}
-                </span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
@@ -138,6 +156,14 @@ export default function PlatformSystemHealth() {
           )}
         </div>
       </div>
+
+      <p className="text-xs" style={{ color: 'var(--pb-text-3)' }}>
+        Signals are real measurements wherever measurable: database/cache reachability probes, a measured DB
+        round-trip for response time, and live router fleet counts. Queue worker status is config-derived — a
+        worker heartbeat is not instrumented yet (documented gap). Router fleet shows{' '}
+        <span className="font-medium">unverified</span> when no routers are registered. Tenant health and all
+        KPIs come from live platform data.
+      </p>
     </div>
   )
 }
